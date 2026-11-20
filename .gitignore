@@ -1,0 +1,17 @@
+# your project url and anon key. The anon key is public by design (RLS is the
+# lock, not the key), but the file is yours: copy config.example.js and fill it in.
+config.local.js
+.env.local
+*.env
+
+# supabase CLI scratch
+supabase/.temp/
+supabase/.branches/
+
+# test deps and artefacts
+test/node_modules/
+test/package-lock.json
+test/*.png
+
+# os
+.DS_Store

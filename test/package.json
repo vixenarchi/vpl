@@ -1,0 +1,11 @@
+{
+  "name": "vpl-v2-test",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node e2e.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.65.0"
+  }
+}

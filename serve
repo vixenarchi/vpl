@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# serve v2 locally, and stay running.
+#
+#   ./serve          start on 8099 in the background
+#   ./serve stop     stop it
+#   ./serve log      follow the request log
+#
+# It also answers on OAUTH_PORT (8788) — see the note below.
+#
+# serve.py is python's own http.server with one added rule: every answer says
+# "do not cache", so a changed file shows up on the next reload instead of
+# looking like a bug. No build step, no framework, nothing to install (§4.4).
+
+PORT="${PORT:-8099}"
+# BIND=127.0.0.1 keeps it local (default). BIND=0.0.0.0 exposes it on the LAN
+# so another machine can reach it by IP. No auth beyond Supabase's own.
+BIND="${BIND:-127.0.0.1}"
+DIR="$(cd "$(dirname "$0")" && pwd)"
+LOG=/tmp/vpl-serve.log
+PIDFILE=/tmp/vpl-serve.pid
+
+# Google sign-in comes back to the Supabase project's "Site URL", which on this
+# project is still the scaffold value http://127.0.0.1:8788. Until that is
+# changed in the dashboard, serving the same folder on that port is what makes
+# the round trip land on the app instead of a refused connection. Drop this
+# listener once the Site URL is the real address.
+OAUTH_PORT="${OAUTH_PORT:-8788}"
+OAUTH_PIDFILE=/tmp/vpl-serve-oauth.pid
+OAUTH_LOG=/tmp/vpl-serve-oauth.log
+
+case "${1:-start}" in
+  stop)
+    stopped=no
+    for f in "$PIDFILE" "$OAUTH_PIDFILE"; do
+      if [ -f "$f" ] && kill -0 "$(cat "$f")" 2>/dev/null; then
+        kill "$(cat "$f")" && rm -f "$f"
+        stopped=yes
+      fi
+    done
+    [ "$stopped" = yes ] && echo "stopped" || echo "not running"
+    ;;
+
+  log)
+    tail -f "$LOG"
+    ;;
+
+  start|*)
+    if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+      echo "already running on http://127.0.0.1:$PORT (pid $(cat "$PIDFILE"))"
+      exit 0
+    fi
+    cd "$DIR" || exit 1
+    # setsid detaches from the terminal, so the server survives the shell
+    # that started it. Without it the process dies with the session.
+    setsid python3 "$DIR/serve.py" "$PORT" "$BIND" \
+      </dev/null >"$LOG" 2>&1 &
+    echo $! >"$PIDFILE"
+    sleep 1
+    if curl -sf -o /dev/null "http://127.0.0.1:$PORT/"; then
+      echo "vpl is at http://127.0.0.1:$PORT/  (pid $(cat "$PIDFILE"))"
+      if [ "$BIND" = "0.0.0.0" ]; then
+        for ip in $(hostname -I 2>/dev/null); do
+          case "$ip" in *:*) continue ;; esac
+          echo "  on the LAN: http://$ip:$PORT/"
+        done
+      fi
+      if [ -z "${OAUTH_PORT:-}" ] || [ "$OAUTH_PORT" = 0 ]; then
+        :
+      elif curl -sf -o /dev/null "http://127.0.0.1:$OAUTH_PORT/" 2>/dev/null; then
+        echo "  google sign-in stops at http://127.0.0.1:$OAUTH_PORT/ (already served)"
+      else
+        setsid python3 "$DIR/serve.py" "$OAUTH_PORT" 127.0.0.1 \
+          </dev/null >"$OAUTH_LOG" 2>&1 &
+        echo $! >"$OAUTH_PIDFILE"
+        sleep 1
+        if curl -sf -o /dev/null "http://127.0.0.1:$OAUTH_PORT/"; then
+          echo "  google sign-in returns to http://127.0.0.1:$OAUTH_PORT/"
+        fi
+      fi
+      echo "stop it with: $0 stop"
+    else
+      echo "failed to start — see $LOG"
+      exit 1
+    fi
+    ;;
+esac

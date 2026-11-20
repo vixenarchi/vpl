@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Publish v2. There is nothing to build: the app already is the files, and the
+# database lives at Supabase. So this stages the seven things a browser needs
+# and hands that folder to Cloudflare Pages.
+#
+#   ./deploy              # publish to the project named below
+#   ./deploy --dry-run    # only show what would be uploaded
+#
+# First time on this machine:  npx wrangler login
+set -euo pipefail
+
+DIR=$(cd "$(dirname "$0")" && pwd)
+PROJECT=${PROJECT:-vpl}
+BRANCH=${BRANCH:-main}
+
+# everything a browser asks for, and nothing else: no tests, no migrations,
+# no dev server, no notes about any of it.
+STAGE=$(mktemp -d)
+trap 'rm -rf "$STAGE"' EXIT
+
+for f in index.html app.js style.css config.local.js _headers; do
+  [ -f "$DIR/$f" ] || { echo "missing $f" >&2; exit 1; }
+  cp "$DIR/$f" "$STAGE/"
+done
+cp -r "$DIR/lib" "$DIR/icons" "$STAGE/"
+# Pages Functions: the CORS door for model endpoints (/api/chat)
+if [ -d "$DIR/functions" ]; then cp -r "$DIR/functions" "$STAGE/"; fi
+
+# the anon key is public on purpose — RLS is the lock, not the key. But a
+# service-role key would be fatal, so refuse to publish one by accident.
+if grep -q "service_role" "$STAGE"/*.js 2>/dev/null; then
+  echo "refusing to deploy: a service_role key is in the client" >&2
+  exit 1
+fi
+
+SIZE=$(du -sk "$STAGE" | cut -f1)
+echo "staging $SIZE KB:"
+(cd "$STAGE" && find . -type f | sort | sed 's/^\./  /')
+
+if [ "${1:-}" = "--dry-run" ]; then
+  echo "dry run: nothing uploaded"
+  exit 0
+fi
+
+# `wrangler whoami` exits 0 even when it is not logged in, so read the answer
+# rather than the exit code.
+WHO=$(npx --yes wrangler whoami 2>&1 || true)
+if ! grep -q "associated with the email" <<<"$WHO"; then
+  cat >&2 <<'EOF'
+
+not signed in to Cloudflare. Run once:
+
+    npx wrangler login
+
+That opens a browser; after it, ./deploy works. There is no API token to paste
+and nothing to install — Pages is free at this size.
+EOF
+  exit 1
+fi
+
+npx --yes wrangler pages deploy "$STAGE" --project-name "$PROJECT" --branch "$BRANCH"

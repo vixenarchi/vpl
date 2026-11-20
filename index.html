@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>vpl</title>
+<meta name="description" content="vixen productivity light — light notes.">
+<link rel="icon" href="icons/v.svg" type="image/svg+xml">
+<meta name="theme-color" content="#1f1d1a">
+
+<link rel="stylesheet" href="style.css">
+
+<!-- The saved theme is applied before first paint so nothing flashes. -->
+<script>
+  try {
+    var t = localStorage.getItem('vpl.theme');
+    if (t) document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
+</head>
+<body>
+
+<!-- ── gate: sign in ─────────────────────────────────────────────── -->
+<section id="gate" class="gate" hidden>
+  <form id="gate-form" class="gate-form">
+    <div class="gate-brand">
+      <span class="gate-mark" aria-hidden="true">v</span>
+      <h1>vpl</h1>
+      <span class="gate-sub">vixen productivity light</span>
+    </div>
+
+    <label for="email">email or a name</label>
+    <input id="email" type="text" autocomplete="username" required
+           spellcheck="false" autocapitalize="off"
+           placeholder="you@example.com or username">
+    <p class="gate-hint">any name will do — an email is only needed to get a
+      forgotten password back.</p>
+
+    <label for="pass">password</label>
+    <div class="pass-wrap">
+      <input id="pass" type="password" autocomplete="current-password"
+             minlength="6" required placeholder="at least 6 characters">
+      <button id="btn-eye" type="button" class="eye" aria-pressed="false"
+              aria-controls="pass" aria-label="show password" title="show password">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M1.6 12S5.6 5.8 12 5.8 22.4 12 22.4 12 18.4 18.2 12 18.2 1.6 12 1.6 12z"/>
+          <circle cx="12" cy="12" r="3.1"/>
+          <path class="eye-slash" d="M3.5 20.5 20.5 3.5"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="gate-row">
+      <button id="btn-login" type="submit" class="primary">sign in</button>
+      <button id="btn-register" type="button">create account</button>
+    </div>
+
+    <button id="btn-google" type="button" class="google">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <path fill="#4285F4" d="M23 12.2c0-.8-.1-1.6-.2-2.3H12v4.4h6.2c-.3 1.4-1.1 2.6-2.4 3.4v2.8h3.9c2.3-2.1 3.3-5.2 3.3-8.3z"/>
+        <path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-2.8c-1.1.7-2.5 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3C3.4 21.5 7.4 24 12 24z"/>
+        <path fill="#FBBC05" d="M5.4 14.6c-.2-.7-.4-1.4-.4-2.2s.1-1.5.4-2.2v-3H1.4C.5 8.9 0 10.4 0 12s.5 3.1 1.4 4.4l4-2.6z"/>
+        <path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4C17.9 1.2 15.2 0 12 0 7.4 0 3.4 2.5 1.4 6.2l4 3C6.3 6.4 8.9 4.8 12 4.8z"/>
+      </svg>
+      continue with Google
+    </button>
+
+    <p id="gate-msg" class="gate-msg" role="status"></p>
+  </form>
+</section>
+
+<!-- ── app ───────────────────────────────────────────────────────── -->
+<div id="app" class="app" hidden>
+
+  <header class="bar">
+    <button id="btn-list" class="icon" title="notes (Ctrl+\)" aria-label="toggle note list">☰</button>
+    <a class="brand" href="#/"><span class="brand-mark" aria-hidden="true">v</span><span class="brand-word">vpl</span></a>
+
+    <span class="bar-spacer bar-gap-a"></span>
+
+    <button id="btn-agent" class="icon agent-open" type="button" hidden
+            title="assistant" aria-label="assistant" aria-expanded="false" aria-controls="agent">✎</button>
+
+    <section id="agent" class="agent" hidden>
+      <form id="agent-form" class="agent-form">
+        <span class="agent-mark" aria-hidden="true">✎</span>
+        <input id="agent-input" type="text" autocomplete="off"
+               placeholder="ask: expand this idea, tidy the list, make a summary…"
+               aria-label="ask the assistant">
+        <button id="agent-go" class="ghost agent-go" type="submit">go</button>
+      </form>
+      <div class="agent-pop">
+        <p id="agent-msg" class="agent-msg muted" aria-live="polite"></p>
+        <div id="agent-out" class="agent-out" hidden>
+          <div id="agent-text" class="agent-text"></div>
+          <div class="agent-actions">
+            <button id="agent-add" class="ghost" type="button">add at the end</button>
+            <button id="agent-replace" class="ghost" type="button">replace the note</button>
+            <button id="agent-drop" class="ghost" type="button">discard</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <span class="bar-spacer bar-gap-b"></span>
+    <button id="btn-new" class="icon" title="new note (Alt+N)" aria-label="new note">＋</button>
+    <button id="btn-help" class="icon" title="keyboard shortcuts (?)" aria-label="keyboard shortcuts">⌨</button>
+    <button id="btn-theme" class="icon" title="theme" aria-label="toggle theme">◐</button>
+    <button id="btn-settings" class="icon" title="you: name, assistant, account" aria-label="settings">⚙</button>
+    <button id="btn-out" class="icon" title="sign out" aria-label="sign out">⏻</button>
+  </header>
+
+  <div class="workspace">
+
+    <!-- note tree, recycle bin pinned to the bottom -->
+    <nav id="list" class="list" aria-label="notes">
+      <div class="list-head">
+        <input id="q" type="search" placeholder="filter… (Ctrl+K)" aria-label="filter notes">
+      </div>
+
+      <p id="trash-banner" class="trash-banner" hidden>
+        <span>recycle bin</span> — restore a note, or delete it for good
+      </p>
+
+      <ul id="list-items" class="list-items" role="tree"></ul>
+      <p id="list-empty" class="list-empty" hidden>no notes yet.</p>
+
+      <div class="list-foot">
+        <button id="btn-trash" class="trash" title="recycle bin" aria-label="recycle bin">
+          <span class="trash-icon" aria-hidden="true">♲</span>
+          <span class="trash-label">recycle bin</span>
+          <span id="trash-count" class="trash-count"></span>
+        </button>
+        <button id="btn-bin-empty" class="bin-empty" type="button" hidden>empty all</button>
+      </div>
+    </nav>
+
+    <!-- the note -->
+    <main id="main" class="main">
+
+      <section id="view-none" class="placeholder">
+        <p>no note open.</p>
+        <p class="muted">press ＋ or Alt+N to start one · <kbd>Ctrl</kbd>+<kbd>/</kbd> for shortcuts</p>
+      </section>
+
+      <section id="view-note" class="note" hidden>
+        <div class="note-bar">
+          <div class="note-meta">
+            <span id="note-vis" class="note-vis" hidden></span>
+            <span id="note-status" class="note-status" aria-live="polite"></span>
+          </div>
+
+          <div class="modes" role="tablist" aria-label="editor mode">
+            <button id="mode-write" class="tab" role="tab" aria-selected="true"
+                    data-mode="write" title="write (Ctrl+1)">write</button>
+            <button id="mode-view" class="tab" role="tab" aria-selected="false"
+                    data-mode="view" title="read (Ctrl+2)">view</button>
+          </div>
+
+          <div class="note-actions">
+            <button id="btn-share" class="ghost" title="share this note and everything under it"
+                    aria-label="share">⇗ share</button>
+            <button id="btn-child" class="ghost" title="new note under this one (Ctrl+Enter)"
+                    aria-label="new note under this one">↳ child</button>
+            <button id="btn-del" class="ghost danger">delete</button>
+          </div>
+        </div>
+
+        <input id="title" class="title" type="text" placeholder="untitled"
+               aria-label="note title" autocomplete="off">
+
+        <!-- WRITE: rich text -->
+        <div id="pane-write" class="pane">
+          <div id="toolbar" class="toolbar" role="toolbar" aria-label="formatting">
+            <button data-cmd="bold" title="bold (Ctrl+B)"><b>B</b></button>
+            <button data-cmd="italic" title="italic (Ctrl+I)"><i>I</i></button>
+            <button data-cmd="strikeThrough" title="strikethrough"><s>S</s></button>
+            <button data-cmd="formatBlock" data-arg="h2" title="heading — press again to turn it back into text">H</button>
+            <span class="tb-sep"></span>
+            <button data-cmd="insertUnorderedList" title="bullet list">•</button>
+            <button data-cmd="insertOrderedList" title="numbered list">1.</button>
+            <button data-cmd="formatBlock" data-arg="blockquote" title="quote">❝</button>
+            <button data-cmd="box" title="box: hold anything (a pasted paragraph, a quote, a list)">▭</button>
+            <button data-cmd="formatBlock" data-arg="pre" title="code block">‹›</button>
+            <span class="tb-sep"></span>
+            <button data-cmd="createLink" title="link (Ctrl+K in text)">link</button>
+            <button data-cmd="unlink" title="remove link">unlink</button>
+            <button data-cmd="removeFormat" title="clear formatting">⌫</button>
+          </div>
+
+          <div id="editable" class="editable" contenteditable="true" spellcheck="true"
+               role="textbox" aria-multiline="true" aria-label="note body"
+               data-placeholder="write. bold is Ctrl+B."></div>
+        </div>
+
+        <!-- VIEW: rendered -->
+        <div id="pane-view" class="pane" hidden>
+          <article id="rendered" class="rendered"></article>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- share: a public link, or people with a role -->
+<dialog id="settings" class="dialog settings-dialog">
+  <button id="set-x" class="dialog-x" type="button" aria-label="close settings" title="close">✕</button>
+  <h2>you</h2>
+  <p id="set-who" class="muted share-scope"></p>
+
+  <form id="set-name-form" class="share-section">
+    <label for="set-name">name <span class="muted">— optional</span></label>
+    <div class="set-line">
+      <input id="set-name" type="text" autocomplete="name" placeholder="what should we call you?">
+      <button class="primary" type="submit">save</button>
+    </div>
+    <p id="set-name-hint" class="muted share-hint" hidden>filled in by your Google account.</p>
+  </form>
+
+  <section class="share-section">
+    <h3>assistant</h3>
+    <p class="muted share-hint">the key is kept in this browser only — never sent anywhere
+      except the address you name. any endpoint that speaks the OpenAI chat format works.</p>
+
+    <label for="set-ai-url">api url</label>
+    <input id="set-ai-url" type="text" spellcheck="false" autocapitalize="off"
+           placeholder="https://api.openai.com/v1">
+
+    <label for="set-ai-model">model</label>
+    <input id="set-ai-model" type="text" spellcheck="false" autocapitalize="off"
+           placeholder="gpt-4o-mini">
+
+    <label for="set-ai-key">api key</label>
+    <div class="pass-wrap">
+      <input id="set-ai-key" type="password" spellcheck="false" autocomplete="off"
+             placeholder="sk-…">
+      <button id="set-ai-eye" type="button" class="eye" aria-pressed="false"
+              aria-controls="set-ai-key" aria-label="show api key" title="show api key">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M1.6 12S5.6 5.8 12 5.8 22.4 12 22.4 12 18.4 18.2 12 18.2 1.6 12 1.6 12z"/>
+          <circle cx="12" cy="12" r="3.1"/>
+          <path class="eye-slash" d="M3.5 20.5 20.5 3.5"/>
+        </svg>
+      </button>
+    </div>
+
+    <p id="set-ai-msg" class="share-msg" aria-live="polite"></p>
+
+    <div class="confirm-row set-actions">
+      <button id="set-ai-save" class="primary" type="button">save</button>
+      <button id="set-ai-test" class="ghost" type="button">test it</button>
+      <button id="set-ai-clear" class="ghost danger" type="button">forget the key</button>
+    </div>
+  </section>
+
+  <section class="share-section">
+    <h3>password</h3>
+    <p class="muted share-hint">changing it signs out every other device, not this one.</p>
+
+    <label for="set-pass">new password</label>
+    <div class="pass-wrap">
+      <input id="set-pass" type="password" autocomplete="new-password"
+             placeholder="at least 6 characters">
+      <button id="set-pass-eye" type="button" class="eye" aria-pressed="false"
+              aria-controls="set-pass" aria-label="show password" title="show password">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M1.6 12S5.6 5.8 12 5.8 22.4 12 22.4 12 18.4 18.2 12 18.2 1.6 12 1.6 12z"/>
+          <circle cx="12" cy="12" r="3.1"/>
+          <path class="eye-slash" d="M3.5 20.5 20.5 3.5"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="confirm-row">
+      <button id="btn-set-pass" class="primary" type="button">change password</button>
+    </div>
+    <p id="set-pass-msg" class="share-msg" aria-live="polite"></p>
+  </section>
+
+  <section class="share-section">
+    <h3>delete account</h3>
+    <p class="muted share-hint">deletes the account, every note in it and every link you
+      made. there is no backup and no way back.</p>
+    <p id="set-del-what" class="muted share-hint"></p>
+    <button id="btn-delete-account" class="ghost danger" type="button">delete my account</button>
+    <p id="set-del-msg" class="share-msg" aria-live="polite"></p>
+  </section>
+
+  <div class="confirm-row settings-foot">
+    <button id="set-cancel" class="ghost" type="button">cancel</button>
+    <button id="set-close" class="primary">done</button>
+  </div>
+</dialog>
+
+<dialog id="share" class="dialog share-dialog">
+  <button id="share-x" class="dialog-x" type="button" aria-label="close">✕</button>
+  <h2>share <span id="share-for" class="share-for"></span></h2>
+  <p class="muted share-scope">one link covers this note and every note under it.</p>
+
+  <section class="share-section">
+    <label class="share-toggle">
+      <input id="share-public" type="checkbox">
+      <span>share a <strong>link</strong> — anyone who has it can read</span>
+    </label>
+    <p class="muted share-hint">no account, no address, nothing to look up.
+      a link is the flexible way; a person is the one you can take back.</p>
+    <div id="share-link-row" class="share-link-row" hidden>
+      <input id="share-link" class="share-link" readonly dir="ltr" aria-label="public link">
+      <button id="share-copy" class="ghost">copy</button>
+      <button id="share-renew" class="ghost" title="replace the link; the old one stops working">new link</button>
+      <p class="muted share-hint">read-only · no sign-in needed · switch it off and the link dies</p>
+    </div>
+  </section>
+
+  <section class="share-section">
+    <h3>people</h3>
+    <form id="share-add" class="share-add">
+      <input id="share-email" type="text" inputmode="email" spellcheck="false"
+             autocapitalize="off" autocomplete="off" aria-label="a person's email, or their name"
+             placeholder="their email, or a name on this app">
+      <select id="share-role" aria-label="permission">
+        <option value="view">can view</option>
+        <option value="edit">can edit</option>
+      </select>
+      <button class="primary" type="submit">add</button>
+    </form>
+    <p id="share-who-hint" class="share-who-hint" aria-live="polite" hidden></p>
+    <p class="muted share-hint">if they have no account yet, the invitation waits:
+      it grants nothing until you allow it by hand.</p>
+    <ul id="share-list" class="share-list"></ul>
+    <p id="share-msg" class="share-msg" aria-live="polite"></p>
+  </section>
+
+  <div class="confirm-row">
+    <button id="share-copy-msg" class="ghost" type="button"
+            title="a short message to paste into a chat">copy a message</button>
+    <span class="foot-gap"></span>
+    <button id="share-cancel" class="ghost" type="button">cancel</button>
+    <button id="share-close" class="primary" type="button">done</button>
+  </div>
+</dialog>
+
+<!-- putting a note out of the bin for good -->
+<dialog id="purge" class="dialog purge-dialog">
+  <button id="purge-x" class="dialog-x" type="button" aria-label="close">✕</button>
+  <h2 id="purge-title">delete for good?</h2>
+  <p id="purge-text" class="muted"></p>
+  <div class="confirm-row">
+    <button id="purge-cancel" class="ghost" type="button">keep it</button>
+    <button id="purge-go" class="danger" type="button">delete for good</button>
+  </div>
+</dialog>
+
+<!-- keyboard shortcuts -->
+<dialog id="help" class="dialog help-dialog">
+  <h2>keyboard</h2>
+  <dl class="keys">
+    <dt><kbd>Alt</kbd>+<kbd>N</kbd></dt><dd>new note</dd>
+    <dt><kbd>Ctrl</kbd>+<kbd>Enter</kbd></dt><dd>new note under the current one</dd>
+    <dt><kbd>Ctrl</kbd>+<kbd>1</kbd> <kbd>2</kbd></dt><dd>write · view</dd>
+    <dt><kbd>Ctrl</kbd>+<kbd>E</kbd></dt><dd>switch write / view</dd>
+    <dt><kbd>Ctrl</kbd>+<kbd>B</kbd> / <kbd>I</kbd></dt><dd>bold / italic</dd>
+    <dt><kbd>Ctrl</kbd>+<kbd>\</kbd></dt><dd>show or hide the list</dd>
+    <dt><kbd>Ctrl</kbd>+<kbd>K</kbd></dt><dd>filter (in list) or link (in text)</dd>
+    <dt><kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>previous / next note</dd>
+    <dt><kbd>Alt</kbd>+<kbd>←</kbd> / <kbd>→</kbd></dt><dd>outdent / nest under previous sibling</dd>
+    <dt>drag a note</dt><dd>drop on another to nest it · on a row's edge to reorder · on empty space for the top level · on the bin to delete, or on the bin while in it to restore</dd>
+    <dt><kbd>Esc</kbd></dt><dd>leave the editor, or close this</dd>
+    <dt><kbd>Ctrl</kbd>+<kbd>/</kbd></dt><dd>this list</dd>
+  </dl>
+  <div class="confirm-row">
+    <button id="help-close" class="primary">close</button>
+  </div>
+</dialog>
+
+<!-- the public reader: no sign-in, no list, no editor -->
+<div id="reader" class="reader" hidden>
+  <header class="reader-head">
+    <span class="reader-brand">vpl · shared</span>
+    <span id="reader-role" class="reader-badge">read only</span>
+    <button id="reader-copy" class="ghost reader-copy" type="button"
+            title="copy a link to this chapter">copy link</button>
+    <a id="reader-home" class="reader-home" href="#/" hidden>my notes</a>
+  </header>
+  <div class="reader-body">
+    <nav id="reader-nav" class="reader-nav" aria-label="chapters"></nav>
+    <article class="reader-page">
+      <h1 id="reader-title" class="reader-title"></h1>
+      <div id="reader-md" class="rendered"></div>
+    </article>
+  </div>
+</div>
+
+<script src="config.local.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

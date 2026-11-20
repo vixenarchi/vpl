@@ -1,0 +1,1127 @@
+/* vpl — one stylesheet, CSS variables (§4.4).
+ * Warm paper, not a dashboard. Light is the default; dark is a variable swap. */
+
+:root {
+  --paper:        #faf8f4;
+  --paper-2:      #f2eee6;   /* list pane */
+  --paper-3:      #e9e3d8;   /* hairlines, hover */
+  --ink:          #1f1d1a;
+  --ink-2:        #55504a;
+  --ink-3:        #8a8378;
+  --line:         #e0d9cd;
+  --mark:         #b4531f;   /* the only accent, used sparingly */
+  --danger:       #a3352b;
+
+  /* one colour language for sharing, in the list and at the top of the note:
+   * anyone with the link / someone may edit / someone may only read */
+  --tone-public: #a4553c;   /* terracotta, next to the accent */
+  --tone-shared: #4a6b52;   /* moss */
+  --tone-read:   #4a5f76;   /* slate */
+
+  --sans: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --serif: 'Newsreader', ui-serif, Georgia, 'Times New Roman', serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --list-w: 15rem;
+  --radius: 8px;
+  --bar-h: 2.75rem;
+  --line-strong: #cdc3b2;
+}
+
+[data-theme='dark'] {
+  --paper:        #1a1816;
+  --paper-2:      #232120;
+  --paper-3:      #33302c;
+  --ink:          #f7f3ec;
+  --ink-2:        #ddd6cb;
+  --ink-3:        #b5ada1;   /* 7.97:1 on --paper */
+  /* Edges must be obvious, not merely present. #8a8177 is 4.63:1 on
+   * --paper and 4.19:1 on the sidebar surface. */
+  --line:         #8a8177;
+  --line-strong:  #a39a8f;
+  --mark:         #ffb06b;
+  --danger:       #ff9084;
+  --tone-public: #dda07a;
+  --tone-shared: #9fc4a8;
+  --tone-read:   #a8c4e0;
+}
+
+/* In dark mode a hairline on a near-black surface vanishes, so inputs and
+ * pane dividers get an explicit, visible border. Structural dividers are
+ * drawn in --line-strong and made 2px: at 1px even a strong colour reads
+ * as "faint" on a large dark field. */
+[data-theme='dark'] input,
+[data-theme='dark'] textarea {
+  border-color: var(--line);
+}
+[data-theme='dark'] .list-head input { background: var(--paper-3); }
+[data-theme='dark'] .bar {
+  border-bottom: 2px solid var(--line-strong);
+}
+[data-theme='dark'] .list {
+  border-right: 2px solid var(--line-strong);
+}
+[data-theme='dark'] .list-foot {
+  border-top: 2px solid var(--line-strong);
+  background: #2b2824;
+}
+[data-theme='dark'] button.trash { color: var(--ink-2); }
+[data-theme='dark'] .trash-icon { color: var(--ink-2); }
+[data-theme='dark'] .note-bar { border-bottom: 1px solid var(--line); }
+[data-theme='dark'] .rendered blockquote { border-left-color: var(--line-strong); }
+[data-theme='dark'] .rendered code { background: var(--paper-3); }
+[data-theme='dark'] .rendered pre { background: var(--paper-3); border: 1px solid var(--line); }
+[data-theme='dark'] .rendered th,
+[data-theme='dark'] .rendered td { border-color: var(--line); }
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+[hidden] { display: none !important; }
+
+button, input, textarea, select { font: inherit; color: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--mark);
+  outline-offset: 2px;
+}
+
+/* ── buttons ────────────────────────────────────────────────────── */
+button {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  color: var(--ink-2);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+button:hover { background: var(--paper-3); color: var(--ink); }
+button.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+button.primary:hover { background: var(--ink-2); }
+button.danger { color: var(--danger); }
+button.danger:hover { background: var(--danger); color: var(--paper); border-color: var(--danger); }
+button.icon {
+  border: none; padding: 0.35rem 0.5rem; font-size: 1.05rem; line-height: 1;
+  border-radius: var(--radius);
+}
+button.ghost { border-color: transparent; }
+button.ghost:hover { border-color: var(--line); }
+
+/* ── gate ───────────────────────────────────────────────────────── */
+/* ── gate ───────────────────────────────────────────────────────── */
+.gate {
+  min-height: 100%;
+  display: grid; place-items: center;
+  padding: 1.5rem 1rem;
+}
+/* the form is the card: one border around the whole sign-in, so the thing on
+ * a blank page has an edge instead of floating */
+.gate-form {
+  width: 100%; max-width: 20.5rem;
+  display: grid; gap: 0.35rem;
+  padding: 1.15rem 1.15rem 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--paper);
+  box-shadow: 0 12px 34px rgb(0 0 0 / 0.07);
+}
+/* vpl · vixen productivity light — one line, because three stacked lines
+ * above two fields is a poster, not a form. */
+.gate-brand {
+  display: flex; align-items: center; gap: 0.45rem;
+  margin-bottom: 0.85rem; min-width: 0;
+}
+.gate-mark {
+  flex: 0 0 auto;
+  width: 1.5rem; height: 1.5rem;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--serif); font-size: 0.85rem;
+}
+.gate-form h1 {
+  margin: 0; font-family: var(--serif); font-weight: 500;
+  font-size: 1.2rem; letter-spacing: -0.01em; line-height: 1;
+}
+.gate-sub {
+  margin: 0; color: var(--ink-3); font-size: 0.74rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gate-sub::before { content: '·'; margin-right: 0.4rem; }
+.gate-form label {
+  font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--ink-3); margin-top: 0.35rem;
+}
+.gate-form input {
+  padding: 0.48rem 0.62rem;
+  font-size: 0.92rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  width: 100%;
+}
+.gate-hint {
+  margin: 0.15rem 0 0; font-size: 0.68rem; color: var(--ink-3); line-height: 1.3;
+}
+.pass-wrap { position: relative; }
+.pass-wrap input { padding-right: 2.4rem; }
+.eye {
+  position: absolute; right: 0.25rem; top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center;
+  width: 2rem; height: 2rem; padding: 0;
+  border: 0; background: none; color: var(--ink-3); cursor: pointer;
+  border-radius: 999px;
+}
+.eye:hover { color: var(--ink); background: var(--paper-3); }
+.eye svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+.eye-slash { display: inline; }
+.eye[aria-pressed='true'] .eye-slash { display: none; }
+.eye[aria-pressed='true'] { color: var(--ink); }
+.gate-row { display: flex; gap: 0.5rem; margin-top: 0.7rem; }
+.gate-row button { flex: 1; padding: 0.46rem; border-radius: 10px; font-size: 0.88rem; }
+.gate-msg { min-height: 0; margin: 0.45rem 0 0; font-size: 0.8rem; color: var(--danger); }
+.gate-msg:empty { display: none; }
+button.google {
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  margin-top: 0.7rem; width: 100%; padding: 0.46rem;
+  border-radius: 10px; font-size: 0.88rem;
+  background: var(--paper); border: 1px solid var(--line);
+}
+
+/* ── bar ────────────────────────────────────────────────────────── */
+.app { height: 100%; display: flex; flex-direction: column; }
+
+.bar {
+  height: var(--bar-h);
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: 0.15rem;
+  padding: 0 0.5rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  position: relative;          /* the assistant's answer drops out of here */
+  z-index: 30;
+}
+.bar-spacer { flex: 1 1 0; min-width: 0; }
+.brand {
+  display: flex; align-items: center; gap: 0.4rem;
+  text-decoration: none; color: var(--ink);
+  font-family: var(--serif); font-size: 1rem;
+  margin-left: 0.15rem;
+}
+.brand-mark {
+  width: 1.35rem; height: 1.35rem; display: grid; place-items: center;
+  border-radius: 50%; background: var(--ink); color: var(--paper);
+  font-size: 0.8rem; font-family: var(--serif);
+}
+
+/* ── workspace ──────────────────────────────────────────────────── */
+.workspace {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* list pane */
+.list {
+  width: var(--list-w);
+  flex: 0 0 var(--list-w);
+  border-right: 1px solid var(--line);
+  background: var(--paper-2);
+  display: flex; flex-direction: column;
+  min-height: 0;
+}
+.list-head { padding: 0.5rem; border-bottom: 1px solid var(--line); }
+.list-head input {
+  width: 100%; padding: 0.35rem 0.5rem;
+  border: 1px solid transparent; border-radius: var(--radius);
+  background: var(--paper); font-size: 0.85rem;
+}
+.list-head input:focus { border-color: var(--line); outline: none; }
+
+/* You should not have to remember that you are looking at the bin. The pane
+ * itself changes colour and says so in words — colour alone is not a label. */
+.list.trash-mode { background: var(--paper-3); }
+.list.trash-mode .list-head { border-bottom-color: var(--line-strong); }
+.list.trash-mode .list-head input { background: var(--paper-2); }
+.trash-banner {
+  margin: 0.45rem 0.5rem 0.15rem; padding: 0.34rem 0.5rem;
+  font-size: 0.72rem; line-height: 1.35; color: var(--ink-2);
+  background: var(--paper-2); border-radius: 6px;
+  border-left: 3px solid var(--mark);
+}
+.trash-banner span {
+  font-weight: 600; letter-spacing: 0.02em;
+  text-transform: uppercase; font-size: 0.68rem; color: var(--ink);
+}
+.list.trash-mode .list-items { opacity: 0.96; }
+.list.trash-mode button.trash.active { background: var(--paper-2); }
+
+.list-items { list-style: none; margin: 0; padding: 0.25rem; overflow-y: auto; flex: 1; }
+.list-items li { margin: 0 0 1px; }
+.list-items button {
+  display: block; width: 100%; text-align: left;
+  border: none; background: transparent;
+  padding: 0.45rem 0.5rem; border-radius: 6px;
+  color: var(--ink);
+}
+.list-items button:hover { background: var(--paper-3); }
+.list-items button[aria-current='true'] { background: var(--paper-3); }
+.list-items .li-title {
+  display: block; font-size: 0.87rem; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.list-items .li-hint {
+  display: block; font-size: 0.75rem; color: var(--ink-3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.list-empty { padding: 1rem 0.75rem; color: var(--ink-3); font-size: 0.85rem; margin: 0; }
+
+/* note pane */
+.main {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  overflow-y: auto;
+}
+.placeholder {
+  margin: auto; text-align: center; color: var(--ink-3);
+}
+.placeholder p { margin: 0.15rem 0; }
+.placeholder .muted { font-size: 0.85rem; color: var(--ink-3); }
+
+/* Vixen asked for the note to start at the left and use the width. It was
+ * centred in a 46rem column, which reads as a narrow strip on a wide screen.
+ * Now it is left aligned and stretched, with a single generous left margin so
+ * the first character is not glued to the window edge. */
+.note {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1rem clamp(1rem, 3vw, 3.5rem) 4rem;
+  display: flex; flex-direction: column; flex: 1;
+}
+
+.note-bar {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  position: sticky; top: 0; z-index: 2;
+  background: var(--paper);
+  padding-bottom: 0.4rem;
+}
+.note-meta { flex: 1; min-width: 0; }
+.note-status { font-size: 0.75rem; color: var(--ink-3); }
+.note-meta { display: flex; align-items: center; gap: 0.45rem; min-width: 0; }
+.note-vis {
+  font-family: var(--sans); font-size: 0.62rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.09em;
+  padding: 0.1rem 0.45rem; border-radius: 4px;
+  border: 1px solid currentColor; color: var(--ink-3);
+  white-space: nowrap;
+}
+.note-vis[data-vis='public'] { color: var(--tone-public); background: color-mix(in srgb, var(--tone-public) 10%, transparent); }
+.note-vis[data-vis='shared'] { color: var(--tone-shared); background: color-mix(in srgb, var(--tone-shared) 10%, transparent); }
+.note-vis[data-vis='private'] { color: var(--ink-3); background: color-mix(in srgb, var(--ink-3) 8%, transparent); }
+.note-actions { display: flex; gap: 0.3rem; align-items: center; }
+.note-actions button { font-size: 0.8rem; padding: 0.3rem 0.55rem; }
+
+button.mode .mode-edit { display: none; }
+.mode-editing button.mode .mode-view { display: none; }
+.mode-editing button.mode .mode-edit { display: inline; }
+
+input.title {
+  width: 100%;
+  border: none; background: transparent;
+  font-family: var(--serif);
+  font-size: 1.75rem; font-weight: 500; line-height: 1.25;
+  padding: 0.2rem 0;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
+}
+input.title:focus { outline: none; }
+input.title::placeholder { color: var(--ink-3); }
+
+/* the textarea and the rendered view share one box so switching does not jump */
+textarea.body {
+  width: 100%;
+  flex: 1;
+  min-height: 50vh;
+  border: none; background: transparent; resize: none;
+  font-family: var(--mono);
+  font-size: 0.9rem; line-height: 1.7;
+  padding: 0;
+  color: var(--ink);
+  tab-size: 2;
+}
+textarea.body:focus { outline: none; }
+
+.rendered {
+  font-family: var(--serif); font-size: 1.02rem; line-height: 1.7;
+  /* a long run of characters with no space — a pasted url, an id — must break
+   * rather than push the page sideways on a phone */
+  overflow-wrap: anywhere;
+}
+.rendered h1, .rendered h2, .rendered h3 {
+  font-family: var(--serif); font-weight: 600; line-height: 1.3;
+  margin: 1.6em 0 0.5em;
+}
+.rendered h1 { font-size: 1.5rem; }
+.rendered h2 { font-size: 1.25rem; }
+.rendered h3 { font-size: 1.08rem; }
+.rendered p { margin: 0.7em 0; }
+.rendered a { color: var(--mark); text-underline-offset: 2px; }
+.rendered ul, .rendered ol { padding-left: 1.3em; }
+.rendered li { margin: 0.2em 0; }
+.rendered blockquote {
+  margin: 0.9em 0; padding: 0.1em 0 0.1em 1em;
+  border-left: 2px solid var(--line); color: var(--ink-2);
+}
+.rendered code {
+  font-family: var(--mono); font-size: 0.85em;
+  background: var(--paper-3); padding: 0.12em 0.35em; border-radius: 4px;
+  /* a long token in inline code used to widen the whole page on a phone */
+  overflow-wrap: anywhere;
+}
+.rendered pre {
+  background: var(--paper-3); padding: 0.8rem 1rem;
+  /* the block scrolls on its own; the page must not */
+  max-width: 100%; overflow-x: auto; box-sizing: border-box;
+  border-radius: var(--radius); overflow-x: auto;
+}
+.rendered pre code { background: none; padding: 0; font-size: 0.85rem; }
+.rendered hr { border: none; border-top: 1px solid var(--line); margin: 1.6em 0; }
+.rendered table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+.rendered th, .rendered td { border: 1px solid var(--line); padding: 0.35rem 0.55rem; text-align: left; }
+.rendered img { max-width: 100%; }
+
+/* ── recycle bin, pinned to the bottom of the list ─────────────── */
+.list-foot {
+  display: flex; align-items: center; gap: 0.35rem;
+  flex: 0 0 auto;
+  border-top: 1px solid var(--line);
+  padding: 0.4rem;
+  background: var(--paper-2);
+}
+button.trash {
+  display: flex; align-items: center; gap: 0.45rem;
+  flex: 1 1 auto; min-width: 0; border: 1px solid transparent;
+  background: transparent; border-radius: var(--radius);
+  padding: 0.45rem 0.5rem;
+  color: var(--ink-2); font-size: 0.82rem;
+  text-align: left;
+}
+button.trash:hover { background: var(--paper-3); color: var(--ink); }
+button.trash.active {
+  background: var(--paper-3); color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+/* the bin can be emptied, but never by accident: the button is quiet, the
+ * dialog is not */
+.bin-empty {
+  margin-left: auto; flex: 0 0 auto; white-space: nowrap;
+  font-family: var(--sans); font-size: 0.68rem;
+  padding: 0.22rem 0.5rem; border-radius: 6px;
+  background: transparent; color: var(--ink-3);
+  border: 1px dashed var(--line-strong); cursor: pointer;
+}
+.bin-empty:hover, .bin-empty:focus-visible {
+  color: var(--ink); border-style: solid; background: var(--paper-3);
+}
+.list-items button.row-purge {
+  position: absolute; right: 0.15rem; top: 50%; transform: translateY(-50%);
+  z-index: 1; display: grid; place-items: center;
+  width: 1.35rem; height: 1.35rem; padding: 0; line-height: 1;
+  font-size: 0.7rem; border-radius: 6px;
+  background: transparent; color: var(--ink-3);
+  border: 1px solid transparent; cursor: pointer;
+}
+.tree-row.has-purge > button[data-id] { padding-right: 1.9rem; }
+.row-purge:hover, .row-purge:focus-visible {
+  color: var(--ink); background: var(--paper-3); border-color: var(--line-strong);
+}
+.trash-icon { font-size: 0.98rem; line-height: 1; }
+.trash-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trash-count {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem; color: var(--ink-3);
+  min-width: 1.1rem; text-align: right;
+}
+button.trash.active .trash-count { color: var(--mark); }
+
+/* a note in the bin is read-only; its action button becomes "restore" */
+button.restore { color: var(--mark); }
+button.restore:hover {
+  background: var(--mark); color: var(--paper); border-color: var(--mark);
+}
+button.mode:disabled { opacity: 0.4; cursor: default; }
+button.mode:disabled:hover { background: transparent; }
+
+/* ── R11: usable at 375px ───────────────────────────────────────── */
+@media (max-width: 720px) {
+  :root { --list-w: 12rem; }
+  .list {
+    position: absolute; inset: var(--bar-h) auto 0 0;
+    z-index: 5;
+    transform: translateX(-100%);
+    transition: transform 0.15s ease;
+    box-shadow: 2px 0 20px rgb(0 0 0 / 0.08);
+  }
+  .list.open { transform: none; }
+  .note { padding: 0.75rem 1rem 3rem; }
+  input.title { font-size: 1.4rem; }
+  .note-actions .ghost { font-size: 0.75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+/* ══ v2.2 — tree, rich editor, keyboard, full width ══════════════════ */
+
+/* ── tree rows ─────────────────────────────────────────────────────
+ * Depth is shown by indentation plus a faint rail so a deep tree still
+ * reads as a tree and not as text that happens to be shifted. */
+.list-items li[hidden] { display: none; }
+
+.tree-row { display: flex; position: relative; }
+
+/* drag and drop: the zone under the cursor decides what will happen, so the
+ * marks have to be unambiguous — a box for "nest inside here", a line for
+ * "land between these two". */
+.tree-row.dragging { opacity: 0.4; }
+.tree-row[data-drop='inside'] {
+  background: color-mix(in srgb, var(--mark) 15%, var(--paper-2));
+  box-shadow: inset 0 0 0 2px var(--mark);
+  border-radius: var(--radius);
+}
+.tree-row[data-drop='before']::after,
+.tree-row[data-drop='after']::after {
+  content: ''; position: absolute; left: 0.15rem; right: 0.15rem; height: 3px;
+  background: var(--mark); border-radius: 2px; pointer-events: none;
+}
+.tree-row[data-drop='before']::after { top: -1px; }
+.tree-row[data-drop='after']::after { bottom: -1px; }
+.list-items.drop-root {
+  box-shadow: inset 0 0 0 2px var(--mark);
+  border-radius: var(--radius);
+}
+
+/* a row held by a finger: nothing else may scroll, select or offer a menu */
+html.touch-dragging, html.touch-dragging body { touch-action: none; overscroll-behavior: none; }
+html.touch-dragging .list, html.touch-dragging .tree-row { user-select: none; -webkit-user-select: none; }
+.tree-row { -webkit-touch-callout: none; }
+.drag-ghost {
+  position: fixed; top: 0; left: 0; z-index: 60; pointer-events: none;
+  padding: 0.3rem 0.5rem; border-radius: 6px;
+  background: var(--paper); color: var(--ink);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 10px 26px rgb(0 0 0 / 0.22);
+  opacity: 0.94;
+}
+
+.list-items button[data-id] {
+  display: flex; align-items: baseline; gap: 0.3rem;
+  width: 100%; text-align: left;
+  background: none; border: 0; cursor: pointer;
+  padding: 0.4rem 0.45rem;
+  border-radius: var(--radius);
+  color: var(--ink);
+  position: relative;
+}
+.list-items button[data-id]:hover { background: var(--paper-3); }
+.list-items button[data-id][aria-current='true'] {
+  background: var(--paper-3);
+  box-shadow: inset 2px 0 0 var(--mark);
+}
+
+.twisty {
+  flex: none; width: 0.85rem; font-size: 0.7rem;
+  color: var(--ink-3); line-height: 1.4;
+  cursor: pointer; user-select: none;
+}
+.twisty.spacer { cursor: default; }
+
+.li-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.li-title {
+  font-size: 0.9rem; line-height: 1.35;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.li-hint {
+  font-size: 0.72rem; color: var(--ink-3); line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* the recycle-bin toggle gets a border so it reads as a separate place */
+button.trash {
+  display: flex; align-items: center; gap: 0.4rem;
+  width: 100%; background: none; cursor: pointer;
+  border: 1px solid transparent; border-radius: var(--radius);
+  padding: 0.45rem 0.5rem;
+  color: var(--ink-2); font-size: 0.82rem;
+  text-align: left;
+}
+button.trash:hover { background: var(--paper-3); color: var(--ink); }
+button.trash.active {
+  background: var(--paper-3); color: var(--ink);
+  border-color: var(--line-strong);
+}
+.trash-icon { font-size: 0.98rem; line-height: 1; }
+.trash-label { flex: 1; }
+.trash-count {
+  font-size: 0.72rem; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.trash-count:not(:empty) {
+  background: var(--paper-3); border-radius: 999px;
+  padding: 0.05rem 0.4rem;
+}
+
+/* the bin is a drop target in both directions; the label says which one */
+button.trash.drop-active,
+button.trash.drop-active:hover {
+  background: var(--paper-3);
+  color: var(--mark);
+  border-color: var(--mark);
+  box-shadow: inset 0 0 0 1px var(--mark);
+}
+button.trash.drop-active .trash-count { color: var(--mark); }
+
+/* ── modes ────────────────────────────────────────────────────────── */
+.modes {
+  display: flex; gap: 0.15rem;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem;
+}
+.tab {
+  background: none; border: 0; cursor: pointer;
+  font-size: 0.76rem; color: var(--ink-2);
+  padding: 0.25rem 0.6rem; border-radius: 999px;
+  font-family: inherit;
+}
+.tab:hover:not(:disabled) { color: var(--ink); }
+.tab[aria-selected='true'] {
+  background: var(--paper); color: var(--ink);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+}
+.tab:disabled { opacity: 0.4; cursor: not-allowed; }
+[data-theme='dark'] .tab[aria-selected='true'] { background: var(--paper-3); }
+
+/* ── rich editor ──────────────────────────────────────────────────── */
+.pane { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.pane[hidden] { display: none; }
+
+.toolbar {
+  display: flex; flex-wrap: wrap; gap: 0.1rem; align-items: center;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 0.6rem;
+  position: sticky; top: 0;
+  background: var(--paper);
+  z-index: 2;
+}
+.toolbar button {
+  background: none; border: 0; cursor: pointer;
+  color: var(--ink-2); font-family: inherit;
+  font-size: 0.82rem; line-height: 1;
+  padding: 0.35rem 0.5rem; border-radius: 5px;
+  min-width: 1.9rem;
+}
+.toolbar button:hover { background: var(--paper-3); color: var(--ink); }
+.tb-sep {
+  width: 1px; height: 1.1rem; background: var(--line);
+  margin: 0 0.25rem;
+}
+
+/* The writing surface: full width, serif, generous line height. */
+.editable {
+  flex: 1;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--ink);
+  outline: none;
+  min-height: 50vh;
+  padding-bottom: 30vh;      /* room to scroll while typing at the end */
+  word-wrap: break-word;
+}
+.editable:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ink-3);
+  pointer-events: none;
+}
+.editable h1, .editable h2, .editable h3, .editable h4 {
+  font-family: var(--sans); line-height: 1.25;
+  margin: 0.9em 0 0.15em;
+}
+.editable h1 { font-size: 1.6rem; }
+.editable h2 { font-size: 1.32rem; }
+.editable h3 { font-size: 1.14rem; }
+.editable h4 { font-size: 1rem; }
+.editable p { margin: 0; }
+/* a blank line you typed yourself is a real, short gap — not a paragraph
+ * margin stacked on top of one */
+.editable p:empty { min-height: 1em; }
+.editable ul, .editable ol { margin: 0; padding-left: 1.5rem; }
+.editable li { margin: 0.15em 0; }
+.editable blockquote {
+  margin: 0.9em 0; padding: 0.1em 0 0.1em 1rem;
+  border-left: 3px solid var(--line-strong);
+  color: var(--ink-2);
+}
+.editable code {
+  font-family: var(--mono); font-size: 0.88em;
+  background: var(--paper-3); padding: 0.1em 0.32em;
+  border-radius: 4px;
+}
+.editable pre {
+  font-family: var(--mono); font-size: 0.85rem; line-height: 1.5;
+  background: var(--paper-3); padding: 0.7rem 0.9rem;
+  border-radius: var(--radius); overflow-x: auto;
+}
+.editable a { color: var(--mark); }
+.editable hr { border: 0; border-top: 1px solid var(--line-strong); margin: 1.5em 0; }
+
+/* a fenced code block inside the rich surface: a labelled card, so it is
+ * clear it is code and not prose. Edited as text, kept verbatim. */
+.blk-act {
+  position: absolute; top: 0.4rem; right: 0.5rem;
+  font-family: var(--sans); font-size: 0.66rem;
+  background: transparent; color: var(--ink-3); border: 1px solid var(--line);
+  border-radius: 6px; padding: 0.05rem 0.4rem; cursor: pointer;
+}
+.blk-act:hover { color: var(--ink); background: var(--paper-3); }
+.blk-code {
+  margin: 1em 0; padding: 0.6rem 0.8rem;
+  background: var(--paper-2);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--mark);
+  border-radius: var(--radius);
+  font-family: var(--mono); font-size: 0.82rem;
+  color: var(--ink-2);
+  position: relative;
+}
+.blk-label {
+  display: block; font-family: var(--sans); font-size: 0.7rem;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--ink-3); margin-bottom: 0.3rem;
+}
+.blk-code pre {
+  background: none; padding: 0; margin: 0;
+  white-space: pre-wrap; word-break: break-word;
+}
+
+/* ── view pane ────────────────────────────────────────────────────── */
+.rendered { font-family: var(--serif); font-size: 1.05rem; line-height: 1.75; }
+.rendered:focus { outline: none; }
+
+/* ── dialogs ─────────────────────────────────────────────────────────
+ * Found by looking in dark mode: the help panel had no background rule, so it
+ * was the browser's white, which on a near-black page is a flashbang. Every
+ * dialog now starts from the paper colour and the ink colour, and the ones
+ * that need more say so themselves. */
+.dialog {
+  background: var(--paper); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: var(--radius);
+  padding: 1.25rem 1.25rem 1rem;
+  width: min(34rem, 92vw);
+  max-height: 88dvh; overflow: auto;
+}
+.dialog::backdrop { background: rgb(0 0 0 / 0.35); }
+[data-theme='dark'] .dialog::backdrop { background: rgb(0 0 0 / 0.62); }
+
+/* ── kbd and the help dialog ──────────────────────────────────────── */
+kbd {
+  font-family: var(--mono); font-size: 0.74rem;
+  background: var(--paper-3); color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px; padding: 0.06rem 0.32rem;
+  white-space: nowrap;
+}
+.dialog.help-dialog { max-width: 32rem; width: min(32rem, 92vw); }
+.dialog.help-dialog h2 {
+  margin: 0 0 0.6rem; font-family: var(--serif); font-weight: 500; font-size: 1.24rem;
+}
+.keys {
+  display: grid; grid-template-columns: max-content 1fr;
+  gap: 0.5rem 1.1rem; align-items: baseline;
+  margin: 0.4rem 0 1.2rem;
+}
+.keys dt { text-align: right; white-space: nowrap; }
+.keys dd { margin: 0; font-size: 0.85rem; color: var(--ink-2); }
+
+
+/* ── share dialog ─────────────────────────────────────────────────── */
+.share-dialog {
+  position: relative;
+  max-width: 34rem; width: min(34rem, 92vw);
+  background: var(--paper); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: var(--radius);
+  padding: 1.25rem 1.25rem 1rem;
+}
+.share-dialog::backdrop { background: rgb(0 0 0 / 0.35); }
+.share-dialog h2 {
+  margin: 0 0 0.15rem; font-family: var(--serif); font-weight: 500; font-size: 1.3rem;
+}
+.share-for { font-family: var(--sans); font-size: 0.85rem; color: var(--ink-3); }
+.share-scope { margin: 0 0 0.9rem; font-size: 0.8rem; }
+.share-section { border-top: 1px solid var(--line); padding-top: 0.85rem; margin-top: 0.85rem; }
+.share-section h3 {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--ink-3); margin: 0 0 0.5rem;
+}
+.share-toggle { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; cursor: pointer; }
+.share-link-row { margin-top: 0.55rem; display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+.share-link {
+  flex: 1 1 12rem; min-width: 0; text-align: left; direction: ltr; unicode-bidi: plaintext;
+  font-family: var(--mono); font-size: 0.76rem;
+  background: var(--paper-2); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 0.35rem 0.45rem;
+}
+.share-hint { flex-basis: 100%; margin: 0.1rem 0 0; font-size: 0.72rem; }
+.share-add { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.55rem; }
+.share-add input {
+  flex: 1 1 10rem; min-width: 0;
+  background: var(--paper-2); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 0.35rem 0.45rem; font-size: 0.85rem;
+}
+.share-add select {
+  background: var(--paper-2); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 0.35rem 0.4rem; font-size: 0.8rem;
+}
+.share-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; }
+.share-person {
+  display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;
+  font-size: 0.85rem; padding: 0.15rem 0;
+}
+.share-who { flex: 1 1 9rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.share-role { font-size: 0.78rem; flex: 0 0 auto; min-width: 6.4rem; }
+.share-remove { padding: 0.05rem 0.45rem; font-size: 0.95rem; line-height: 1.2; }
+.share-empty { font-size: 0.8rem; }
+/* the test button's verdict: a colour and a word, never colour alone */
+.share-msg[data-state='ok'] { color: var(--tone-shared); }
+.share-msg[data-state='bad'] { color: var(--tone-public); }
+.share-msg[data-state='busy'] { color: var(--ink-3); }
+.share-msg { min-height: 1.1rem; font-size: 0.76rem; color: var(--ink-2); margin: 0.45rem 0 0; }
+
+/* a note someone shared with you is marked as such, with its permission */
+.share-badge.own {
+  border-style: dashed; color: var(--ink-2);
+}
+.share-badge {
+  margin-left: 0.4rem; padding: 0.02rem 0.35rem;
+  font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.04em;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  color: var(--ink-3); vertical-align: 0.12em; white-space: nowrap;
+}
+
+/* a coloured stripe and a coloured badge say how a note is shared before you
+ * open it; muted text alone was too easy to miss */
+.tree-row[data-tone='public']   { --tone: var(--tone-public); }
+.tree-row[data-tone='shared']   { --tone: var(--tone-shared); }
+.tree-row[data-tone='readonly'] { --tone: var(--tone-read); }
+.tree-row[data-tone]::before {
+  content: ''; position: absolute; left: 0; top: 3px; bottom: 3px;
+  width: 3px; border-radius: 0 2px 2px 0; background: var(--tone);
+}
+.tree-row[data-tone] .share-badge { color: var(--tone); border-color: color-mix(in srgb, var(--tone) 55%, transparent); }
+
+.note[data-tone='public']   { --tone: var(--tone-public); }
+.note[data-tone='shared']   { --tone: var(--tone-shared); }
+.note[data-tone='readonly'] { --tone: var(--tone-read); }
+.note[data-tone] .note-bar { box-shadow: inset 0 -2px 0 var(--tone); }
+.note[data-tone] .note-status { color: var(--tone); font-weight: 600; }
+
+/* ── the generic box ───────────────────────────────────────────────
+ * The old toolbar offered only a code block, so a pasted paragraph became code.
+ * This holds anything: prose, a list, a quote, an image. */
+.blk-box {
+  margin: 0.7rem 0;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--mark);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+}
+.blk-box > :first-child { margin-top: 0; }
+.blk-box > :last-child { margin-bottom: 0; }
+
+/* a waiting invitation: no role, no access, plainly marked */
+.share-wait {
+  margin-left: 0.4rem; padding: 0.02rem 0.35rem;
+  font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.04em;
+  border: 1px dashed var(--line-strong); border-radius: 999px;
+  color: var(--ink-3); white-space: nowrap;
+}
+.share-who-hint {
+  margin: 0.35rem 0 0; font-size: 0.76rem; color: var(--ink-2); min-height: 1rem;
+}
+.share-who-hint[data-state='wait'] { color: var(--ink-3); }
+.share-who-hint[data-state='new'] { color: var(--ink-2); font-style: italic; }
+
+.reader-copy { font-size: 0.75rem; padding: 0.15rem 0.5rem; margin-left: auto; }
+.share-allow {
+  font-size: 0.74rem; padding: 0.18rem 0.6rem; flex: 0 0 auto;
+  border-color: var(--tone-shared); color: var(--tone-shared);
+}
+.share-allow:hover { background: color-mix(in srgb, var(--tone-shared) 12%, transparent); }
+
+/* ── the assistant line ─────────────────────────────────────────────
+ * One row, the same weight as the toolbar: it is a helper, not a destination. */
+/* ── the assistant, in the empty stretch of the top bar ─────────────
+ * It used to sit above the note and cost a whole row of whitespace. Now it is
+ * one line in the bar, right after the name, and its answer drops out of the
+ * bar over the note instead of pushing the text down. */
+.agent {
+  flex: 1 1 16rem; min-width: 0; max-width: 30rem;
+  margin-left: 0.6rem;
+  position: relative;
+}
+.agent-open { display: none; }
+.agent-form {
+  display: flex; align-items: center; gap: 0.3rem;
+  height: 1.85rem; padding: 0 0.15rem 0 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper-2);
+}
+.agent-form:focus-within { border-color: var(--line-strong); background: var(--paper); }
+.agent-mark { color: var(--ink-3); font-size: 0.78rem; }
+.agent-form input {
+  flex: 1; min-width: 0; border: 0; background: none;
+  padding: 0; font: inherit; font-size: 0.82rem; color: var(--ink);
+}
+.agent-form input:focus { outline: none; }
+.agent-form input::placeholder { color: var(--ink-3); }
+.agent-go {
+  border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.74rem;
+  flex: 0 0 auto;
+}
+.agent-pop {
+  position: absolute; top: calc(100% + 0.45rem); left: 0;
+  width: min(32rem, 88vw); z-index: 40;
+  display: grid; gap: 0.3rem;
+}
+/* nothing to say, nothing to catch the mouse */
+.agent-pop:not(:has(.agent-out:not([hidden]))):not(:has(.agent-msg:not(:empty))) {
+  display: none;
+}
+.agent-out {
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--mark);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.12);
+}
+.agent-text {
+  white-space: pre-wrap; font-size: 0.88rem; line-height: 1.45;
+  max-height: 15rem; overflow: auto;
+}
+.agent-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.agent-msg { margin: 0; font-size: 0.75rem; }
+.agent-msg:not(:empty) {
+  justify-self: start; padding: 0.15rem 0.5rem; border-radius: 6px;
+  background: var(--paper-2); border: 1px solid var(--line);
+}
+
+/* ── settings ──────────────────────────────────────────────────────── */
+.settings-dialog {
+  max-width: 30rem; width: min(30rem, 92vw);
+  position: relative;
+  max-height: 86dvh; overflow-y: auto;
+  padding: 1rem 1.05rem 0.5rem;
+  font-size: 0.9rem;
+}
+.settings-dialog::backdrop { background: rgb(0 0 0 / 0.35); }
+.dialog input, .dialog select, .dialog textarea { text-align: left; }
+.foot-gap { flex: 1 1 auto; }
+.dialog-x {
+  position: absolute; top: 0.6rem; right: 0.6rem;
+  width: 1.7rem; height: 1.7rem; padding: 0;
+  display: grid; place-items: center;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--paper-2); color: var(--ink-2);
+  font-size: 0.72rem; line-height: 1; cursor: pointer;
+}
+.dialog-x:hover { background: var(--paper-3); color: var(--ink); }
+/* the two ways out stay reachable in a long dialog */
+.settings-foot {
+  position: sticky; bottom: -0.5rem; margin-top: 0.3rem;
+  padding: 0.45rem 0 0.15rem; background: var(--paper);
+}
+.settings-dialog h2 {
+  margin: 0 0 0.1rem; font-family: var(--serif); font-weight: 500; font-size: 1.12rem;
+}
+.settings-dialog label {
+  display: block; margin-top: 0.35rem;
+  font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+.settings-dialog input[type='text'],
+.settings-dialog input[type='password'] {
+  width: 100%; padding: 0.34rem 0.5rem;
+  border: 1px solid var(--line); border-radius: 6px;
+  background: var(--paper); color: var(--ink);
+  font: inherit; font-size: 0.84rem;
+}
+.settings-dialog .share-section { padding-top: 0.6rem; margin-top: 0.6rem; }
+.settings-dialog .share-section h3 { margin-bottom: 0.3rem; font-size: 0.66rem; }
+.settings-dialog .share-hint { font-size: 0.7rem; line-height: 1.4; }
+.settings-dialog .confirm-row { margin-top: 0.5rem; gap: 0.35rem; }
+.settings-dialog button { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+.settings-dialog .share-msg { font-size: 0.72rem; }
+.settings-dialog .pass-wrap input { padding-right: 2rem; }
+.set-line { display: flex; gap: 0.4rem; margin-top: 0.1rem; }
+.set-line input { flex: 1; }
+.settings-dialog .share-msg { min-height: 1rem; }
+
+/* ── putting a note out of the bin for good ───────────────────────── */
+.purge-dialog {
+  position: relative;
+  max-width: 27rem; width: min(27rem, 92vw);
+  background: var(--paper); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: var(--radius);
+  padding: 1.25rem 1.25rem 1rem;
+}
+.purge-dialog::backdrop { background: rgb(0 0 0 / 0.35); }
+.purge-dialog h2 { margin: 0 0 0.4rem; font-family: var(--serif); font-weight: 500; font-size: 1.15rem; }
+.purge-dialog .muted { margin: 0 0 1rem; font-size: 0.85rem; line-height: 1.5; }
+.purge-dialog .danger {
+  background: var(--tone-public); border-color: var(--tone-public); color: #fff;
+}
+.purge-dialog .danger:hover { filter: brightness(0.94); }
+
+/* ── the public reader ────────────────────────────────────────────── */
+.reader { min-height: 100dvh; background: var(--paper); }
+.reader-head {
+  display: flex; align-items: center; gap: 0.6rem;
+  height: var(--bar-h); padding: 0 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.reader-brand { font-size: 0.85rem; color: var(--ink-2); }
+.reader-badge {
+  font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--ink-3); border: 1px solid var(--line-strong);
+  border-radius: 999px; padding: 0.05rem 0.4rem;
+}
+.reader-home { margin-left: auto; font-size: 0.82rem; color: var(--mark); text-decoration: none; }
+.reader-home:hover { text-decoration: underline; }
+/* A shared note is read the same way a note is read: from the left edge,
+ * using the width. A centred column looked like a different product — and it
+ * put the text of every link somewhere near the middle of the screen. */
+.reader-body {
+  display: grid; grid-template-columns: 15rem minmax(0, 1fr);
+  gap: 2rem; margin: 0;
+  padding: 1.5rem 1.75rem 4rem;
+}
+/* a grid item may not grow past its column: without this a long line of code
+ * in the page pushed the whole grid wider than the phone */
+.reader-page { min-width: 0; }
+.reader-nav { min-width: 0; }
+.reader-nav {
+  position: sticky; top: 1rem; align-self: start;
+  display: flex; flex-direction: column; gap: 1px;
+  max-height: calc(100dvh - 6rem); overflow-y: auto;
+}
+.reader-link {
+  display: block; padding: 0.32rem 0.5rem; border-radius: var(--radius);
+  font-size: 0.86rem; color: var(--ink-2); text-decoration: none;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.reader-link:hover { background: var(--paper-3); color: var(--ink); }
+.reader-link[aria-current='true'] {
+  background: var(--paper-3); color: var(--ink);
+  box-shadow: inset 2px 0 0 var(--mark);
+}
+.reader-title { font-family: var(--serif); font-size: 2rem; line-height: 1.2; margin: 0 0 1rem; }
+
+/* ── when the bar cannot hold a readable field ─────────────────────
+ * An iPhone 8 leaves the pill about eighty pixels wide, which is a field you
+ * cannot read, let alone type in. fitAgent() measures the room and sets
+ * .agent-tight; then the bar keeps only a ✎ and the assistant opens as a strip
+ * under it — the whole width, the same input. A measured class rather than a
+ * media query, so a narrow desktop window or a large default font behaves the
+ * same as a phone. */
+.agent-open[hidden] { display: none; }
+.agent-tight .agent-open:not([hidden]) { display: grid; margin-left: 0.2rem; }
+.agent-tight .agent:not(.open) { display: none; }
+.agent-tight .agent {
+  position: fixed; top: var(--bar-h); left: 0; right: 0;
+  margin: 0; max-width: none; z-index: 44;
+  padding: 0.5rem 0.6rem 0.55rem;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 8px 18px rgb(0 0 0 / 0.08);
+}
+.agent-tight .agent.open:not([hidden]) { display: block; }
+.agent-tight .agent-form { height: 2rem; padding: 0 0.2rem 0 0.55rem; }
+.agent-tight .agent-mark { display: initial; }
+.agent-tight .agent-go { display: inline-block; }
+.agent-tight .agent-form input { font-size: 0.85rem; }
+.agent-tight .agent-pop { position: static; width: auto; margin-top: 0.5rem; }
+.agent-tight .agent-text { max-height: 40vh; }
+
+/* ── narrow screens: the list slides over the note ────────────────── */
+@media (max-width: 46rem) {
+  .list {
+    position: absolute; inset: var(--bar-h) auto 0 0;
+    z-index: 20; width: min(17rem, 82vw);
+    transform: translateX(-100%);
+    transition: transform 0.16s ease;
+    box-shadow: 2px 0 16px rgb(0 0 0 / 0.18);
+  }
+  .list.open { transform: none; }
+  .note { padding: 0.75rem 1rem 3rem; }
+
+  /* On a phone the formatting row cannot fit, so it scrolls sideways. The
+   * buttons must not shrink to make room — shrinking is what pushed the last
+   * control off the edge and made it untappable. */
+  .toolbar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .toolbar::-webkit-scrollbar { display: none; }
+  .toolbar button { flex: 0 0 auto; }
+  .tb-sep { flex: 0 0 auto; }
+
+  /* the assistant keeps its line, without its ornaments, and the bar gives it
+   * room by dropping the wordmark and thinning the icons */
+  .brand-word { display: none; }
+  .bar > .icon { padding: 0.25rem; min-width: 1.6rem; }
+  .bar-gap-a { display: none; }
+  .agent { flex: 1 1 auto; margin: 0 0.25rem; max-width: none; }
+  .agent-mark, .agent-go { display: none; }
+  .agent-form { padding: 0 0.5rem; height: 1.7rem; }
+  .agent-form input { font-size: 0.79rem; }
+  .agent-pop { margin-top: 0.45rem; width: auto; }
+
+  /* The note header has four things competing for one line. */
+  .note-bar { flex-wrap: wrap; gap: 0.3rem; }
+
+  /* the reader stacks: chapters above the page */
+  .reader-body { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 1rem 1rem 3rem; }
+  .reader-nav {
+    position: static; max-height: none;
+    border-bottom: 1px solid var(--line); padding-bottom: 0.5rem;
+  }
+  .reader-title { font-size: 1.5rem; }
+  .modes { order: 3; }
+  .note-actions { margin-left: auto; }
+  button.ghost { padding: 0.35rem 0.45rem; }
+}
