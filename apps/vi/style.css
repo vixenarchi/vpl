@@ -108,7 +108,7 @@
 .band {
   display: flex; align-items: center; justify-content: space-between;
   gap: 0.6rem; border: none; border-radius: 4px;
-  padding: 0.34rem 0.9rem; margin: 0 auto; width: 100%;
+  padding: 0.34rem 1.55rem; margin: 0 auto; width: 100%;
   font-size: 0.78rem; color: var(--paper); cursor: pointer;
   transition: filter 0.12s, width 0.2s;
   clip-path: polygon(0 0, 100% 0, calc(100% - 1.1rem) 100%, 1.1rem 100%);

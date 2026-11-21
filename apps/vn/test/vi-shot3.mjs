@@ -1,0 +1,26 @@
+import { chromium } from 'playwright';
+const br = await chromium.launch();
+const pg = await br.newPage({ viewport: { width: 1280, height: 900 } });
+await pg.goto('https://vi.terg.hr', { waitUntil: 'networkidle' });
+await pg.fill('#email', 'vpl-agent@terg.hr');
+await pg.fill('#pass', 'agent-vpl-2026!');
+await pg.click('#btn-login');
+await pg.waitForSelector('#app:not([hidden])');
+await pg.waitForTimeout(1500);
+await pg.click('.step[data-stage="ideation"]');
+await pg.waitForTimeout(300);
+await pg.screenshot({ path: '/tmp/q-light.png' });
+await pg.click('#btn-theme');
+await pg.waitForTimeout(400);
+await pg.screenshot({ path: '/tmp/q-dark.png' });
+await pg.click('#btn-theme');
+await pg.click('.step[data-stage="selection"]');
+await pg.waitForTimeout(400);
+await pg.screenshot({ path: '/tmp/q-select.png' });
+const btn = await pg.evaluate(() => {
+  const b = document.querySelector('.panel-foot .primary');
+  const cs = getComputedStyle(b);
+  return [b.textContent.trim(), cs.backgroundColor, cs.color];
+});
+console.log('primary button:', btn.join(' | '));
+await br.close();

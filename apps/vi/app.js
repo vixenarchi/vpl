@@ -449,7 +449,7 @@ async function choose(n) {
       const r = await db.updateIdea(old.id, { stage: 'parked', reason: old.reason || 'replaced this round' });
       Object.assign(old, r);
     }
-    const row = await db.updateIdea(n.id, { stage: 'selected', reason: reason || n.reason || '' });
+    const row = await db.updateIdea(n.id, { stage: 'selected', reason: reason || '' });
     Object.assign(n, row);
     // everything else that was explored is now parked, with a reason, not deleted
     const rest = S.ideas.filter((i) => i.id !== n.id && i.stage !== 'selected' && i.stage !== 'parked' && i.exploration);
@@ -567,7 +567,9 @@ async function swap(n) {
   try {
     const a = await db.updateIdea(c.id, { stage: 'parked', reason: c.reason || 'swapped out' });
     Object.assign(c, a);
-    const b = await db.updateIdea(n.id, { stage: 'selected', reason: n.reason || 'swapped in' });
+    // a parking reason does not carry over: it answered "why not now", and the
+    // answer to "why this one" is a different sentence
+    const b = await db.updateIdea(n.id, { stage: 'selected', reason: '' });
     Object.assign(n, b);
     S.project = await db.updateProject(S.project.id, { chosen_id: n.id });
     paintAll();

@@ -87,3 +87,26 @@ button, input, textarea, select { font: inherit; color: inherit; }
   outline: 2px solid var(--mark);
   outline-offset: 2px;
 }
+
+/* ── buttons ────────────────────────────────────────────────────── */
+/* Base controls belong to the shell: an app that forgets them falls back to the
+ * browser's beige buttons, which is what vi did until this was added. */
+button {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  color: var(--ink-2);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+button:hover { background: var(--paper-3); color: var(--ink); }
+button.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+button.primary:hover { background: var(--ink-2); }
+button.danger { color: var(--danger); }
+button.ghost { border-color: transparent; }
+button.ghost:hover { border-color: var(--line); }
+button.icon {
+  border: none; padding: 0.35rem 0.5rem; font-size: 1.05rem; line-height: 1;
+  border-radius: var(--radius);
+}
