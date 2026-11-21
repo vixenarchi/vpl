@@ -532,7 +532,9 @@ where a login may return to.
 
 For this suite the intended configuration is:
 
-- **Site URL** — `https://vn.terg.hr` (one value, the default landing place)
+- **Site URL** — `https://vn.terg.hr`. The dashboard offers exactly one value and
+  that is the point: the app sends its own address with every sign-in, so the
+  per-app addresses belong in the list below, not here
 - **Redirect URLs** — one entry per app, with the wildcard so query strings work:
   `https://vn.terg.hr/**`, `https://vi.terg.hr/**`, and for local work
   `http://127.0.0.1:8099/**` and `http://127.0.0.1:8100/**`
@@ -543,6 +545,13 @@ The failure mode is quiet, which is why it reads like a bug in the app: Supabase
 can only redirect to an address on the list, so a round trip from `vi` with only
 `vn` allowed returns to `vn`, already signed in. Add the entry, sign out, sign in
 again from `vi`, and it stays in `vi`.
+
+Checked on 21 Nov 2026 after the entries were added: clicking **continue with
+Google** on `vi.terg.hr` reaches Google's consent page with
+`redirect_uri=https://ebhrjstllsazywbxnbqt.supabase.co/auth/v1/callback` and no
+`redirect_uri_mismatch`, and the authorize call carries
+`redirect_to=https://vi.terg.hr/` — the same for `vn`. What remains is a person
+with a Google account finishing the round trip and watching the address bar.
 
 None of this is a repository change. It is a dashboard step, done once, and it is
 the one step in the whole suite that cannot be code.
