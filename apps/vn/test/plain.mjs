@@ -6,7 +6,8 @@ import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join } from 'node:path';
 
-const ROOT = '/home/vergovic/vixen/v2', PORT = 8099;
+const here = new URL('.', import.meta.url).pathname.replace(/\/$/, '');
+const ROOT = new URL('..', import.meta.url).pathname.replace(/\/$/, ''), PORT = 8099;
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
   '.svg': 'image/svg+xml', '.png': 'image/png' };
 const srv = createServer((q, r) => {

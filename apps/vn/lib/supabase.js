@@ -103,7 +103,7 @@ const FIELDS = 'id,user_id,title,body,tags,parent_id,position,is_public,deleted_
 export async function listNotes() {
   const db = await client();
   const { data, error } = await db
-    .from('notes')
+    .from('vn_notes')
     /* created_at is needed to keep sibling order stable. Without it the
      * tie-break compared Invalid Date and the tree came out in an arbitrary
      * order that changed between renders. */
@@ -117,7 +117,7 @@ export async function listNotes() {
 
 export async function getNote(id) {
   const db = await client();
-  const { data, error } = await db.from('notes').select(FIELDS).eq('id', id).single();
+  const { data, error } = await db.from('vn_notes').select(FIELDS).eq('id', id).single();
   if (error) throw error;
   return data;
 }
@@ -131,7 +131,7 @@ export async function createNote(patch = {}) {
    * auth.uid() is NULL before confirmation, which turned a policy check into
    * an unknown and failed confusingly. Send it explicitly. */
   const row = { user_id: s.user.id, title: '', body: '', ...patch };
-  const { data, error } = await db.from('notes').insert(row).select(FIELDS).single();
+  const { data, error } = await db.from('vn_notes').insert(row).select(FIELDS).single();
   if (error) throw error;
   return data;
 }
@@ -139,14 +139,14 @@ export async function createNote(patch = {}) {
 export async function updateNote(id, patch) {
   const db = await client();
   const { data, error } = await db
-    .from('notes').update(patch).eq('id', id).select(FIELDS).single();
+    .from('vn_notes').update(patch).eq('id', id).select(FIELDS).single();
   if (error) throw error;
   return data;
 }
 
 export async function deleteNote(id) {
   const db = await client();
-  const { error } = await db.from('notes').delete().eq('id', id);
+  const { error } = await db.from('vn_notes').delete().eq('id', id);
   if (error) throw error;
 }
 
@@ -155,7 +155,7 @@ export async function deleteNote(id) {
  * second, deliberate act, never the first. */
 export async function purgeNote(id) {
   const db = await client();
-  const { error } = await db.from('notes').delete().eq('id', id);
+  const { error } = await db.from('vn_notes').delete().eq('id', id);
   if (error) throw error;
 }
 
@@ -164,7 +164,7 @@ export async function purgeNote(id) {
 export async function purgeNotes(ids) {
   if (!ids.length) return;
   const db = await client();
-  const { error } = await db.from('notes').delete().in('id', ids);
+  const { error } = await db.from('vn_notes').delete().in('id', ids);
   if (error) throw error;
 }
 
@@ -181,7 +181,7 @@ const SHARE_FIELDS = 'id,note_id,owner_id,code,email,role,pending,created_at';
  * sorts the three apart; the database decides which ones exist here. */
 export async function listShares() {
   const db = await client();
-  const { data, error } = await db.from('note_shares')
+  const { data, error } = await db.from('vn_shares')
     .select(SHARE_FIELDS)
     .order('created_at', { ascending: true });
   if (error) throw error;
@@ -193,7 +193,7 @@ export async function listShares() {
  * though it is the normal "this link is dead" case. */
 export async function getShareByCode(code) {
   const db = await client();
-  const { data, error } = await db.from('note_shares')
+  const { data, error } = await db.from('vn_shares')
     .select(SHARE_FIELDS).eq('code', code).limit(1);
   if (error) throw error;
   return data?.[0] ?? null;
@@ -203,7 +203,7 @@ export async function getShareByCode(code) {
  * reader needs no account and no note ever appears in someone else's list. */
 export async function readShare(code) {
   const db = await client();
-  const { data, error } = await db.rpc('read_share', { p_code: code });
+  const { data, error } = await db.rpc('vn_read_share', { p_code: code });
   if (error) throw error;
   return data || [];
 }
@@ -211,7 +211,7 @@ export async function readShare(code) {
 /* code is left out on purpose so the column default generates it */
 export async function addPublicLink(noteId) {
   const db = await client();
-  const { data, error } = await db.from('note_shares')
+  const { data, error } = await db.from('vn_shares')
     .insert({ note_id: noteId })
     .select(SHARE_FIELDS).single();
   if (error) throw error;
@@ -222,7 +222,7 @@ export async function addPublicLink(noteId) {
  * nothing until it is allowed, and only then must the account exist. */
 export async function addEmailShare(noteId, email, role, pending = false) {
   const db = await client();
-  const { data, error } = await db.from('note_shares')
+  const { data, error } = await db.from('vn_shares')
     .insert({ note_id: noteId, email: email.trim().toLowerCase(), role, pending })
     .select(SHARE_FIELDS).single();
   if (error) throw error;
@@ -233,7 +233,7 @@ export async function addEmailShare(noteId, email, role, pending = false) {
  * address still has no account, so this cannot be used to guess one. */
 export async function allowShare(id) {
   const db = await client();
-  const { data, error } = await db.from('note_shares')
+  const { data, error } = await db.from('vn_shares')
     .update({ pending: false })
     .eq('id', id)
     .select(SHARE_FIELDS).single();
@@ -243,7 +243,7 @@ export async function allowShare(id) {
 
 export async function setShareRole(id, role) {
   const db = await client();
-  const { data, error } = await db.from('note_shares')
+  const { data, error } = await db.from('vn_shares')
     .update({ role }).eq('id', id).select(SHARE_FIELDS).single();
   if (error) throw error;
   return data;
@@ -251,7 +251,7 @@ export async function setShareRole(id, role) {
 
 export async function removeShare(id) {
   const db = await client();
-  const { error } = await db.from('note_shares').delete().eq('id', id);
+  const { error } = await db.from('vn_shares').delete().eq('id', id);
   if (error) throw error;
 }
 
@@ -259,7 +259,7 @@ export async function removeShare(id) {
  * so the dialog can explain instead of silently storing a grant nobody can use. */
 export async function accountExists(email) {
   const db = await client();
-  const { data, error } = await db.rpc('account_exists', { who: email });
+  const { data, error } = await db.rpc('vn_account_exists', { who: email });
   if (error) throw error;
   return data === true;
 }
@@ -268,7 +268,7 @@ export async function accountExists(email) {
  * show the owner what they are about to trust. */
 export async function accountHint(email) {
   const db = await client();
-  const { data, error } = await db.rpc('account_hint', { who: email });
+  const { data, error } = await db.rpc('vn_account_hint', { who: email });
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) return null;
@@ -280,7 +280,7 @@ export async function accountHint(email) {
  * delete the caller's own rows. */
 export async function deleteAccount() {
   const db = await client();
-  const { error } = await db.rpc('delete_my_account');
+  const { error } = await db.rpc('vn_delete_my_account');
   if (error) throw error;
 }
 

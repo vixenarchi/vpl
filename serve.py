@@ -110,7 +110,9 @@ class NoCache(SimpleHTTPRequestHandler):
 def main():
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8099
     host = sys.argv[2] if len(sys.argv) > 2 else '0.0.0.0'
-    root = os.path.dirname(os.path.abspath(__file__))
+    # third argument: the folder to serve. Defaults to this file's folder, so
+    # `python3 serve.py 8099` still works on its own.
+    root = sys.argv[3] if len(sys.argv) > 3 else os.path.dirname(os.path.abspath(__file__))
     handler = partial(NoCache, directory=root)
     srv = ThreadingHTTPServer((host, port), handler)
     print('serving %s on http://%s:%d/' % (root, host, port), flush=True)

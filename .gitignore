@@ -8,10 +8,13 @@ config.local.js
 supabase/.temp/
 supabase/.branches/
 
+# the shared shell, copied into an app by ./stage — never committed twice
+apps/*/vendor/
+
 # test deps and artefacts
-test/node_modules/
-test/package-lock.json
-test/*.png
+apps/*/test/node_modules/
+apps/*/test/package-lock.json
+apps/*/test/*.png
 
 # os
 .DS_Store

@@ -13,7 +13,7 @@ import { dirname, join } from 'node:path';
 import { createServer } from 'node:http';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(here, '..', '..', 'v2');
+const ROOT = join(here, '..');
 const PORT = 8099;
 
 /* ── static server, no build step (§4.4) ──────────────────────────── */

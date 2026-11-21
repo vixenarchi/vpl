@@ -3,7 +3,7 @@ import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join } from 'node:path';
-const ROOT='/home/vergovic/vixen/v2', PORT=8093;
+const ROOT = new URL('..', import.meta.url).pathname.replace(/\/$/, ''), PORT = 8093;
 const MIME={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.webmanifest':'application/manifest+json'};
 const srv=createServer((q,r)=>{const u=new URL(q.url,'http://x').pathname;const n=u==='/'?'/index.html':u;
 try{const b=readFileSync(join(ROOT,n));r.writeHead(200,{'content-type':MIME[n.slice(n.lastIndexOf('.'))]||'text/plain'});r.end(b)}catch{r.writeHead(404).end('x')}});

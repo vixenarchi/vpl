@@ -1,17 +1,40 @@
 #!/usr/bin/env bash
-# Publish v2. There is nothing to build: the app already is the files, and the
-# database lives at Supabase. So this stages the seven things a browser needs
-# and hands that folder to Cloudflare Pages.
+# Publish one app of the suite. There is nothing to build: the app already is
+# the files, and the database lives at Supabase. So this stages what a browser
+# needs — the app, plus a copy of the shared shell — and hands that folder to
+# Cloudflare Pages.
 #
-#   ./deploy              # publish to the project named below
-#   ./deploy --dry-run    # only show what would be uploaded
+#   ./deploy              # publish apps/vn to the project named below
+#   ./deploy vn           # the same, spelled out
+#   ./deploy vn --dry-run # only show what would be uploaded
+#   APP_PROJECT="vpl-vi" ./deploy vi    # a different Pages project
+#
+# One Pages project per app, one custom domain per project. `vn` is `vpl`,
+# because it was the first and its domain already points there.
 #
 # First time on this machine:  npx wrangler login
 set -euo pipefail
 
-DIR=$(cd "$(dirname "$0")" && pwd)
-PROJECT=${PROJECT:-vpl}
+ROOT=$(cd "$(dirname "$0")" && pwd)
+APP=""
+DRY=""
+for a in "$@"; do
+  case "$a" in
+    --dry-run) DRY=1 ;;
+    -*) echo "unknown flag: $a" >&2; exit 2 ;;
+    *) APP="$a" ;;
+  esac
+done
+APP=${APP:-vn}
+SRC="$ROOT/apps/$APP"
+[ -d "$SRC" ] || { echo "no such app: $APP (have: $(ls "$ROOT/apps" 2>/dev/null | tr '\n' ' '))" >&2; exit 2; }
+
+# first app keeps the name it already has on Cloudflare
+if [ "$APP" = vn ]; then PROJECT=${PROJECT:-vpl}; else PROJECT=${PROJECT:-vpl-$APP}; fi
 BRANCH=${BRANCH:-main}
+
+# the shared look, copied in so the app can be published on its own
+"$ROOT/tools/stage.sh" "$APP"
 
 # everything a browser asks for, and nothing else: no tests, no migrations,
 # no dev server, no notes about any of it.
@@ -19,12 +42,12 @@ STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 
 for f in index.html app.js style.css config.local.js _headers; do
-  [ -f "$DIR/$f" ] || { echo "missing $f" >&2; exit 1; }
-  cp "$DIR/$f" "$STAGE/"
+  [ -f "$SRC/$f" ] || { echo "missing apps/$APP/$f" >&2; exit 1; }
+  cp "$SRC/$f" "$STAGE/"
 done
-cp -r "$DIR/lib" "$DIR/icons" "$STAGE/"
-# Pages Functions: the CORS door for model endpoints (/api/chat)
-if [ -d "$DIR/functions" ]; then cp -r "$DIR/functions" "$STAGE/"; fi
+for d in lib icons vendor functions; do
+  [ -d "$SRC/$d" ] && cp -r "$SRC/$d" "$STAGE/"
+done
 
 # the anon key is public on purpose — RLS is the lock, not the key. But a
 # service-role key would be fatal, so refuse to publish one by accident.
@@ -34,10 +57,10 @@ if grep -q "service_role" "$STAGE"/*.js 2>/dev/null; then
 fi
 
 SIZE=$(du -sk "$STAGE" | cut -f1)
-echo "staging $SIZE KB:"
+echo "staging apps/$APP → $PROJECT, $SIZE KB:"
 (cd "$STAGE" && find . -type f | sort | sed 's/^\./  /')
 
-if [ "${1:-}" = "--dry-run" ]; then
+if [ -n "$DRY" ]; then
   echo "dry run: nothing uploaded"
   exit 0
 fi
