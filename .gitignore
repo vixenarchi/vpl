@@ -18,3 +18,6 @@ apps/*/test/*.png
 
 # os
 .DS_Store
+
+# wrangler writes its own cache where it is run
+.wrangler/
