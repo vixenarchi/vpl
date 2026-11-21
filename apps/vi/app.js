@@ -539,23 +539,53 @@ async function choose(n) {
   }
 }
 
+/* Models are asked for `pick: …` and `why: …` and half the time answer with a
+ * paragraph. So the answer is read, not parsed: the words of a real candidate
+ * make the pick, whatever the shape of the reply. */
+function pickOut(out, list) {
+  const norm = (v) => String(v).toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  const cands = list.map((i) => ({ i, n: norm(i.text) })).sort((a, b) => b.n.length - a.n.length);
+  const lines = out.split('\n').map((l) => l.replace(/^\s*\d+[.)]\s*/, '').replace(/^[-*]\s*/, '').trim())
+    .filter(Boolean);
+  let idea = null;
+  let why = '';
+  // 1. a line that begins with a candidate's own words, from the bottom up
+  for (let k = lines.length - 1; k >= 0 && !idea; k--) {
+    const hit = cands.find((c) => norm(lines[k]).startsWith(c.n));
+    if (hit) { idea = hit.i; why = lines.slice(k + 1).join(' '); }
+  }
+  // 2. labelled anyway
+  if (!idea) {
+    const m = out.match(/pick:\s*(.+)/i);
+    if (m) {
+      const hit = cands.find((c) => norm(m[1]).includes(c.n) || c.n.includes(norm(m[1])));
+      if (hit) { idea = hit.i; why = (out.match(/why:\s*([\s\S]+)/i) || [])[1] || ''; }
+    }
+  }
+  // 3. only one candidate mentioned at all
+  if (!idea) {
+    const seen = cands.filter((c) => norm(out).includes(c.n));
+    if (seen.length === 1) idea = seen[0].i;
+  }
+  why = why.replace(/^(why|because)\s*:?\s*/i, '').replace(/^["“]|["”]$/g, '').trim();
+  if (!why) why = lines.map((l) => l.replace(/^["“]|["”]$/g, ''))
+    .filter((l) => !cands.some((c) => norm(l).startsWith(c.n))).sort((a, b) => b.length - a.length)[0] || '';
+  return { idea, why };
+}
+
 async function suggestWithAi() {
   const list = explored().filter((i) => i.stage !== 'parked');
   if (list.length < 2) return say($('#notes-msg'), 'explore at least two ideas first', 'bad');
   bubble('selection', { text: 'weighing the two', busy: true });
   try {
     const out = await ask(prompts.select(list));
-    const m = out.match(/pick:\s*(.+)/i);
-    const w = out.match(/why:\s*(.+)/i);
-    const name = m ? m[1].trim() : '';
-    const best = list.find((n) => n.text.toLowerCase().includes(name.toLowerCase().slice(0, 24)))
-      || list.find((n) => name.toLowerCase().includes(n.text.toLowerCase().slice(0, 20)));
+    const best = pickOut(out, list);
     bubble('selection', {
-      text: `${name || 'no clear pick'}\n\n${(w ? w[1] : '').trim()}`,
+      text: `${best.idea ? best.idea.text : 'no clear pick'}\n\n${best.why || 'the model gave no reason — ask it again, or write your own'}`,
       label: 'use this reason',
-      onUse: (t) => {
-        $('#pick-reason').value = ((w ? w[1] : '') || t).trim().slice(0, 200);
-        if (best) { S.pick = best.id; paintSelect(); }
+      onUse: () => {
+        if (best.why) $('#pick-reason').value = best.why.slice(0, 200);
+        if (best.idea) { S.pick = best.idea.id; paintSelect(); }
       },
     });
   } catch (e) { clearBubble('selection'); say($('#pick-reason'), e.message.slice(0, 90), 'bad'); }
@@ -750,8 +780,25 @@ function aiEndpoint(url) {
   const u = (url || '').trim().replace(/\/+$/, '');
   if (!u) return '';
   if (/\/chat\/completions$/.test(u)) return u;
+  // gemini and a few others expose an OpenAI-compatible base ending in /openai
+  if (/\/openai$/.test(u)) return u + '/chat/completions';
   if (/\/v\d+$/.test(u)) return u + '/chat/completions';
   return u + '/v1/chat/completions';
+}
+
+/* The prompts ask for plain text. Models sometimes answer in markdown anyway,
+ * and a draft full of ** and ## is not a draft. This is the belt, the prompt is
+ * the braces. */
+function plain(text) {
+  return String(text || '')
+    .replace(/\r/g, '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/^\s*[*-]\s+/gm, '- ')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 async function ask(messages) {
@@ -780,7 +827,7 @@ async function ask(messages) {
   }
   let data;
   try { data = JSON.parse(text); } catch { return text; }
-  return (data.choices?.[0]?.message?.content || data.content || '').trim();
+  return plain(data.choices?.[0]?.message?.content || data.content || '');
 }
 
 /* ── title ────────────────────────────────────────────────────────── */

@@ -231,8 +231,14 @@ VPL_EMAIL=… VPL_PASS=… node mode-check.mjs   # 23 checks
 
 PORT=8100 ./serve vi in another shell, then:
 VI_URL=http://127.0.0.1:8100 node vi-check.mjs   # 20 checks
-VPL_SEARCH_KEY=… node vi-ai.mjs                  # 10 checks (model mocked, search live)
+VPL_SEARCH_KEY=… node vi-ai.mjs                  # 11 checks (model mocked, search live)
+VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "a project"
+                                                 # one real pass through the funnel
 ```
+
+`vi-real.mjs` is how the model notes in `vn` were written: it opens a project,
+walks ideate → explore ×2 → select → simulate, and keeps every answer it got in
+`/tmp/model-*.txt`.
 
 The suites make their own throwaway accounts and delete them at the end. No
 credentials live in this repository — `mode-check.mjs` reads them from the

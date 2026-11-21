@@ -170,6 +170,19 @@ own: it says something in a speech bubble, and the person presses *use it* or
 *drop*. The balloon is the whole etiquette of the app in one component — the
 model is a colleague with an opinion, not an author with a keyboard.
 
+**Which model.** Measured, not guessed: five real calls per model through the
+funnel, same project, same prompts. `gemini-3.1-flash-lite` won at 1.3 s an
+answer with the four labels intact and arithmetic that multiplies out;
+`nvidia/nemotron-3.5-bolt-e4b` is faster (0.7 s) and much thinner — it copies
+the same market size into two different explorations and cannot name a pick;
+`nemotron-3.5-lightning` writes the best prose of the free NVIDIA set and gets
+its projection wrong by a factor of nine; `mistral-large-4-1t` takes over a
+minute per answer and is unusable in a click-through. `gemini-3.8-flash` is
+announced but answered 503, and `gemini-2.5-flash` is retired for new keys.
+The prompt work that came out of this — labels on every line, brackets on every
+figure, "multiply it out before you answer", a `plain()` belt that strips
+markdown anyway — is what makes the cheap models usable.
+
 **Evidence is search, not imagination.** Exploration has a `find facts` button
 that sends one query to `/api/search` (our proxy) and returns two to four real
 results with their sources, which are added to the draft as bracketed facts.
