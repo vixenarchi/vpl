@@ -483,6 +483,26 @@ button.mode:disabled:hover { background: transparent; }
   .note-actions .ghost { font-size: 0.75rem; }
 }
 
+/* On a phone the one-line bar has no room: the badge, the status and three
+ * buttons collide and the status ends up as a column two words wide. Nothing
+ * needs to be hidden to fix that — the bar becomes two rows, status and tabs
+ * on the first, the buttons on the second. */
+@media (max-width: 34rem) {
+  .note-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "meta modes"
+      "actions actions";
+    row-gap: 0.35rem;
+  }
+  .note-meta { grid-area: meta; flex-wrap: nowrap; }
+  .modes { grid-area: modes; }
+  .note-actions { grid-area: actions; justify-content: flex-end; }
+  .note-status { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .note-actions .ghost { font-size: 0.72rem; padding: 0.2rem 0.5rem; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
@@ -727,6 +747,28 @@ button.trash.drop-active .trash-count { color: var(--mark); }
 .rendered { font-family: var(--serif); font-size: 1.05rem; line-height: 1.75; }
 .rendered:focus { outline: none; }
 
+/* ── the light/dark corner ───────────────────────────────────────────
+ * The same switch in three places: the app bar, the sign-in card and the
+ * public reader. A link should not be a different colour from the app you
+ * opened it out of. */
+.corner-theme {
+  position: absolute; top: 0.9rem; right: 0.9rem;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--paper-2); color: var(--ink-2);
+  width: 1.9rem; height: 1.9rem; padding: 0;
+  display: grid; place-items: center; font-size: 0.82rem; cursor: pointer;
+}
+.corner-theme:hover { background: var(--paper-3); color: var(--ink); }
+.reader-theme {
+  margin-left: auto;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--paper-2); color: var(--ink-2);
+  width: 1.7rem; height: 1.7rem; padding: 0;
+  display: grid; place-items: center; font-size: 0.78rem; cursor: pointer;
+}
+.reader-theme:hover { background: var(--paper-3); color: var(--ink); }
+#gate { position: relative; }
+
 /* ── dialogs ─────────────────────────────────────────────────────────
  * Found by looking in dark mode: the help panel had no background rule, so it
  * was the browser's white, which on a near-black page is a flashbang. Every
@@ -872,7 +914,8 @@ kbd {
 .share-who-hint[data-state='wait'] { color: var(--ink-3); }
 .share-who-hint[data-state='new'] { color: var(--ink-2); font-style: italic; }
 
-.reader-copy { font-size: 0.75rem; padding: 0.15rem 0.5rem; margin-left: auto; }
+.reader-copy { font-size: 0.75rem; padding: 0.15rem 0.5rem; }
+.reader-home { margin-left: auto; }
 .share-allow {
   font-size: 0.74rem; padding: 0.18rem 0.6rem; flex: 0 0 auto;
   border-color: var(--tone-shared); color: var(--tone-shared);
@@ -1018,7 +1061,8 @@ kbd {
   color: var(--ink-3); border: 1px solid var(--line-strong);
   border-radius: 999px; padding: 0.05rem 0.4rem;
 }
-.reader-home { margin-left: auto; font-size: 0.82rem; color: var(--mark); text-decoration: none; }
+.reader-home { font-size: 0.82rem; color: var(--mark); text-decoration: none; }
+.reader-home[hidden] + .reader-copy, .reader-copy { margin-left: 0; }
 .reader-home:hover { text-decoration: underline; }
 /* A shared note is read the same way a note is read: from the left edge,
  * using the width. A centred column looked like a different product — and it

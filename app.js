@@ -22,7 +22,7 @@ const el = {
 
   app: $('app'),
   btnList: $('btn-list'), btnNew: $('btn-new'), btnHelp: $('btn-help'),
-  btnTheme: $('btn-theme'), btnOut: $('btn-out'), btnSettings: $('btn-settings'),
+  btnTheme: $('btn-theme'), gateTheme: $('gate-theme'), readerTheme: $('reader-theme'), btnOut: $('btn-out'), btnSettings: $('btn-settings'),
 
   settings: $('settings'), setWho: $('set-who'), setClose: $('set-close'),
   setX: $('set-x'), setCancel: $('set-cancel'),
@@ -168,12 +168,38 @@ function indexShares() {
 
 const MODES = ['write', 'view'];
 
+/* Light or dark, everywhere the app appears: the app bar, the sign-in corner
+ * and the public reader. One saved answer, so a link you open is not a
+ * different colour from the app you opened it out of. */
+function toggleTheme() {
+  const dark = document.documentElement.dataset.theme === 'dark';
+  document.documentElement.dataset.theme = dark ? 'light' : 'dark';
+  try { localStorage.setItem('vpl.theme', dark ? 'light' : 'dark'); } catch {}
+  paintThemeButtons();
+  if (S.current && S.mode === 'view') paintView(S.current);
+}
+
+function paintThemeButtons() {
+  const dark = document.documentElement.dataset.theme === 'dark';
+  const label = dark ? 'switch to light' : 'switch to dark';
+  for (const b of [el.btnTheme, el.gateTheme, el.readerTheme]) {
+    if (!b) continue;
+    b.title = label;
+    b.setAttribute('aria-label', label);
+    b.setAttribute('aria-pressed', String(dark));
+    b.textContent = dark ? '☀' : '◐';
+  }
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', dark ? '#1a1816' : '#faf8f4');
+}
+
 /* ── boot ─────────────────────────────────────────────────────────── */
 
 boot();
 
 async function boot() {
   wire();
+  paintThemeButtons();
 
   let fitTimer = 0;
   window.addEventListener('resize', () => {
@@ -322,12 +348,9 @@ function wire() {
     await db.signOut();
   });
 
-  el.btnTheme.addEventListener('click', () => {
-    const cur = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = cur;
-    try { localStorage.setItem('vpl.theme', cur); } catch {}
-    if (S.current && S.mode === 'view') paintView(S.current);
-  });
+  for (const b of [el.btnTheme, el.gateTheme, el.readerTheme]) {
+    if (b) b.addEventListener('click', toggleTheme);
+  }
 
   el.btnList.addEventListener('click', () => el.list.classList.toggle('open'));
   el.btnNew.addEventListener('click', newNote);
@@ -504,6 +527,7 @@ function route(opts = {}) {
   if (!S.session) {
     el.app.hidden = true;
     el.gate.hidden = false;
+    paintThemeButtons();
     return;
   }
   el.app.hidden = false;
@@ -1917,6 +1941,7 @@ async function showShare(code, noteId) {
   el.gate.hidden = true;
   el.app.hidden = true;
   el.reader.hidden = false;
+  paintThemeButtons();
   el.readerHome.hidden = !S.session;
   el.readerNav.innerHTML = '';
   el.readerTitle.textContent = '';

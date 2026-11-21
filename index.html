@@ -22,6 +22,8 @@
 
 <!-- ── gate: sign in ─────────────────────────────────────────────── -->
 <section id="gate" class="gate" hidden>
+  <button id="gate-theme" class="icon corner-theme" type="button"
+          title="light or dark" aria-label="light or dark">◐</button>
   <form id="gate-form" class="gate-form">
     <div class="gate-brand">
       <span class="gate-mark" aria-hidden="true">v</span>
@@ -222,13 +224,40 @@
     <p class="muted share-hint">the key is kept in this browser only — never sent anywhere
       except the address you name. any endpoint that speaks the OpenAI chat format works.</p>
 
-    <label for="set-ai-url">api url</label>
-    <input id="set-ai-url" type="text" spellcheck="false" autocapitalize="off"
-           placeholder="https://api.openai.com/v1">
+    <label for="set-ai-url">api url <span class="muted">— pick one or type your own</span></label>
+    <input id="set-ai-url" type="text" list="ai-providers" spellcheck="false"
+           autocapitalize="off" placeholder="https://api.openai.com/v1">
+    <datalist id="ai-providers">
+      <option value="https://api.openai.com/v1">OpenAI</option>
+      <option value="https://integrate.api.nvidia.com/v1">NVIDIA</option>
+      <option value="https://api.groq.com/openai/v1">Groq</option>
+      <option value="https://openrouter.ai/api/v1">OpenRouter</option>
+      <option value="https://api.mistral.ai/v1">Mistral</option>
+      <option value="https://api.deepseek.com/v1">DeepSeek</option>
+      <option value="https://api.together.xyz/v1">Together</option>
+      <option value="https://api.x.ai/v1">xAI</option>
+      <option value="https://generativelanguage.googleapis.com/v1beta/openai">Google Gemini</option>
+      <option value="https://api.fireworks.ai/inference/v1">Fireworks</option>
+      <option value="https://api.cerebras.ai/v1">Cerebras</option>
+      <option value="https://api.novita.ai/v3/openai">Novita</option>
+      <option value="https://api.hyperbolic.xyz/v1">Hyperbolic</option>
+    </datalist>
 
-    <label for="set-ai-model">model</label>
-    <input id="set-ai-model" type="text" spellcheck="false" autocapitalize="off"
-           placeholder="gpt-4o-mini">
+    <label for="set-ai-model">model <span class="muted">— pick one or type your own</span></label>
+    <input id="set-ai-model" type="text" list="ai-models" spellcheck="false"
+           autocapitalize="off" placeholder="gpt-4o-mini">
+    <datalist id="ai-models">
+      <option value="gpt-4o-mini">OpenAI · cheap and quick</option>
+      <option value="gpt-4o">OpenAI · best</option>
+      <option value="nvidia/nemotron-3.5-bolt-e4b">NVIDIA · bolt</option>
+      <option value="nvidia/nemotron-3.5-lightning-30b-a3b">NVIDIA · lightning</option>
+      <option value="llama-3.3-70b-versatile">Groq · llama 3.3 70b</option>
+      <option value="meta-llama/llama-3.3-70b-instruct">OpenRouter · llama 3.3 70b</option>
+      <option value="mistral-large-latest">Mistral · large</option>
+      <option value="deepseek-chat">DeepSeek · chat</option>
+      <option value="gemini-2.0-flash">Gemini · 2.0 flash</option>
+      <option value="grok-2-latest">xAI · grok 2</option>
+    </datalist>
 
     <label for="set-ai-key">api key</label>
     <div class="pass-wrap">
@@ -378,6 +407,8 @@
   <header class="reader-head">
     <span class="reader-brand">vpl · shared</span>
     <span id="reader-role" class="reader-badge">read only</span>
+    <button id="reader-theme" class="icon reader-theme" type="button"
+            title="light or dark" aria-label="light or dark">◐</button>
     <button id="reader-copy" class="ghost reader-copy" type="button"
             title="copy a link to this chapter">copy link</button>
     <a id="reader-home" class="reader-home" href="#/" hidden>my notes</a>
