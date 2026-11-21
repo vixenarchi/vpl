@@ -1,34 +1,275 @@
-/* vpl · vi — the ideas workspace.
+/* vpl · vi — the funnel.
  *
  * Palette, type scale and page foundation come from the shell
- * (packages/shell/tokens.css → vendor/tokens.css). What is here is only what
- * an ideas list needs: a bar, one input, one list. Deliberately short — the
- * second app should be able to afford its own small stylesheet.
+ * (packages/shell/tokens.css → vendor/tokens.css). Everything here is the
+ * funnel's own surface: the project rail, the four steps, the bands, the
+ * sticky wall, the parked box.
  */
 
-/* the bar: the one piece of layout every app in the suite repeats, because it
- * is three lines of flex and a shared file for it would be ceremony */
+/* ── frame ────────────────────────────────────────────────────────── */
+.app { min-height: 100dvh; display: flex; flex-direction: column; }
 .bar {
   display: flex; align-items: center; gap: 0.5rem;
   height: var(--bar-h); padding: 0 0.9rem;
   border-bottom: 1px solid var(--line);
-  background: var(--paper);
-  position: sticky; top: 0; z-index: 3;
+  background: var(--paper); position: sticky; top: 0; z-index: 6;
 }
 .grow { flex: 1 1 auto; }
-.app { min-height: 100dvh; }
-.brand-mark {
-  display: grid; place-items: center;
-  width: 1.5rem; height: 1.5rem; border-radius: 5px;
-  background: var(--mark); color: var(--paper);
+.brand-mark, .welcome-mark {
+  display: grid; place-items: center; width: 1.5rem; height: 1.5rem;
+  border-radius: 5px; background: var(--mark); color: var(--paper);
   font-weight: 800; font-size: 0.85rem;
 }
 .brand-word { font-weight: 700; letter-spacing: 0.02em; }
-.brand-sub { color: var(--ink-3); font-size: 0.8rem; margin-left: -0.35rem; }
-.who { color: var(--ink-3); font-size: 0.78rem; max-width: 14rem; overflow: hidden;
-       text-overflow: ellipsis; white-space: nowrap; }
+.brand-sub { color: var(--ink-3); font-size: 0.8rem; }
+.brand-sub::before { content: '·'; margin-right: 0.4rem; }
+.who { color: var(--ink-3); font-size: 0.78rem; max-width: 12rem;
+       overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.only-narrow { display: none; }
 
-.gate { min-height: 100dvh; display: grid; place-items: center; padding: 1.5rem; }
+.body { flex: 1; display: grid; grid-template-columns: 15.5rem minmax(0, 1fr); min-height: 0; }
+
+/* ── projects: one level, never a tree ─────────────────────────────── */
+.projects {
+  border-right: 1px solid var(--line);
+  background: var(--paper-2);
+  display: flex; flex-direction: column; min-height: 0;
+}
+.proj-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.6rem 0.7rem 0.4rem;
+  font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.09em;
+  color: var(--ink-3);
+}
+.proj-list { list-style: none; margin: 0; padding: 0 0.4rem; overflow-y: auto; flex: 1; }
+.proj-row {
+  display: flex; align-items: center; gap: 0.4rem;
+  border-radius: var(--radius); padding: 0.1rem 0.1rem 0.1rem 0.45rem;
+  margin-bottom: 0.1rem;
+}
+.proj-row:hover { background: var(--paper-3); }
+.proj-row.on { background: var(--paper); border: 1px solid var(--line); }
+.proj-row .pick {
+  flex: 1; min-width: 0; text-align: left; border: none; background: none;
+  padding: 0.38rem 0; font-size: 0.86rem; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.proj-row .n {
+  font-size: 0.68rem; color: var(--ink-3); border: 1px solid var(--line);
+  border-radius: 999px; padding: 0 0.35rem; flex: 0 0 auto;
+}
+.proj-row .kill {
+  border: none; background: none; color: var(--ink-3); font-size: 0.7rem;
+  padding: 0.2rem 0.3rem; opacity: 0; flex: 0 0 auto;
+}
+.proj-row:hover .kill, .proj-row.on .kill { opacity: 1; }
+.proj-row .kill:hover { color: var(--danger); }
+.proj-none { padding: 0.6rem 0.7rem; font-size: 0.78rem; }
+
+/* ── the funnel ────────────────────────────────────────────────────── */
+.funnel { padding: 1.1rem 1.6rem 4rem; overflow-y: auto; min-width: 0; }
+.proj-title { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
+.title {
+  flex: 1 1 18rem; min-width: 0; border: none; background: none;
+  font-family: var(--serif); font-size: 1.5rem; color: var(--ink);
+  padding: 0.1rem 0;
+}
+.title:focus { outline: none; border-bottom: 1px solid var(--line-strong); }
+.proj-meta { margin: 0; font-size: 0.76rem; }
+
+/* the story: four numbered steps, one optional zero */
+.steps {
+  list-style: none; margin: 1rem 0 0.6rem; padding: 0;
+  display: flex; gap: 0.45rem; flex-wrap: wrap;
+}
+.step {
+  display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto;
+  gap: 0 0.45rem; text-align: left; align-items: center;
+  border: 1px solid var(--line); background: var(--paper);
+  border-radius: 10px; padding: 0.4rem 0.65rem; min-width: 6.4rem;
+}
+.step:hover { background: var(--paper-2); }
+.step.on { border-color: var(--mark); background: var(--paper); box-shadow: 0 0 0 1px var(--mark) inset; }
+.step-n {
+  grid-row: span 2; display: grid; place-items: center;
+  width: 1.45rem; height: 1.45rem; border-radius: 999px;
+  background: var(--paper-3); color: var(--ink-2);
+  font-size: 0.74rem; font-weight: 700;
+}
+.step.on .step-n { background: var(--mark); color: var(--paper); }
+.step-t { font-size: 0.86rem; font-weight: 600; line-height: 1.1; }
+.step-h { font-size: 0.68rem; color: var(--ink-3); line-height: 1.1; }
+.step.done .step-n { background: var(--tone-shared); color: var(--paper); }
+.step-ctx { border-style: dashed; }
+.step-ctx .step-n { background: none; border: 1px dashed var(--line-strong); color: var(--ink-3); }
+
+/* the picture: the same four stages as bands of one funnel. */
+.bands { display: flex; flex-direction: column; gap: 3px; margin: 0.2rem 0 1.1rem; }
+.band {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.6rem; border: none; border-radius: 4px;
+  padding: 0.34rem 0.9rem; margin: 0 auto; width: 100%;
+  font-size: 0.78rem; color: var(--paper); cursor: pointer;
+  transition: filter 0.12s, width 0.2s;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 1.1rem) 100%, 1.1rem 100%);
+}
+.band:hover { filter: brightness(1.06); }
+.band-t { text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.66rem; font-weight: 700; }
+.band-n { font-weight: 700; font-variant-numeric: tabular-nums; }
+.band-1 { background: var(--tone-read); }
+.band-2 { background: var(--tone-shared); width: 84%; }
+.band-3 { background: var(--tone-public); width: 70%; }
+.band-4 { background: var(--ink-2); width: 56%; }
+.band.here { filter: brightness(1.12); outline: 2px solid var(--mark); outline-offset: 1px; }
+
+/* ── panels ───────────────────────────────────────────────────────── */
+.panel { border-top: 1px solid var(--line); padding-top: 0.9rem; }
+.panel-head h2 {
+  margin: 0 0 0.15rem; font-size: 1.05rem; font-weight: 700;
+  text-transform: lowercase; letter-spacing: 0.01em;
+}
+.panel-head p { margin: 0 0 0.8rem; font-size: 0.83rem; max-width: 46rem; line-height: 1.55; }
+.prose {
+  width: 100%; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--paper-2); padding: 0.6rem 0.7rem;
+  font-family: var(--sans); font-size: 0.88rem; line-height: 1.6;
+  resize: vertical; color: var(--ink);
+}
+.prose:focus { background: var(--paper); border-color: var(--line-strong); outline: none; }
+.panel-foot {
+  display: flex; align-items: center; gap: 0.5rem; margin-top: 0.6rem; flex-wrap: wrap;
+}
+.panel-foot .msg, .msg { font-size: 0.76rem; color: var(--ink-3); flex: 1; min-width: 8rem; }
+.msg[data-state='bad'] { color: var(--danger); }
+.msg[data-state='ok'] { color: var(--tone-shared); }
+.msg[data-state='busy'] { color: var(--ink-3); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* ideation: the sticky wall */
+.note-form { display: flex; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+.note-form input {
+  flex: 1 1 16rem; min-width: 0; border: 1px solid var(--line);
+  border-radius: var(--radius); background: var(--paper-2);
+  padding: 0.5rem 0.65rem; font-size: 0.88rem;
+}
+.notes {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.55rem;
+}
+.note {
+  position: relative; border-radius: 6px; padding: 0.6rem 0.7rem 1.5rem;
+  font-size: 0.85rem; line-height: 1.45; min-height: 5.4rem;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+  transform: rotate(var(--tilt, -0.4deg));
+  transition: transform 0.12s;
+}
+.note:hover { transform: rotate(0deg); }
+.note[data-color='butter'] { background: #f7e6a6; color: #2c2617; }
+.note[data-color='rose']   { background: #f6d2cb; color: #33211e; }
+.note[data-color='mint']   { background: #cfe6d4; color: #1e2b21; }
+.note[data-color='sky']    { background: #cfe0f0; color: #1d2733; }
+[data-theme='dark'] .note { box-shadow: 0 1px 2px rgb(0 0 0 / 0.5); }
+.note-flag {
+  position: absolute; right: 0.45rem; top: 0.3rem;
+  font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgb(0 0 0 / 0.5);
+}
+.note .kill {
+  position: absolute; right: 0.2rem; bottom: 0.15rem; border: none;
+  background: none; color: inherit; opacity: 0.45; font-size: 0.72rem;
+  padding: 0.15rem 0.3rem;
+}
+.note:hover .kill { opacity: 0.9; }
+.note .go {
+  position: absolute; left: 0.2rem; bottom: 0.15rem; border: none;
+  background: none; color: inherit; opacity: 0.5; font-size: 0.7rem;
+  padding: 0.15rem 0.3rem;
+}
+.note .go:hover { opacity: 1; text-decoration: underline; }
+.notes-none { font-size: 0.84rem; margin: 0.3rem 0 0; }
+
+#pick-reason { flex: 1 1 20rem; min-width: 0; border: 1px solid var(--line);
+  border-radius: var(--radius); background: var(--paper-2);
+  padding: 0.45rem 0.65rem; font-size: 0.86rem; text-align: left; }
+
+/* exploration + selection */
+.picks { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.9rem; }
+.pick-btn {
+  border: 1px solid var(--line); background: var(--paper-2);
+  border-radius: 999px; padding: 0.22rem 0.6rem; font-size: 0.78rem;
+  max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pick-btn.on { border-color: var(--mark); color: var(--ink); background: var(--paper); }
+.pick-btn.done { border-color: var(--tone-shared); }
+.explore-who { margin: 0 0 0.4rem; font-size: 0.8rem; color: var(--ink-2); }
+.pick-list { display: grid; gap: 0.5rem; margin-bottom: 0.7rem; }
+.pick-card {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 0.55rem;
+  align-items: start; border: 1px solid var(--line); border-radius: 8px;
+  padding: 0.55rem 0.7rem; background: var(--paper);
+}
+.pick-card.on { border-color: var(--mark); box-shadow: 0 0 0 1px var(--mark) inset; }
+.pick-card h3 { margin: 0 0 0.2rem; font-size: 0.9rem; font-weight: 600; }
+.pick-card p { margin: 0; font-size: 0.78rem; color: var(--ink-2); white-space: pre-wrap; }
+.pick-card .num {
+  width: 1.3rem; height: 1.3rem; border-radius: 999px; background: var(--paper-3);
+  display: grid; place-items: center; font-size: 0.72rem; font-weight: 700;
+}
+.chosen {
+  margin-top: 0.9rem; border: 1px solid var(--tone-shared); border-radius: 8px;
+  padding: 0.6rem 0.75rem; background: var(--paper-2);
+}
+.chosen h3 { margin: 0 0 0.15rem; font-size: 0.92rem; }
+.chosen p { margin: 0; font-size: 0.8rem; color: var(--ink-2); }
+.sim-hints { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; margin: 0 0 0.35rem; }
+
+/* parked box: a dashed strip at the foot of the funnel — the place ideas sit
+   when another one is chosen. Not a stage, so not a band. */
+.parked {
+  margin: 0.5rem 0 0.9rem; border: 1px dashed var(--line-strong);
+  border-radius: 6px; padding: 0.4rem 0.8rem; background: var(--paper-2);
+}
+.parked[open] { padding-bottom: 0.7rem; }
+.parked > summary { list-style: none; }
+.parked > summary::-webkit-details-marker { display: none; }
+.parked > summary::before { content: '▸'; font-size: 0.65rem; color: var(--ink-3); }
+.parked[open] > summary::before { content: '▾'; }
+.parked summary {
+  cursor: pointer; display: flex; align-items: center; gap: 0.45rem;
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-2);
+}
+.parked-n { border: 1px solid var(--line); border-radius: 999px; padding: 0 0.35rem; font-size: 0.7rem; }
+.parked p { margin: 0.5rem 0 0.3rem; font-size: 0.78rem; }
+.parked-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.parked-list li {
+  display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center;
+  border-top: 1px solid var(--line); padding-top: 0.4rem;
+}
+.parked-list .t { font-size: 0.84rem; }
+.parked-list .r {
+  display: block; width: 100%; margin-top: 0.15rem;
+  border: 1px dashed var(--line); border-radius: 4px;
+  background: transparent; color: var(--ink-3);
+  font-size: 0.74rem; padding: 0.12rem 0.35rem; text-align: left;
+}
+.parked-list .r:focus { border-style: solid; background: var(--paper); color: var(--ink); outline: none; }
+.parked-list .acts { display: flex; gap: 0.3rem; }
+.parked-list button { font-size: 0.72rem; padding: 0.15rem 0.45rem; }
+.parked-empty { font-size: 0.78rem; color: var(--ink-3); }
+
+/* ── welcome ──────────────────────────────────────────────────────── */
+.welcome { display: grid; place-items: center; padding: 2rem; }
+.welcome-card {
+  max-width: 26rem; text-align: left; border: 1px solid var(--line);
+  border-radius: 14px; padding: 1.6rem 1.5rem; background: var(--paper);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.08);
+}
+.welcome-card h2 { margin: 0.7rem 0 0.4rem; font-size: 1.15rem; }
+.welcome-card p { margin: 0 0 1rem; font-size: 0.87rem; color: var(--ink-2); line-height: 1.6; }
+
+/* ── gate (same as vn, kept here so the app is standalone) ─────────── */
+.gate { min-height: 100dvh; display: grid; place-items: center; padding: 1.5rem; position: relative; }
 .gate-form {
   width: min(23rem, 100%); display: flex; flex-direction: column; gap: 0.4rem;
   background: var(--paper); border: 1px solid var(--line);
@@ -52,32 +293,55 @@
 .gate-msg { margin: 0.1rem 0; font-size: 0.78rem; color: var(--danger); min-height: 1.05rem; }
 .gate-fine { margin: 0.35rem 0 0; font-size: 0.72rem; color: var(--ink-3); line-height: 1.45; }
 .confirm-row { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.35rem; }
+.corner-theme {
+  position: absolute; top: 0.9rem; right: 0.9rem;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--paper-2); color: var(--ink-2);
+  width: 1.9rem; height: 1.9rem; padding: 0;
+  display: grid; place-items: center; font-size: 0.82rem; cursor: pointer;
+}
 
-.workspace { max-width: 40rem; margin: 0 auto; padding: 1.6rem 1.25rem 4rem; }
-.add { display: flex; gap: 0.5rem; }
-.add input {
-  flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: var(--radius);
-  background: var(--paper-2); padding: 0.55rem 0.7rem; font-size: 0.95rem;
+/* ── dialogs ──────────────────────────────────────────────────────── */
+.dialog {
+  border: 1px solid var(--line-strong); border-radius: 12px;
+  background: var(--paper); color: var(--ink);
+  padding: 1.2rem 1.25rem; max-width: 26rem; width: calc(100vw - 2rem);
+  max-height: 88dvh; overflow-y: auto;
 }
-.count { margin: 0.9rem 0 0.3rem; font-size: 0.75rem; }
-.ideas { list-style: none; margin: 0; padding: 0; }
-.idea {
-  display: flex; align-items: baseline; gap: 0.6rem;
-  padding: 0.5rem 0.25rem; border-bottom: 1px solid var(--line);
+.dialog::backdrop { background: rgb(0 0 0 / 0.45); }
+.dialog h2 { margin: 0 0 0.3rem; font-size: 1.05rem; }
+.dialog p { font-size: 0.8rem; line-height: 1.5; }
+.dialog label { display: block; font-size: 0.66rem; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--ink-3); margin: 0.5rem 0 0.15rem; }
+.dialog input {
+  width: 100%; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--paper-2); padding: 0.4rem 0.55rem; font-size: 0.85rem;
+  text-align: left;
 }
-.idea .text { flex: 1; line-height: 1.5; }
-.idea.done .text { color: var(--ink-3); text-decoration: line-through; }
-.tick {
-  flex: 0 0 auto; width: 1.35rem; height: 1.35rem; padding: 0;
-  display: grid; place-items: center; border-radius: 999px;
-  border: 1px solid var(--line); color: var(--ink-3); font-size: 0.8rem;
+.dialog-x {
+  position: absolute; top: 0.5rem; right: 0.5rem; border: none; background: none;
+  color: var(--ink-3); font-size: 0.85rem;
 }
-.idea.done .tick { color: var(--tone-shared); border-color: var(--tone-shared); }
-.del {
-  flex: 0 0 auto; border-color: transparent; color: var(--ink-3);
-  padding: 0.1rem 0.35rem; font-size: 0.8rem;
+.share-msg { min-height: 1.05rem; font-size: 0.76rem; color: var(--ink-3); }
+
+/* ── narrow ───────────────────────────────────────────────────────── */
+@media (max-width: 46rem) {
+  .body { grid-template-columns: 1fr; }
+  .projects {
+    position: absolute; inset: var(--bar-h) auto 0 0; z-index: 8;
+    width: min(17rem, 82vw); transform: translateX(-100%);
+    transition: transform 0.16s ease; box-shadow: 2px 0 16px rgb(0 0 0 / 0.18);
+  }
+  .projects.open { transform: none; }
+  .only-narrow { display: inline-block; }
+  .funnel { padding: 0.9rem 0.9rem 3rem; }
+  .steps { gap: 0.3rem; flex-wrap: nowrap; overflow-x: auto;
+           scrollbar-width: none; padding-bottom: 0.15rem; }
+  .steps::-webkit-scrollbar { display: none; }
+  .step { flex: 0 0 auto; min-width: 6.1rem; padding: 0.35rem 0.45rem; }
+  .step-h { display: none; }
+  .title { font-size: 1.25rem; }
+  .notes { grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); }
 }
-.del:hover { color: var(--danger); border-color: var(--danger); }
-.empty { font-size: 0.85rem; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

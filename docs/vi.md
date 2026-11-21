@@ -1,0 +1,170 @@
+# vi — vixen idea
+
+An idea funnel you can see. One project, five stages, four of them numbered.
+The point is not the database or the model — it is that a person who has never
+read a lean book can look at the screen and know what to do next.
+
+`vi` is the second app of the suite: its own tables (`vi_`), its own domain
+(`vi.terg.hr`), the same signed-in person, the same shell palette.
+
+## Why a funnel
+
+Ash Maurya's reference funnel (LEANSTACK, 2018) runs Strategy Alignment →
+Ideation → Exploration → Selection → Validation → Growth and optimises three
+things: the quality and quantity at the top, the **conversion between stages**,
+and **time to conversion**.
+
+Six stages is a wall. Five is a story:
+
+- **Context** (optional, not numbered) — the constraints. Skipping it is
+  allowed and never punished.
+- **1 Ideation** — quantity, no judgement.
+- **2 Exploration** — turn an idea into a business: customer, problem, rough
+  size, the facts that decide whether it is worth a month.
+- **3 Selection** — one idea chosen, with a written reason. Everything else is
+  parked, also with a reason.
+- **4 Simulation** — validation tests, refinement, and a projection whose
+  assumptions are labelled.
+
+Validation and Growth are merged into Simulation on purpose. Growth is the
+stage that needs real customers and real months; pretending to run it inside an
+app would be theatre.
+
+## The rule that keeps it a funnel
+
+A funnel is not a list of columns. It is decisions with reasons.
+
+- Leaving Exploration requires: **customer**, **problem**, **rough size**, and
+  at least **one checkable fact** (with a source, once search is wired).
+- Selection requires: **exactly one** chosen idea and **one line why**; every
+  other idea is parked with a line why not now.
+- Simulation requires: **three assumptions that could be wrong** and what would
+  be measured.
+
+Without those, the model produces plausible text forever and the funnel becomes
+a kanban board with no decisions — which is exactly what the v1 spec warns
+about.
+
+## What the screen is
+
+```
+┌ bar ──────────────────────────────────────────────── vpl · vi · ideas ┐
+├ projects (one level) ┬ project ────────────────────────────────────────┤
+│  › Rooftop ERP       │  title  (editable inline)                       │
+│  › Idea funnel       │  (1) Ideate  (2) Explore  (3) Select  (4) Simulate
+│  + new project       │  ────────────────────────────────────────────── │
+│                      │  funnel: counts per stage, clickable bands      │
+│                      │  ────────────────────────────────────────────── │
+│                      │  the stage's own surface                        │
+│                      │   1 sticky notes, add, add with AI              │
+│                      │   2 idea cards + exploration text               │
+│                      │   3 choose one + reason, others park            │
+│                      │   4 tests, assumptions, projection              │
+│                      │  ────────────────────────────────────────────── │
+│                      │  parked (collapsed): cards, restore or swap     │
+└──────────────────────┴─────────────────────────────────────────────────┘
+```
+
+The left side is a flat list of projects, never a tree: an idea funnel belongs
+to one project, projects do not nest.
+
+The four numbered steps at the top are the story; the funnel graphic under them
+is the picture. Both are navigation. Colour is not the only label — each band
+carries its name and count.
+
+## Stages in detail
+
+### Context (optional)
+
+Free text, or a pile of words: "construction · saturated · capabilities:
+high-rise, commercial, residential, roofing". A **Formulate** button turns the
+pile into three or four sentences of constraints, which the person can then fix
+by hand.
+
+Stored as `vi_projects.context`. Nothing depends on it being filled.
+
+### 1 Ideation
+
+Sticky notes. One line each, one colour from a small palette, added by typing or
+by **add with AI** (the model gets the context and the title and proposes 5–8
+more, each landing as its own note, each deletable). Nothing is ranked here.
+
+Stored as `vi_ideas` rows with `stage = 'ideation'`.
+
+### 2 Exploration
+
+Pick an idea, then work it. The model writes a first pass — customer, problem,
+job to be done, rough size, why now, what would prove it — and the person edits
+the text underneath. Exploration text is kept per idea, appended as versions, so
+a second pass does not erase the first.
+
+Search arrives here (last on the roadmap): one or two key facts with sources,
+through our proxy, not through the model's imagination.
+
+Stored as `vi_ideas.exploration` (markdown) with `vi_ideas.explored_at`.
+
+### 3 Selection
+
+The model proposes two or three candidates with one sentence each. The person
+chooses **one**. The chosen idea becomes `stage = 'selected'`; every other
+explored idea becomes `stage = 'parked'` with a written reason. Parking is not
+deleting: parked ideas sit in a box at the bottom of the funnel and can be
+restored or **swapped** with the current choice at any time.
+
+Stored as `vi_ideas.stage`, `vi_ideas.reason`, `vi_projects.chosen_id`.
+
+### 4 Simulation
+
+Three panels of text, no spreadsheet:
+
+- **tests** — what will be tested, with whom, what counts as success or failure
+- **refinement** — what changes after each test
+- **projection** — numbers only with their assumptions spelled out ("2 % of
+  40 000 firms, because…")
+
+Stored as `vi_projects.simulation` (markdown, versioned).
+
+## Tables
+
+Almost nothing, on purpose.
+
+- **vi_projects** — `id, user_id, title, context, exploration, simulation,
+  chosen_id, created_at, updated_at`. One row per funnel; the stage texts live
+  here because they are the project's own document.
+- **vi_ideas** — `id, project_id, user_id, text, stage, color, reason,
+  exploration, explored_at, position, created_at, updated_at`. `stage` is one of
+  `ideation | parked | selected | simulated`.
+
+Two tables, one level of nesting, no joins across apps. `vi_projects` and
+`vi_ideas` are owner-only through RLS; sharing (public link plus per-email view
+/ edit) reuses the `vn` shape with `vi_` names when it is built, and is a
+deliberate next step, not part of the first screen.
+
+## The model, and why nothing is "smart"
+
+Every stage is one call with a fixed prompt and the project's own text as
+context. There is no agent loop, no memory, no embedding store. The quality
+lives in the prompts, so they live in one file in the app (`prompts.js`), one
+constant per stage, readable and editable without touching the UI.
+
+- the key is the person's own, kept in their browser, as in `vn`
+- calls go through the suite's proxy (`/api/chat`, then `api.terg.hr`), because
+  model APIs do not send CORS headers
+- every AI output is **added** to the stage text, never written over it
+
+## Roadmap
+
+1. the screen: projects, four steps, funnel, sticky notes, parked box (this)
+2. the model: formulate context, add ideas, explore, propose, simulate
+3. the search: Tavily or Serper through `/api/search`, results as facts with
+   sources in Exploration; the person brings their own key
+4. sharing: public link and per-email grants, `vi_shares`
+5. import: parked idea → a note in `vn` through copy-paste markdown, never a
+   cross-app write
+
+## Non-goals
+
+No kanban columns, no drag-and-drop between stages, no scores, no deadlines, no
+reminders, no attachments, no teams, no realtime, no vector search, no charts.
+
+The funnel is the picture. The decisions are the product.

@@ -4,7 +4,8 @@ A suite of small, independent apps that share one look and one signed-in person.
 
 - **vn** — notes with chapters, a bin, sharing by link or by person, an
   assistant. At https://vn.terg.hr
-- **vi** — ideas, one line each. At https://vi.terg.hr
+- **vi** — an idea funnel: context, ideate, explore, select one, simulate.
+  At https://vi.terg.hr — see `docs/vi.md`
 - **api** — the suite's one CORS door to a model endpoint, at
   https://api.terg.hr
 
@@ -97,8 +98,12 @@ one address (an email, role `view` or `edit`). This is the second table, and the
 only one justified: a permission is not a property of a note, it is a relation
 between a note and a person.
 
-**vi_ideas** — `id, user_id, text, done, created_at, updated_at`. Its own table,
-its own policies, no join to notes.
+**vi_projects** and **vi_ideas** — a funnel and its sticky notes. The project
+carries the stage documents (`context`, `exploration`, `simulation`); an idea
+carries `text`, `stage` (ideation, parked, selected), `reason` and its own
+exploration. One chosen idea per project is a partial unique index, so the rule
+"exactly one" is kept by the database and not by the screen. No join to notes:
+the design is in `docs/vi.md`.
 
 ### The prefix rule, and its guard
 
@@ -220,6 +225,9 @@ node e2e.mjs            # 25 checks
 node plain.mjs          # 8  checks
 node touch-check.mjs    # 9  checks  (needs touch emulation)
 VPL_EMAIL=… VPL_PASS=… node mode-check.mjs   # 23 checks
+
+PORT=8100 ./serve vi in another shell, then:
+VI_URL=http://127.0.0.1:8100 node vi-check.mjs   # 20 checks
 ```
 
 The suites make their own throwaway accounts and delete them at the end. No

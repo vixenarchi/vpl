@@ -7,28 +7,27 @@
 <meta name="theme-color" content="#faf8f4">
 <link rel="icon" href="icons/v.svg" type="image/svg+xml">
 
-<!-- the shell: palette, type scale, page foundation. Copied into vendor/ by
-     ./stage, so this app ships with its own copy of the shared look. -->
 <link rel="stylesheet" href="vendor/tokens.css">
 <link rel="stylesheet" href="style.css">
 
 <script>
-  /* the saved theme is applied before first paint, same as in vn */
   try { var t = localStorage.getItem('vpl.theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
 </script>
 </head>
 <body>
 
+<!-- ── gate ──────────────────────────────────────────────────────── -->
 <section id="gate" class="gate" hidden>
   <button id="gate-theme" class="corner-theme" type="button" aria-label="light or dark">◐</button>
   <form id="gate-form" class="gate-form">
     <div class="gate-brand">
       <span class="gate-mark" aria-hidden="true">v</span>
       <h1>vi</h1>
-      <span class="gate-sub">vixen ideas</span>
+      <span class="gate-sub">vixen idea</span>
     </div>
     <label for="email">e-mail or username</label>
-    <input id="email" type="text" autocomplete="username" spellcheck="false" placeholder="you@example.com or username">
+    <input id="email" type="text" autocomplete="username" spellcheck="false"
+           placeholder="you@example.com or username">
     <label for="pass">password</label>
     <input id="pass" type="password" autocomplete="current-password">
     <p id="gate-msg" class="gate-msg" aria-live="polite"></p>
@@ -36,35 +35,210 @@
       <button id="btn-register" class="ghost" type="button">create account</button>
       <button id="btn-login" class="primary" type="submit">sign in</button>
     </div>
-    <p class="gate-fine">one account for the whole suite — what you create here works in vn too.</p>
+    <p class="gate-fine">one account for the whole suite — it works in vn too.</p>
   </form>
 </section>
 
+<!-- ── the app ───────────────────────────────────────────────────── -->
 <div id="app" class="app" hidden>
   <header class="bar">
     <span class="brand-mark" aria-hidden="true">v</span>
     <span class="brand-word">vi</span>
-    <span class="brand-sub">ideas</span>
+    <span class="brand-sub">idea</span>
+    <button id="btn-projects" class="icon only-narrow" type="button" title="projects">☰</button>
     <span class="grow"></span>
     <span id="who" class="who"></span>
-    <button id="btn-theme" class="icon" type="button" title="light or dark" aria-label="light or dark">◐</button>
+    <button id="btn-ai" class="icon" type="button" title="the model this app may use">⚙</button>
+    <button id="btn-theme" class="icon" type="button" title="light or dark">◐</button>
     <button id="btn-out" class="ghost" type="button" title="sign out">out</button>
   </header>
 
-  <main class="workspace">
-    <form id="add-form" class="add">
-      <input id="idea" type="text" placeholder="one idea, one line" autocomplete="off"
-             aria-label="new idea" maxlength="240">
-      <button id="add-btn" class="primary" type="submit">add</button>
-    </form>
+  <div class="body">
+    <!-- projects: one level, never a tree -->
+    <nav id="projects" class="projects" aria-label="projects">
+      <div class="proj-head">
+        <span>projects</span>
+        <button id="btn-new-project" class="icon" type="button" title="new funnel">＋</button>
+      </div>
+      <ul id="proj-list" class="proj-list"></ul>
+      <p id="proj-none" class="proj-none muted">no funnels yet. one project is one funnel.</p>
+    </nav>
 
-    <p id="count" class="count muted"></p>
-    <ul id="ideas" class="ideas"></ul>
-    <p id="empty" class="empty muted">nothing here yet. the first line is the hardest.</p>
-  </main>
+    <main id="funnel" class="funnel" hidden>
+      <!-- title and the road -->
+      <div class="proj-title">
+        <input id="proj-title" class="title" type="text" placeholder="untitled funnel"
+               aria-label="funnel title" autocomplete="off">
+        <p id="proj-meta" class="proj-meta muted"></p>
+      </div>
+
+      <!-- the story: four steps, plus an optional context -->
+      <ol id="steps" class="steps">
+        <li><button class="step step-ctx" data-stage="context" type="button">
+          <span class="step-n">0</span><span class="step-t">context</span>
+          <span class="step-h">optional</span></button></li>
+        <li><button class="step" data-stage="ideation" type="button">
+          <span class="step-n">1</span><span class="step-t">ideate</span>
+          <span class="step-h">get many</span></button></li>
+        <li><button class="step" data-stage="exploration" type="button">
+          <span class="step-n">2</span><span class="step-t">explore</span>
+          <span class="step-h">make it real</span></button></li>
+        <li><button class="step" data-stage="selection" type="button">
+          <span class="step-n">3</span><span class="step-t">select</span>
+          <span class="step-h">choose one</span></button></li>
+        <li><button class="step" data-stage="simulation" type="button">
+          <span class="step-n">4</span><span class="step-t">simulate</span>
+          <span class="step-h">test it</span></button></li>
+      </ol>
+
+      <!-- the picture: the same stages as bands. Both navigate. -->
+      <div id="bands" class="bands" role="navigation" aria-label="funnel">
+        <button class="band band-1" data-stage="ideation" type="button">
+          <span class="band-t">ideate</span><span class="band-n" id="band-ideation">0</span></button>
+        <button class="band band-2" data-stage="exploration" type="button">
+          <span class="band-t">explore</span><span class="band-n" id="band-exploration">0</span></button>
+        <button class="band band-3" data-stage="selection" type="button">
+          <span class="band-t">select</span><span class="band-n" id="band-selection">0</span></button>
+        <button class="band band-4" data-stage="simulation" type="button">
+          <span class="band-t">simulate</span><span class="band-n" id="band-simulation">0</span></button>
+      </div>
+
+      <!-- ── parked ─────────────────────────────────────────────── -->
+      <details id="parked-box" class="parked">
+        <summary><span class="parked-t">parked</span><span id="parked-n" class="parked-n">0</span></summary>
+        <p class="muted">kept, not deleted. restore one, or swap it with the
+          chosen idea.</p>
+        <ul id="parked-list" class="parked-list"></ul>
+      </details>
+
+      <!-- ── stage: context ─────────────────────────────────────── -->
+      <section class="panel" data-stage="context" hidden>
+        <div class="panel-head">
+          <h2>context</h2>
+          <p class="muted">what is true before the first idea: your market, your
+            portfolio, what you can already do. A pile of words is enough.</p>
+        </div>
+        <textarea id="ctx-text" class="prose" rows="6"
+          placeholder="construction · saturated market · capabilities: high-rise, commercial, residential, roofing"></textarea>
+        <div class="panel-foot">
+          <span id="ctx-msg" class="msg"></span>
+          <button id="ctx-formulate" class="ghost" type="button">formulate with AI</button>
+          <button id="ctx-save" class="primary" type="button">save</button>
+        </div>
+      </section>
+
+      <!-- ── stage: ideation ────────────────────────────────────── -->
+      <section class="panel" data-stage="ideation" hidden>
+        <div class="panel-head">
+          <h2>ideate</h2>
+          <p class="muted">one line per idea. no judging here — the funnel does
+            that later.</p>
+        </div>
+        <form id="note-form" class="note-form">
+          <input id="note-input" type="text" maxlength="160" autocomplete="off"
+                 placeholder="one idea, one sticky note" aria-label="new idea">
+          <button class="primary" type="submit">add</button>
+          <button id="notes-ai" class="ghost" type="button" title="let the model add a few">add with AI</button>
+        </form>
+        <ul id="notes" class="notes"></ul>
+        <p id="notes-none" class="notes-none muted">nothing on the wall yet.</p>
+        <div class="panel-foot">
+          <span id="notes-msg" class="msg"></span>
+          <button class="ghost next" data-next="exploration" type="button">towards explore →</button>
+        </div>
+      </section>
+
+      <!-- ── stage: exploration ─────────────────────────────────── -->
+      <section class="panel" data-stage="exploration" hidden>
+        <div class="panel-head">
+          <h2>explore</h2>
+          <p class="muted">pick an idea and turn it into a business: customer,
+            problem, rough size, what would prove it. Facts with a source beat
+            opinions.</p>
+        </div>
+        <div id="explore-pick" class="picks"></div>
+        <div id="explore-work" hidden>
+          <p id="explore-who" class="explore-who"></p>
+          <textarea id="explore-text" class="prose" rows="12"
+            placeholder="customer: …&#10;problem: …&#10;size: …&#10;proves it: …"></textarea>
+          <div class="panel-foot">
+            <span id="explore-msg" class="msg"></span>
+            <button id="explore-ai" class="ghost" type="button">explore with AI</button>
+            <button id="explore-save" class="primary" type="button">save</button>
+          </div>
+        </div>
+        <p id="explore-none" class="muted">no ideas yet — start at ideate.</p>
+      </section>
+
+      <!-- ── stage: selection ───────────────────────────────────── -->
+      <section class="panel" data-stage="selection" hidden>
+        <div class="panel-head">
+          <h2>select</h2>
+          <p class="muted">exactly one. the rest are parked, not deleted, and
+            each carries a reason.</p>
+        </div>
+        <div id="pick-list" class="pick-list"></div>
+        <div class="panel-foot">
+          <label for="pick-reason" class="sr-only">why this one</label>
+          <input id="pick-reason" type="text" placeholder="why this one, in one line">
+          <button id="pick-ai" class="ghost" type="button">suggest with AI</button>
+        </div>
+        <p id="pick-none" class="muted">nothing explored yet — explore a few first.</p>
+        <div id="chosen" class="chosen" hidden></div>
+      </section>
+
+      <!-- ── stage: simulation ──────────────────────────────────── -->
+      <section class="panel" data-stage="simulation" hidden>
+        <div class="panel-head">
+          <h2>simulate</h2>
+          <p class="muted">what you will test, what you expect to change, and a
+            projection whose assumptions are written down.</p>
+        </div>
+        <p id="sim-who" class="explore-who"></p>
+        <p class="sim-hints muted">tests · refinement · projection</p>
+        <textarea id="sim-text" class="prose" rows="14"
+          placeholder="tests: …&#10;&#10;refinement: …&#10;&#10;projection: … (assumptions in brackets)"></textarea>
+        <div class="panel-foot">
+          <span id="sim-msg" class="msg"></span>
+          <button id="sim-ai" class="ghost" type="button">simulate with AI</button>
+          <button id="sim-save" class="primary" type="button">save</button>
+        </div>
+      </section>
+
+    </main>
+
+    <section id="welcome" class="welcome">
+      <div class="welcome-card">
+        <span class="welcome-mark" aria-hidden="true">v</span>
+        <h2>one funnel, four steps</h2>
+        <p>Make a project, throw ideas at it, explore the ones that hold,
+          choose exactly one, then test it. The funnel in the middle is the
+          picture; the steps are the way.</p>
+        <button id="btn-first" class="primary" type="button">start a funnel</button>
+      </div>
+    </section>
+  </div>
 </div>
 
-<!-- project url and anon key: git-ignored, copied from config.example.js -->
+<!-- ── model settings ─────────────────────────────────────────────── -->
+<dialog id="ai-dialog" class="dialog">
+  <button id="ai-x" class="dialog-x" type="button" aria-label="close">✕</button>
+  <h2>the model</h2>
+  <p class="muted">your own key, kept in this browser. nothing is sent
+    anywhere except the endpoint you name, through this app's own origin.</p>
+  <label for="ai-url">api url</label>
+  <input id="ai-url" type="text" spellcheck="false" placeholder="https://api.openai.com/v1">
+  <label for="ai-key">api key</label>
+  <input id="ai-key" type="password" spellcheck="false" placeholder="sk-…">
+  <label for="ai-model">model</label>
+  <input id="ai-model" type="text" spellcheck="false" placeholder="gpt-4o-mini">
+  <p id="ai-msg" class="share-msg" aria-live="polite"></p>
+  <div class="confirm-row">
+    <button id="ai-forget" class="ghost" type="button">forget the key</button>
+    <button id="ai-save" class="primary" type="button">save</button>
+  </div>
+</dialog>
+
 <script src="config.local.js"></script>
 <script type="module" src="app.js"></script>
 </body>

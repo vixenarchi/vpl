@@ -1,9 +1,8 @@
 /* vpl · vi — the whole database surface of this app, in one file.
  *
- * Kept in one place on purpose: if the suite ever grows a second backend
- * (local PostgreSQL, or SQLite for an offline build), this is the only file
- * that has to change. supabase-js arrives from a CDN because there is no
- * bundler.
+ * Two tables, one level of nesting, owner-only through RLS. Kept in one place
+ * because if the suite ever grows a second backend, this is the file that
+ * changes and nothing else. supabase-js arrives from a CDN: no bundler.
  */
 
 let _client = null;
@@ -34,8 +33,10 @@ function loadScript(src) {
   });
 }
 
-const FIELDS = 'id,text,done,created_at,updated_at';
+const P = 'id,title,context,exploration,simulation,chosen_id,created_at,updated_at';
+const I = 'id,project_id,text,stage,color,reason,exploration,explored_at,position,created_at,updated_at';
 
+/* ── auth ─────────────────────────────────────────────────────────── */
 export async function session() {
   const db = await client();
   const { data } = await db.auth.getSession();
@@ -44,7 +45,7 @@ export async function session() {
 
 export async function onAuthChange(fn) {
   const db = await client();
-  db.auth.onAuthStateChange((_event, s) => fn(s));
+  db.auth.onAuthStateChange((_e, s) => fn(s));
 }
 
 export async function signIn(email, password) {
@@ -67,26 +68,72 @@ export async function signOut() {
   await db.auth.signOut();
 }
 
-export async function listIdeas() {
+/* ── projects: one row is one funnel ──────────────────────────────── */
+export async function listProjects() {
   const db = await client();
-  const { data, error } = await db.from('vi_ideas').select(FIELDS).order('created_at', { ascending: false });
+  const { data, error } = await db.from('vi_projects').select(P).order('updated_at', { ascending: false });
   if (error) throw error;
   return data;
 }
 
-export async function addIdea(text) {
+export async function createProject(title = 'untitled funnel') {
+  const db = await client();
+  const s = await session();
+  const { data, error } = await db.from('vi_projects')
+    .insert({ user_id: s.user.id, title }).select(P).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateProject(id, patch) {
+  const db = await client();
+  const { data, error } = await db.from('vi_projects')
+    .update(patch).eq('id', id).select(P).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteProject(id) {
+  const db = await client();
+  const { error } = await db.from('vi_projects').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/* ── ideas: one row is one sticky note ────────────────────────────── */
+export async function listIdeas(projectId) {
+  const db = await client();
+  const { data, error } = await db.from('vi_ideas').select(I)
+    .eq('project_id', projectId).order('position', { ascending: true })
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function addIdea(projectId, text, color = 'butter') {
   const db = await client();
   const s = await session();
   const { data, error } = await db.from('vi_ideas')
-    .insert({ user_id: s.user.id, text }).select(FIELDS).single();
+    .insert({ user_id: s.user.id, project_id: projectId, text, color })
+    .select(I).single();
   if (error) throw error;
   return data;
 }
 
-export async function setIdeaDone(id, done) {
+export async function addIdeas(projectId, list, colorFor = () => 'butter') {
+  const db = await client();
+  const s = await session();
+  const rows = list.map((text, i) => ({
+    user_id: s.user.id, project_id: projectId, text, color: colorFor(i),
+  }));
+  const { data, error } = await db.from('vi_ideas').insert(rows).select(I);
+  if (error) throw error;
+  return data;
+}
+
+export async function updateIdea(id, patch) {
   const db = await client();
   const { data, error } = await db.from('vi_ideas')
-    .update({ done }).eq('id', id).select(FIELDS).single();
+    .update(patch).eq('id', id).select(I).single();
   if (error) throw error;
   return data;
 }
