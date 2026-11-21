@@ -39,6 +39,15 @@
       <button id="btn-register" class="ghost" type="button">create account</button>
       <button id="btn-login" class="primary" type="submit">sign in</button>
     </div>
+    <button id="btn-google" type="button" class="google">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <path fill="#4285F4" d="M23 12.2c0-.8-.1-1.6-.2-2.3H12v4.4h6.2c-.3 1.4-1.1 2.6-2.4 3.4v2.8h3.9c2.3-2.1 3.3-5.2 3.3-8.3z"/>
+        <path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-2.8c-1.1.7-2.5 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3C3.4 21.5 7.4 24 12 24z"/>
+        <path fill="#FBBC05" d="M5.4 14.6c-.2-.7-.4-1.4-.4-2.2s.1-1.5.4-2.2v-3H1.4C.5 8.9 0 10.4 0 12s.5 3.1 1.4 4.4l4-2.6z"/>
+        <path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4C17.9 1.2 15.2 0 12 0 7.4 0 3.4 2.5 1.4 6.2l4 3C6.3 6.4 8.9 4.8 12 4.8z"/>
+      </svg>
+      continue with Google
+    </button>
     <p class="gate-fine">one account for the whole suite — it works in vn too.</p>
   </form>
 </section>
@@ -199,6 +208,7 @@
             placeholder="customer: …&#10;problem: …&#10;size: …&#10;proves it: …"></textarea>
           <div class="panel-foot">
             <span id="explore-msg" class="msg"></span>
+            <button id="explore-search" class="ghost" type="button" title="find a fact with a source">find facts</button>
             <button id="explore-ai" class="ghost" type="button">explore with AI</button>
             <button id="explore-save" class="primary" type="button">save</button>
           </div>
@@ -269,6 +279,17 @@
   <input id="ai-key" type="password" spellcheck="false" placeholder="sk-…">
   <label for="ai-model">model</label>
   <input id="ai-model" type="text" spellcheck="false" placeholder="gpt-4o-mini">
+
+  <p class="dialog-sep">evidence — optional, used by “find facts”</p>
+  <label for="search-provider">search</label>
+  <select id="search-provider">
+    <option value="">none</option>
+    <option value="tavily">Tavily</option>
+    <option value="serper">Serper</option>
+  </select>
+  <label for="search-key">search key</label>
+  <input id="search-key" type="password" spellcheck="false" placeholder="tvly-… or a Serper key">
+
   <p id="ai-msg" class="share-msg" aria-live="polite"></p>
   <div class="confirm-row">
     <button id="ai-forget" class="ghost" type="button">forget the key</button>

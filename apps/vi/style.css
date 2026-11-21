@@ -25,15 +25,28 @@
   --round: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
+/* Dark is a chalkboard, not a blackout: the ink flips to cream so every outline
+ * and number still reads, the nodes keep their colour, and the shadows stay
+ * black so the buttons still sit on the page. */
 [data-theme='dark'] {
-  --ink-line: #0c0a08;
-  --paper-page: #17141a;
-  --c-ctx: #4a3f2c;
-  --c-ide: #7a5a12;
-  --c-exp: #1f5a46;
-  --c-sel: #7a3520;
-  --c-sim: #3f3468;
-  --c-park: #2a2520;
+  --ink-line: #efe3c7;
+  --paper-page: #141110;
+  --paper: #201b17;
+  --paper-2: #282219;
+  --paper-3: #322a20;
+  --ink: #f6eddc;
+  --ink-2: #d3c4a9;
+  --line: #4c4133;
+  --line-strong: #75674f;
+  --c-ctx: #6d5a36;
+  --c-ide: #b07f14;
+  --c-exp: #2f6d55;
+  --c-sel: #ac4d2b;
+  --c-sim: #5b4b99;
+  --c-park: #241f19;
+  --mark: #ff9d2e;
+  --comic-shadow: 4px 4px 0 #090706;
+  --comic-shadow-lg: 8px 8px 0 #090706;
 }
 
 /* ── frame ────────────────────────────────────────────────────────── */
@@ -72,7 +85,7 @@ body { font-family: var(--round); background: var(--paper-page); }
 .projects {
   border-right: 3px solid var(--ink-line);
   background:
-    radial-gradient(var(--ink-line) 0.9px, transparent 1px) 0 0 / 9px 9px,
+    radial-gradient(color-mix(in srgb, var(--ink-line) 34%, transparent) 0.9px, transparent 1px) 0 0 / 9px 9px,
     var(--c-park);
   background-blend-mode: multiply;
   display: flex; flex-direction: column; min-height: 0;
@@ -377,6 +390,42 @@ body { font-family: var(--round); background: var(--paper-page); }
 .chosen p { margin: 0; font-size: 0.8rem; color: var(--ink-2); }
 .sim-hints { font-family: var(--display); font-size: 0.9rem; letter-spacing: 0.08em; margin: 0 0 0.3rem; color: var(--ink-2); }
 
+/* ── the balloon: what the model says, before you take it ─────────── */
+.bubble {
+  position: relative;
+  background: var(--paper);
+  border: 3px solid var(--ink-line);
+  border-radius: 14px;
+  padding: 0.6rem 0.8rem 0.55rem;
+  margin: 0.35rem 0 0.85rem;
+  box-shadow: var(--comic-shadow);
+  max-width: 42rem;
+  animation: bubble-in 0.18s ease-out;
+}
+.bubble::before {
+  content: '';
+  position: absolute; top: -0.62rem; left: 1.6rem;
+  width: 1rem; height: 1rem; background: inherit;
+  border-left: 3px solid var(--ink-line); border-top: 3px solid var(--ink-line);
+  transform: rotate(45deg);
+}
+.bubble-text {
+  margin: 0; font-size: 0.86rem; line-height: 1.5; white-space: pre-wrap;
+}
+.bubble-act { display: flex; gap: 0.4rem; margin-top: 0.45rem; flex-wrap: wrap; }
+.bubble-act button { font-size: 0.76rem; padding: 0.2rem 0.55rem; }
+.bubble-src {
+  display: block; margin-top: 0.35rem; font-size: 0.72rem;
+  color: var(--ink-2); text-decoration: underline; text-underline-offset: 2px;
+}
+.bubble-busy .bubble-text::after {
+  content: '…'; animation: dots 1.2s steps(4, end) infinite;
+}
+@keyframes bubble-in { from { transform: translateY(6px) scale(0.98); opacity: 0; } }
+@keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+
+@media (prefers-reduced-motion: reduce) { .bubble { animation: none; } }
+
 /* ── parked drawer ────────────────────────────────────────────────── */
 .parked {
   margin: 0.2rem 0 1rem; border: 3px dashed var(--ink-line);
@@ -425,6 +474,14 @@ body { font-family: var(--round); background: var(--paper-page); }
 .welcome-card p { margin: 0 0 1rem; font-size: 0.87rem; color: var(--ink-2); line-height: 1.55; }
 
 /* ── gate ─────────────────────────────────────────────────────────── */
+button.google {
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  margin-top: 0.6rem; width: 100%; padding: 0.45rem;
+  font-size: 0.85rem; font-weight: 700; background: var(--paper);
+  border: 2.5px solid var(--ink-line); box-shadow: 3px 3px 0 var(--ink-line);
+}
+button.google:hover { background: var(--paper-2); }
+
 .gate { min-height: 100dvh; display: grid; place-items: center; padding: 1.5rem; position: relative; }
 .gate-form {
   width: min(23rem, 100%); display: flex; flex-direction: column; gap: 0.4rem;
@@ -468,6 +525,15 @@ body { font-family: var(--round); background: var(--paper-page); }
 .dialog p { font-size: 0.8rem; line-height: 1.5; color: var(--ink-2); }
 .dialog label { display: block; font-size: 0.66rem; font-weight: 800; text-transform: uppercase;
   letter-spacing: 0.09em; color: var(--ink-2); margin: 0.5rem 0 0.15rem; }
+.dialog select {
+  width: 100%; border: 2.5px solid var(--ink-line); border-radius: 5px;
+  background: var(--paper); padding: 0.4rem 0.5rem; font-size: 0.85rem;
+}
+.dialog-sep {
+  margin: 1rem 0 0.2rem; font-family: var(--display); font-size: 0.85rem;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2);
+  border-top: 2px dashed var(--line-strong); padding-top: 0.6rem;
+}
 .dialog input {
   width: 100%; border: 2.5px solid var(--ink-line); border-radius: 5px;
   background: var(--paper); padding: 0.4rem 0.55rem; font-size: 0.85rem; text-align: left;

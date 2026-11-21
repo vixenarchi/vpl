@@ -17,11 +17,14 @@
 <body>
   <main>
     <h1>vpl · api</h1>
-    <p>One door for the suite: <code>POST /chat</code> forwards a model request
-       from our own origin, because model APIs do not send CORS headers.</p>
+    <p>One door for the suite. <code>POST /chat</code> forwards a model request
+       from our own origin, because model APIs do not send CORS headers.
+       <code>POST /search</code> does the same for evidence: Tavily or Serper,
+       one query, a few results with sources.</p>
     <p>The key travels in the request body, is used once, and is never stored
-       or logged. Only the hosts on the allowlist are reachable, and only the
-       apps of this suite may call it.</p>
+       or logged. Only the hosts on the allowlist are reachable, search
+       destinations are fixed per provider, and only the apps of this suite may
+       call either door.</p>
   </main>
 </body>
 </html>

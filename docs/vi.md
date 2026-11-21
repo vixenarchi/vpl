@@ -35,7 +35,7 @@ app would be theatre.
 A funnel is not a list of columns. It is decisions with reasons.
 
 - Leaving Exploration requires: **customer**, **problem**, **rough size**, and
-  at least **one checkable fact** (with a source, once search is wired).
+  at least **one checkable fact**, with its source.
 - Selection requires: **exactly one** chosen idea and **one line why**; every
   other idea is parked with a line why not now.
 - Simulation requires: **three assumptions that could be wrong** and what would
@@ -165,6 +165,18 @@ context. There is no agent loop, no memory, no embedding store. The quality
 lives in the prompts, so they live in one file in the app (`prompts.js`), one
 constant per stage, readable and editable without touching the UI.
 
+**The model speaks in a balloon.** Nothing it writes lands in a field on its
+own: it says something in a speech bubble, and the person presses *use it* or
+*drop*. The balloon is the whole etiquette of the app in one component — the
+model is a colleague with an opinion, not an author with a keyboard.
+
+**Evidence is search, not imagination.** Exploration has a `find facts` button
+that sends one query to `/api/search` (our proxy) and returns two to four real
+results with their sources, which are added to the draft as bracketed facts.
+The key is the person's own, chosen in the same settings dialog: Tavily (1000
+free, no card) or Serper (2500). The rule this enforces: a claim about the
+market needs a source, and an assumption is written as `[assumption]`.
+
 - the key is the person's own, kept in their browser, as in `vn`
 - calls go through the suite's proxy (`/api/chat`, then `api.terg.hr`), because
   model APIs do not send CORS headers
@@ -174,8 +186,9 @@ constant per stage, readable and editable without touching the UI.
 
 1. ~~the screen: projects, four steps, funnel, sticky notes, parked box~~ done (`f7ca5c5`)
 2. the model: formulate context, add ideas, explore, propose, simulate
-3. the search: Tavily or Serper through `/api/search`, results as facts with
-   sources in Exploration; the person brings their own key
+3. ~~the search: Tavily or Serper through `/api/search`, results as facts with
+   sources in Exploration; the person brings their own key~~ done (`/search` on
+   api.terg.hr)
 4. sharing: public link and per-email grants, `vi_shares`
 5. import: parked idea → a note in `vn` through copy-paste markdown, never a
    cross-app write

@@ -168,6 +168,9 @@ fails on a page. So the call leaves from an origin of ours:
   `https://api.terg.hr/chat`. One allowlist of hosts, one allowlist of origins
   (`vn.terg.hr`, `vi.terg.hr`, … and local development). The key travels in the
   body, is used once, and is never stored or logged.
+- **`apps/api/functions/search.js`** — `https://api.terg.hr/search`, the same
+  idea for evidence. The caller names a provider (`tavily` or `serper`), not a
+  URL, so the destination is fixed and there is no host list to drift.
 - **`apps/vn/functions/api/chat.js`** — the same door on the app's own origin,
   which is what a local `./serve` and a single-app deployment use.
 
@@ -228,6 +231,7 @@ VPL_EMAIL=… VPL_PASS=… node mode-check.mjs   # 23 checks
 
 PORT=8100 ./serve vi in another shell, then:
 VI_URL=http://127.0.0.1:8100 node vi-check.mjs   # 20 checks
+VPL_SEARCH_KEY=… node vi-ai.mjs                  # 10 checks (model mocked, search live)
 ```
 
 The suites make their own throwaway accounts and delete them at the end. No

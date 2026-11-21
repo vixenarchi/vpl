@@ -65,6 +65,10 @@ async function boot() {
   $('#gate-theme').onclick = toggleTheme;
   $('#gate-form').addEventListener('submit', (e) => { e.preventDefault(); login(); });
   $('#btn-register').onclick = () => login(true);
+  $('#btn-google').onclick = async () => {
+    try { await db.signInWithGoogle(); }
+    catch (e) { say($('#gate-msg'), e.message || String(e), 'bad'); }
+  };
   $('#btn-theme').onclick = toggleTheme;
   $('#btn-out').onclick = async () => { await db.signOut(); location.reload(); };
 
@@ -122,6 +126,7 @@ async function enter() {
   $('#ctx-formulate').onclick = formulateContext;
   $('#explore-save').onclick = saveExploration;
   $('#explore-ai').onclick = exploreWithAi;
+  $('#explore-search').onclick = searchFacts;
   $('#sim-save').onclick = saveSimulation;
   $('#sim-ai').onclick = simulateWithAi;
   $('#pick-ai').onclick = suggestWithAi;
@@ -279,6 +284,53 @@ function setStage(stage) {
   if (window.innerWidth > 740 && stage !== 'ideation') $(t)?.focus({ preventScroll: true });
 }
 
+/* ── the balloon ──────────────────────────────────────────────────
+ * The model never writes into a field silently. It says something in a balloon,
+ * and the person either takes it or drops it. That is the whole etiquette. */
+function clearBubble(stage) {
+  $$(`.panel[data-stage="${stage}"] .bubble`).forEach((b) => b.remove());
+}
+
+function bubble(stage, { text, label, onUse, links = [], busy = false }) {
+  const panel = $(`.panel[data-stage="${stage}"]`);
+  if (!panel) return null;
+  clearBubble(stage);
+  const b = document.createElement('div');
+  b.className = 'bubble' + (busy ? ' bubble-busy' : '');
+  const p = document.createElement('p');
+  p.className = 'bubble-text';
+  p.textContent = text;
+  b.append(p);
+  links.forEach((l) => {
+    const a = document.createElement('a');
+    a.className = 'bubble-src';
+    a.href = l.url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    let host = '';
+    try { host = new URL(l.url).hostname.replace(/^www\./, ''); } catch {}
+    a.textContent = (l.title || l.url) + (host ? ` — ${host}` : '');
+    b.append(a);
+  });
+  if (label) {
+    const row = document.createElement('div');
+    row.className = 'bubble-act';
+    const use = document.createElement('button');
+    use.type = 'button'; use.className = 'primary'; use.textContent = label;
+    use.onclick = async () => {
+      try { await onUse(text, links); b.remove(); } catch (e) { say($('.msg', panel), e.message, 'bad'); }
+    };
+    const drop = document.createElement('button');
+    drop.type = 'button'; drop.className = 'ghost'; drop.textContent = 'drop';
+    drop.onclick = () => b.remove();
+    row.append(use, drop);
+    b.append(row);
+  }
+  const head = panel.querySelector('.panel-head');
+  head ? head.after(b) : panel.prepend(b);
+  return b;
+}
+
 /* ── context ──────────────────────────────────────────────────────── */
 async function saveContext() {
   const msg = $('#ctx-msg');
@@ -294,12 +346,15 @@ async function formulateContext() {
   const msg = $('#ctx-msg');
   const raw = $('#ctx-text').value.trim();
   if (!raw) return say(msg, 'write a pile of words first, then formulate', 'bad');
-  say(msg, 'thinking…', 'busy');
+  bubble('context', { text: 'reading your notes', busy: true });
   try {
-    const out = await ask(prompts.context(raw));
-    $('#ctx-text').value = out.trim();
-    say(msg, 'a first pass — fix it by hand, then save', 'ok');
-  } catch (e) { say(msg, e.message, 'bad'); }
+    const out = (await ask(prompts.context(raw))).trim();
+    bubble('context', {
+      text: out,
+      label: 'use these sentences',
+      onUse: (t) => { $('#ctx-text').value = t; say(msg, 'fix it by hand, then save', 'ok'); },
+    });
+  } catch (e) { clearBubble('context'); say(msg, e.message, 'bad'); }
 }
 
 /* ── ideation ─────────────────────────────────────────────────────── */
@@ -350,18 +405,24 @@ async function killNote(n) {
 
 async function notesWithAi() {
   const msg = $('#notes-msg');
-  say(msg, 'thinking…', 'busy');
+  bubble('ideation', { text: 'thinking of a few', busy: true });
   try {
     const out = await ask(prompts.ideate(S.project.title, S.project.context,
       working().map((i) => i.text)));
     const lines = out.split('\n').map((l) => l.replace(/^\s*[-*\d.)]+\s*/, '').trim())
       .filter((l) => l.length > 3).slice(0, 8);
     if (!lines.length) throw new Error('the model returned nothing usable');
-    const rows = await db.addIdeas(S.project.id, lines, (i) => COLORS[(total() + i) % COLORS.length]);
-    S.ideas.push(...rows);
-    say(msg, `${rows.length} notes added — delete what does not fit`, 'ok');
-    paintAll();
-  } catch (e) { say(msg, e.message, 'bad'); }
+    bubble('ideation', {
+      text: lines.map((l, i) => `${i + 1}. ${l}`).join('\n'),
+      label: `put ${lines.length} on the wall`,
+      onUse: async () => {
+        const rows = await db.addIdeas(S.project.id, lines, (i) => COLORS[(total() + i) % COLORS.length]);
+        S.ideas.push(...rows);
+        say(msg, `${rows.length} notes added — delete what does not fit`, 'ok');
+        paintAll();
+      },
+    });
+  } catch (e) { clearBubble('ideation'); say(msg, e.message, 'bad'); }
 }
 
 /* ── exploration ──────────────────────────────────────────────────── */
@@ -410,13 +471,19 @@ async function exploreWithAi() {
   const msg = $('#explore-msg');
   const n = S.ideas.find((i) => i.id === S.pick);
   if (!n) return;
-  say(msg, 'thinking…', 'busy');
+  bubble('exploration', { text: 'sketching the business', busy: true });
   try {
-    const out = await ask(prompts.explore(n.text, S.project.context, n.exploration));
-    const ta = $('#explore-text');
-    ta.value = (n.exploration ? n.exploration.trim() + '\n\n' : '') + out.trim();
-    say(msg, 'a first pass — keep what is true, cut the rest, then save', 'ok');
-  } catch (e) { say(msg, e.message, 'bad'); }
+    const out = (await ask(prompts.explore(n.text, S.project.context, n.exploration))).trim();
+    bubble('exploration', {
+      text: out,
+      label: 'use as draft',
+      onUse: (t) => {
+        const ta = $('#explore-text');
+        ta.value = (n.exploration ? n.exploration.trim() + '\n\n' : '') + t;
+        say(msg, 'keep what is true, cut the rest, then save', 'ok');
+      },
+    });
+  } catch (e) { clearBubble('exploration'); say(msg, e.message, 'bad'); }
 }
 
 /* ── selection ────────────────────────────────────────────────────── */
@@ -475,20 +542,23 @@ async function choose(n) {
 async function suggestWithAi() {
   const list = explored().filter((i) => i.stage !== 'parked');
   if (list.length < 2) return say($('#notes-msg'), 'explore at least two ideas first', 'bad');
-  const msg = $('#pick-reason');
-  msg.placeholder = 'thinking…';
+  bubble('selection', { text: 'weighing the two', busy: true });
   try {
     const out = await ask(prompts.select(list));
     const m = out.match(/pick:\s*(.+)/i);
     const w = out.match(/why:\s*(.+)/i);
-    const best = m && list.find((n) => n.text.toLowerCase().includes(m[1].trim().toLowerCase().slice(0, 24)));
-    if (best) { S.pick = best.id; paintSelect(); }
-    msg.value = (w ? w[1] : '').trim().slice(0, 200);
-    msg.placeholder = 'why this one, in one line';
-  } catch (e) {
-    msg.placeholder = 'why this one, in one line';
-    say($('#notes-msg'), e.message, 'bad');
-  }
+    const name = m ? m[1].trim() : '';
+    const best = list.find((n) => n.text.toLowerCase().includes(name.toLowerCase().slice(0, 24)))
+      || list.find((n) => name.toLowerCase().includes(n.text.toLowerCase().slice(0, 20)));
+    bubble('selection', {
+      text: `${name || 'no clear pick'}\n\n${(w ? w[1] : '').trim()}`,
+      label: 'use this reason',
+      onUse: (t) => {
+        $('#pick-reason').value = ((w ? w[1] : '') || t).trim().slice(0, 200);
+        if (best) { S.pick = best.id; paintSelect(); }
+      },
+    });
+  } catch (e) { clearBubble('selection'); say($('#pick-reason'), e.message.slice(0, 90), 'bad'); }
 }
 
 /* ── simulation ───────────────────────────────────────────────────── */
@@ -511,13 +581,19 @@ async function saveSimulation() {
 async function simulateWithAi() {
   const msg = $('#sim-msg');
   const c = chosen();
-  say(msg, 'thinking…', 'busy');
+  bubble('simulation', { text: 'sketching the tests', busy: true });
   try {
-    const out = await ask(prompts.simulate(c, S.project.context, $('#sim-text').value));
-    const ta = $('#sim-text');
-    ta.value = (ta.value.trim() ? ta.value.trim() + '\n\n' : '') + out.trim();
-    say(msg, 'a first pass — cut what you cannot test, then save', 'ok');
-  } catch (e) { say(msg, e.message, 'bad'); }
+    const out = (await ask(prompts.simulate(c, S.project.context, $('#sim-text').value))).trim();
+    bubble('simulation', {
+      text: out,
+      label: 'use as draft',
+      onUse: (t) => {
+        const ta = $('#sim-text');
+        ta.value = (ta.value.trim() ? ta.value.trim() + '\n\n' : '') + t;
+        say(msg, 'cut what you cannot test, then save', 'ok');
+      },
+    });
+  } catch (e) { clearBubble('simulation'); say(msg, e.message, 'bad'); }
 }
 
 /* ── parked box ───────────────────────────────────────────────────── */
@@ -579,6 +655,52 @@ async function swap(n) {
   } catch (e) { console.error(e); }
 }
 
+/* ── evidence: one query, a few results with sources ──────────────── */
+const SEARCH_KEY = 'vpl.search';
+const SHARED_SEARCH = 'https://api.terg.hr/search';
+
+function searchCfg() {
+  try { return JSON.parse(localStorage.getItem(SEARCH_KEY) || '{}'); } catch { return {}; }
+}
+
+async function searchFacts() {
+  const msg = $('#explore-msg');
+  const n = S.ideas.find((i) => i.id === S.pick);
+  if (!n) return;
+  const c = searchCfg();
+  if (!c.key || !c.provider) {
+    openAiDialog();
+    say($('#ai-msg'), 'add a search key below — one per browser', 'bad');
+    return;
+  }
+  const query = [n.text, (S.project.context || '').split(/[·.]/)[0]].filter(Boolean).join(' — ').slice(0, 240);
+  bubble('exploration', { text: `searching: ${query}`, busy: true });
+  const body = JSON.stringify({ provider: c.provider, key: c.key, query, results: 4 });
+  try {
+    let res = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+    if (res.status === 404 || res.status === 405) {
+      res = await fetch(SHARED_SEARCH, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+    }
+    const text = await res.text();
+    let data = null;
+    try { data = JSON.parse(text); } catch {}
+    if (!res.ok) throw new Error((data && (data.error?.message || data.error)) || text.slice(0, 160) || 'search failed');
+    const rows = (data && data.results) || [];
+    if (!rows.length) throw new Error('nothing found for that wording');
+    const lines = rows.map((r) => `— ${(r.snippet || '').replace(/\s+/g, ' ').slice(0, 190)} (${new URL(r.url).hostname})`);
+    bubble('exploration', {
+      text: lines.join('\n'),
+      links: rows.map((r) => ({ title: r.title, url: r.url })),
+      label: 'add as facts',
+      onUse: () => {
+        const ta = $('#explore-text');
+        ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + lines.join('\n') + '\n';
+        say(msg, 'facts with a source — now say what they mean', 'ok');
+      },
+    });
+  } catch (e) { clearBubble('exploration'); say(msg, e.message, 'bad'); }
+}
+
 /* ── the model ────────────────────────────────────────────────────── */
 const SHARED_PROXY = 'https://api.terg.hr/chat';
 const AI_KEY = 'vpl.ai';
@@ -596,12 +718,18 @@ function wireAiDialog() {
     const model = $('#ai-model').value.trim() || 'gpt-4o-mini';
     if (!url || !key) return say($('#ai-msg'), 'both url and key, please', 'bad');
     localStorage.setItem(AI_KEY, JSON.stringify({ url, key, model }));
+    const provider = $('#search-provider').value;
+    const searchKey = $('#search-key').value.trim();
+    if (provider && searchKey) localStorage.setItem(SEARCH_KEY, JSON.stringify({ provider, key: searchKey }));
+    if (!provider || !searchKey) localStorage.removeItem(SEARCH_KEY);
     say($('#ai-msg'), 'saved in this browser', 'ok');
   };
   $('#ai-forget').onclick = () => {
     localStorage.removeItem(AI_KEY);
+    localStorage.removeItem(SEARCH_KEY);
     $('#ai-key').value = '';
-    say($('#ai-msg'), 'key forgotten', 'ok');
+    $('#search-key').value = '';
+    say($('#ai-msg'), 'keys forgotten', 'ok');
   };
 }
 
@@ -610,6 +738,9 @@ function openAiDialog() {
   $('#ai-url').value = c.url || '';
   $('#ai-key').value = c.key || '';
   $('#ai-model').value = c.model || 'gpt-4o-mini';
+  const sc = searchCfg();
+  $('#search-provider').value = sc.provider || '';
+  $('#search-key').value = sc.key || '';
   say($('#ai-msg'), '');
   $('#ai-dialog').showModal();
 }
