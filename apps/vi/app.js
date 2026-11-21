@@ -139,6 +139,9 @@ async function loadProjects() {
     S.projects = [];
   }
   paintProjects();
+  // if the person already opened or made a funnel while this list was on its
+  // way, that choice wins; the welcome screen must not appear over it.
+  if (S.project) return;
   const last = sessionStorage.getItem('vi.project');
   const first = S.projects.find((p) => p.id === last) || S.projects[0];
   if (first) await openProject(first.id);

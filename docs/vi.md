@@ -48,29 +48,47 @@ about.
 ## What the screen is
 
 ```
-┌ bar ──────────────────────────────────────────────── vpl · vi · ideas ┐
+┌ bar ───────────────────────────────────────────────── vpl · vi · idea ┐
 ├ projects (one level) ┬ project ────────────────────────────────────────┤
-│  › Rooftop ERP       │  title  (editable inline)                       │
-│  › Idea funnel       │  (1) Ideate  (2) Explore  (3) Select  (4) Simulate
-│  + new project       │  ────────────────────────────────────────────── │
-│                      │  funnel: counts per stage, clickable bands      │
+│  › Rooftop ERP       │  ROOFTOP ERP           6 ideas · 2 explored     │
+│  › Idea funnel       │                                                │
+│  + new project       │   (0)──(1)──(2)──(3)──(4)      the road         │
+│                      │  context ideate explore select simulate        │
 │                      │  ────────────────────────────────────────────── │
-│                      │  the stage's own surface                        │
-│                      │   1 sticky notes, add, add with AI              │
-│                      │   2 idea cards + exploration text               │
-│                      │   3 choose one + reason, others park            │
-│                      │   4 tests, assumptions, projection              │
+│                      │  funnel bands: name and count, clickable        │
 │                      │  ────────────────────────────────────────────── │
-│                      │  parked (collapsed): cards, restore or swap     │
+│                      │  parked ideas (drawer)                          │
+│                      │  ────────────────────────────────────────────── │
+│                      │  ┌ PANEL 1 · THE WALL ────────────────────┐    │
+│                      │  │ the stage's own surface, comic framed    │    │
+│                      │  └──────────────────────────────────────────┘   │
 └──────────────────────┴─────────────────────────────────────────────────┘
 ```
 
 The left side is a flat list of projects, never a tree: an idea funnel belongs
 to one project, projects do not nest.
 
-The four numbered steps at the top are the story; the funnel graphic under them
-is the picture. Both are navigation. Colour is not the only label — each band
-carries its name and count.
+## The look, and why it is not a dashboard
+
+The first build was correct and lifeless: five small cards in a row, a table of
+colours, a tool that felt like SAP. This is the app where a half-formed idea is
+supposed to feel welcome, so the screen is a **comic page read as a road**:
+
+- five **stops** on a winding dotted line, chunky round buttons with a hard ink
+  shadow that presses down when tapped — Duolingo's grammar, not its mascot
+- ink outlines, offset shadows, slightly tilted bands, a **caption tab** on every
+  panel (`panel 2 · the field`), halftone dots in the corner and behind the
+  project list
+- three typefaces doing three jobs: **Bangers** shouts (captions, stage names,
+  numbers), **Nunito** explains, **Caveat** is the handwriting on a sticky note
+- motion is small and physical: a stop hops when it becomes current and spins a
+  dashed ring, notes land with a slap, the panel is a page, not a card
+
+Two rules survive the costume. Colour is never the only signal — every stop has
+a number, a word and an icon. And the same four stages appear twice: as stops
+(story) and as bands (picture). Both navigate; neither is decoration.
+
+**Never centre typed text.** No centred input, no centred dialog.
 
 ## Stages in detail
 

@@ -4,8 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>vi · vpl</title>
-<meta name="theme-color" content="#faf8f4">
+<meta name="theme-color" content="#fbf6ea">
 <link rel="icon" href="icons/v.svg" type="image/svg+xml">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Caveat:wght@500;700&family=Nunito:wght@400;600;800&display=swap">
 
 <link rel="stylesheet" href="vendor/tokens.css">
 <link rel="stylesheet" href="style.css">
@@ -65,33 +69,64 @@
     </nav>
 
     <main id="funnel" class="funnel" hidden>
-      <!-- title and the road -->
       <div class="proj-title">
         <input id="proj-title" class="title" type="text" placeholder="untitled funnel"
                aria-label="funnel title" autocomplete="off">
         <p id="proj-meta" class="proj-meta muted"></p>
       </div>
 
-      <!-- the story: four steps, plus an optional context -->
-      <ol id="steps" class="steps">
-        <li><button class="step step-ctx" data-stage="context" type="button">
-          <span class="step-n">0</span><span class="step-t">context</span>
-          <span class="step-h">optional</span></button></li>
-        <li><button class="step" data-stage="ideation" type="button">
-          <span class="step-n">1</span><span class="step-t">ideate</span>
-          <span class="step-h">get many</span></button></li>
-        <li><button class="step" data-stage="exploration" type="button">
-          <span class="step-n">2</span><span class="step-t">explore</span>
-          <span class="step-h">make it real</span></button></li>
-        <li><button class="step" data-stage="selection" type="button">
-          <span class="step-n">3</span><span class="step-t">select</span>
-          <span class="step-h">choose one</span></button></li>
-        <li><button class="step" data-stage="simulation" type="button">
-          <span class="step-n">4</span><span class="step-t">simulate</span>
-          <span class="step-h">test it</span></button></li>
-      </ol>
+      <!-- the road: five stops on a winding line -->
+      <nav class="road" aria-label="the road">
+        <svg class="road-line" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M70,180 C185,55 205,55 300,95 C395,135 415,220 510,200 C605,180 640,45 735,80 C820,112 875,190 935,150"
+                fill="none" stroke="currentColor" stroke-width="4"
+                stroke-dasharray="1 10" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+        </svg>
+        <ol class="stops">
+          <li class="stop stop-ctx" style="--x:9%; --y:61%">
+            <button class="step" data-stage="context" type="button" title="context (optional)">
+              <span class="node-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg></span>
+              <span class="step-n">0</span>
+            </button>
+            <span class="stop-t">context</span>
+            <span class="stop-h">optional</span>
+          </li>
+          <li class="stop stop-ide" style="--x:29%; --y:32%">
+            <button class="step" data-stage="ideation" type="button" title="ideate">
+              <span class="node-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.5.4.8 1 .8 1.6V16h5.4v-.5c0-.6.3-1.2.8-1.6A6 6 0 0 0 12 3z"/></svg></span>
+              <span class="step-n">1</span>
+            </button>
+            <span class="stop-t">ideate</span>
+            <span class="stop-h">get many</span>
+          </li>
+          <li class="stop stop-exp" style="--x:51%; --y:67%">
+            <button class="step" data-stage="exploration" type="button" title="explore">
+              <span class="node-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5 21 21"/></svg></span>
+              <span class="step-n">2</span>
+            </button>
+            <span class="stop-t">explore</span>
+            <span class="stop-h">make it real</span>
+          </li>
+          <li class="stop stop-sel" style="--x:72%; --y:27%">
+            <button class="step" data-stage="selection" type="button" title="select one">
+              <span class="node-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 16.9 6.6 19.8l1.1-6.1L3.2 9.4l6.1-.8z"/></svg></span>
+              <span class="step-n">3</span>
+            </button>
+            <span class="stop-t">select</span>
+            <span class="stop-h">choose one</span>
+          </li>
+          <li class="stop stop-sim" style="--x:91%; --y:51%">
+            <button class="step" data-stage="simulation" type="button" title="simulate">
+              <span class="node-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M8 21h8"/></svg></span>
+              <span class="step-n">4</span>
+            </button>
+            <span class="stop-t">simulate</span>
+            <span class="stop-h">test it</span>
+          </li>
+        </ol>
+      </nav>
 
-      <!-- the picture: the same stages as bands. Both navigate. -->
+      <!-- the picture: the same stages as bands of one funnel -->
       <div id="bands" class="bands" role="navigation" aria-label="funnel">
         <button class="band band-1" data-stage="ideation" type="button">
           <span class="band-t">ideate</span><span class="band-n" id="band-ideation">0</span></button>
@@ -103,20 +138,20 @@
           <span class="band-t">simulate</span><span class="band-n" id="band-simulation">0</span></button>
       </div>
 
-      <!-- ── parked ─────────────────────────────────────────────── -->
+      <!-- ── parked drawer ──────────────────────────────────────── -->
       <details id="parked-box" class="parked">
-        <summary><span class="parked-t">parked</span><span id="parked-n" class="parked-n">0</span></summary>
-        <p class="muted">kept, not deleted. restore one, or swap it with the
-          chosen idea.</p>
+        <summary><span class="parked-t">parked ideas</span><span id="parked-n" class="parked-n">0</span></summary>
+        <p>kept, not deleted. restore one, or swap it with the chosen idea.</p>
         <ul id="parked-list" class="parked-list"></ul>
       </details>
 
       <!-- ── stage: context ─────────────────────────────────────── -->
       <section class="panel" data-stage="context" hidden>
+        <span class="caption">panel 0 · setting</span>
         <div class="panel-head">
           <h2>context</h2>
-          <p class="muted">what is true before the first idea: your market, your
-            portfolio, what you can already do. A pile of words is enough.</p>
+          <p>what is true before the first idea: your market, your portfolio,
+            what you can already do. A pile of words is enough.</p>
         </div>
         <textarea id="ctx-text" class="prose" rows="6"
           placeholder="construction · saturated market · capabilities: high-rise, commercial, residential, roofing"></textarea>
@@ -129,9 +164,10 @@
 
       <!-- ── stage: ideation ────────────────────────────────────── -->
       <section class="panel" data-stage="ideation" hidden>
+        <span class="caption">panel 1 · the wall</span>
         <div class="panel-head">
           <h2>ideate</h2>
-          <p class="muted">one line per idea. no judging here — the funnel does
+          <p>one line per idea, on the wall. no judging here — the funnel does
             that later.</p>
         </div>
         <form id="note-form" class="note-form">
@@ -144,17 +180,17 @@
         <p id="notes-none" class="notes-none muted">nothing on the wall yet.</p>
         <div class="panel-foot">
           <span id="notes-msg" class="msg"></span>
-          <button class="ghost next" data-next="exploration" type="button">towards explore →</button>
+          <button class="ghost next" data-next="exploration" type="button">next stop: explore →</button>
         </div>
       </section>
 
       <!-- ── stage: exploration ─────────────────────────────────── -->
       <section class="panel" data-stage="exploration" hidden>
+        <span class="caption">panel 2 · the field</span>
         <div class="panel-head">
           <h2>explore</h2>
-          <p class="muted">pick an idea and turn it into a business: customer,
-            problem, rough size, what would prove it. Facts with a source beat
-            opinions.</p>
+          <p>pick an idea and turn it into a business: customer, problem, rough
+            size, what would prove it. Facts with a source beat opinions.</p>
         </div>
         <div id="explore-pick" class="picks"></div>
         <div id="explore-work" hidden>
@@ -172,10 +208,11 @@
 
       <!-- ── stage: selection ───────────────────────────────────── -->
       <section class="panel" data-stage="selection" hidden>
+        <span class="caption">panel 3 · the choice</span>
         <div class="panel-head">
           <h2>select</h2>
-          <p class="muted">exactly one. the rest are parked, not deleted, and
-            each carries a reason.</p>
+          <p>exactly one. the rest are parked, not deleted, and each carries a
+            reason.</p>
         </div>
         <div id="pick-list" class="pick-list"></div>
         <div class="panel-foot">
@@ -189,13 +226,14 @@
 
       <!-- ── stage: simulation ──────────────────────────────────── -->
       <section class="panel" data-stage="simulation" hidden>
+        <span class="caption">panel 4 · the test</span>
         <div class="panel-head">
           <h2>simulate</h2>
-          <p class="muted">what you will test, what you expect to change, and a
-            projection whose assumptions are written down.</p>
+          <p>what you will test, what you expect to change, and a projection
+            whose assumptions are written down.</p>
         </div>
         <p id="sim-who" class="explore-who"></p>
-        <p class="sim-hints muted">tests · refinement · projection</p>
+        <p class="sim-hints">tests · refinement · projection</p>
         <textarea id="sim-text" class="prose" rows="10"
           placeholder="tests: …&#10;&#10;refinement: …&#10;&#10;projection: … (assumptions in brackets)"></textarea>
         <div class="panel-foot">
@@ -204,16 +242,15 @@
           <button id="sim-save" class="primary" type="button">save</button>
         </div>
       </section>
-
     </main>
 
     <section id="welcome" class="welcome">
       <div class="welcome-card">
         <span class="welcome-mark" aria-hidden="true">v</span>
-        <h2>one funnel, four steps</h2>
-        <p>Make a project, throw ideas at it, explore the ones that hold,
-          choose exactly one, then test it. The funnel in the middle is the
-          picture; the steps are the way.</p>
+        <h2>one funnel, four stops</h2>
+        <p>Make a project, throw ideas at the wall, explore the ones that hold,
+          choose exactly one, then test it. The road is the way; the funnel is
+          the picture.</p>
         <button id="btn-first" class="primary" type="button">start a funnel</button>
       </div>
     </section>
@@ -224,8 +261,8 @@
 <dialog id="ai-dialog" class="dialog">
   <button id="ai-x" class="dialog-x" type="button" aria-label="close">✕</button>
   <h2>the model</h2>
-  <p class="muted">your own key, kept in this browser. nothing is sent
-    anywhere except the endpoint you name, through this app's own origin.</p>
+  <p>your own key, kept in this browser. nothing is sent anywhere except the
+    endpoint you name, through this app's own origin.</p>
   <label for="ai-url">api url</label>
   <input id="ai-url" type="text" spellcheck="false" placeholder="https://api.openai.com/v1">
   <label for="ai-key">api key</label>

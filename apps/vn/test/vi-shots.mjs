@@ -28,7 +28,7 @@ if (await pg.isVisible('#btn-first')) { await pg.click('#btn-first'); }
 else { await pg.click('#btn-new-project'); }
 await pg.waitForTimeout(900);
 await pg.fill('#proj-title', 'Rooftop ERP');
-await pg.click('body');           // blur -> save
+await pg.press('#proj-title', 'Enter');  // blur -> save
 await pg.waitForTimeout(500);
 
 for (const n of notes) {
