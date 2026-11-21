@@ -154,7 +154,7 @@ constant per stage, readable and editable without touching the UI.
 
 ## Roadmap
 
-1. the screen: projects, four steps, funnel, sticky notes, parked box (this)
+1. ~~the screen: projects, four steps, funnel, sticky notes, parked box~~ done (`f7ca5c5`)
 2. the model: formulate context, add ideas, explore, propose, simulate
 3. the search: Tavily or Serper through `/api/search`, results as facts with
    sources in Exploration; the person brings their own key
