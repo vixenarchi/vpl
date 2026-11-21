@@ -213,6 +213,8 @@ tools/stage.sh            "copy the shared look into this app"
 deploy                    publish one app: ./deploy vn | vi | api
 serve  serve.py           local server that refuses to cache
 supabase/migrations/      the schema, and every change since
+docs/start-here.md        a cold start: what this is, where it is written down,
+                          what to run, and what not to break
 docs/specification.md     the 0-architecture this is built against
 docs/build-notes.md       why v2 exists, and what it fixed
 ```
