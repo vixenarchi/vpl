@@ -109,7 +109,9 @@ one address (an email, role `view` or `edit`). This is the second table, and the
 only one justified: a permission is not a property of a note, it is a relation
 between a note and a person.
 
-**vi_projects** and **vi_ideas** — a funnel and its sticky notes. The project
+**vi_projects** and **vi_ideas** — a funnel and its sticky notes.
+**vi_shares** — a link or a person, `view` or `edit`; the database refuses a
+decision by anyone but the owner (`vi_decisions_are_the_owners`). The project
 carries the stage documents (`context`, `exploration`, `simulation`); an idea
 carries `text`, `stage` (ideation, parked, selected), `reason` and its own
 exploration. One chosen idea per project is a partial unique index, so the rule
@@ -247,6 +249,7 @@ VPL_EMAIL=… VPL_PASS=… node mode-check.mjs   # 23 checks
 PORT=8100 ./serve vi in another shell, then:
 VI_URL=http://127.0.0.1:8100 node vi-check.mjs   # 20 checks
 VPL_SEARCH_KEY=… node vi-ai.mjs                  # 14 checks (model mocked, search live)
+VI_URL=http://127.0.0.1:8100 node vi-share.mjs    # 12 checks (link, guest, revoke)
 VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "a project"
                                                  # one real pass through the funnel
 ```

@@ -33,7 +33,7 @@ function loadScript(src) {
   });
 }
 
-const P = 'id,title,context,exploration,simulation,chosen_id,created_at,updated_at';
+const P = 'id,user_id,title,context,exploration,simulation,chosen_id,created_at,updated_at';
 const I = 'id,project_id,text,stage,color,reason,exploration,explored_at,position,created_at,updated_at';
 
 /* ── auth ─────────────────────────────────────────────────────────── */
@@ -151,4 +151,83 @@ export async function deleteIdea(id) {
   const db = await client();
   const { error } = await db.from('vi_ideas').delete().eq('id', id);
   if (error) throw error;
+}
+
+/* ── sharing: one funnel, a link or a person ──────────────────────── */
+const SH = 'id,project_id,owner_id,code,email,role,pending,created_at';
+
+export async function listShares(projectId) {
+  const db = await client();
+  const { data, error } = await db.from('vi_shares').select(SH)
+    .eq('project_id', projectId).order('created_at', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+/* Sixteen characters of randomness that a person can paste; the check
+ * constraint on the table refuses anything shorter. */
+function newCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  return [...bytes].map((b) => b.toString(36).padStart(2, '0')).join('').slice(0, 20);
+}
+
+export async function makeLink(projectId) {
+  const db = await client();
+  const s = await session();
+  const { data, error } = await db.from('vi_shares')
+    .insert({ project_id: projectId, owner_id: s.user.id, code: newCode() })
+    .select(SH).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function revokeShare(id) {
+  const db = await client();
+  const { error } = await db.from('vi_shares').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/* One person, one role. Re-sharing with the same address changes the role
+ * instead of making a second row. */
+export async function shareWith(projectId, email, role = 'view') {
+  const db = await client();
+  const s = await session();
+  const addr = String(email || '').trim().toLowerCase();
+  if (!addr || !addr.includes('@')) throw new Error('that is not an address');
+  // the unique index on email is partial and case-folded, so PostgREST cannot
+  // upsert on it: ask first, then change the role or add the row
+  const { data: had } = await db.from('vi_shares').select(SH)
+    .eq('project_id', projectId).eq('email', addr).maybeSingle();
+  if (had) {
+    const { data, error } = await db.from('vi_shares')
+      .update({ role }).eq('id', had.id).select(SH).single();
+    if (error) throw error;
+    return data;
+  }
+  const { data, error } = await db.from('vi_shares')
+    .insert({ project_id: projectId, owner_id: s.user.id, email: addr, role })
+    .select(SH).single();
+  if (error) throw error;
+  return data;
+}
+
+/* What a public code shows, without an account and without RLS. */
+export async function readShare(code) {
+  const db = await client();
+  const { data, error } = await db.rpc('vi_read_share', { p_code: code });
+  if (error) throw error;
+  return data || [];
+}
+
+/* 'owner' | 'edit' | 'view' | null, asked once when a funnel opens. */
+export async function roleOn(project) {
+  const s = await session();
+  if (!s || !project) return null;
+  if (project.user_id === s.user.id) return 'owner';
+  const db = await client();
+  const { data, error } = await db.rpc('vi_share_role', {
+    project: project.id, viewer_email: (s.user.email || '').toLowerCase(),
+  });
+  if (error) return null;
+  return data || null;
 }

@@ -27,9 +27,19 @@ const S = {
   pick: null,      // idea id being explored
   facts: {},       // idea id → the search results this session saw
   busy: false,
+  role: 'owner',   // owner | edit | view — what this person may do here
+  guest: null,     // a public link: no session, no writes, no rail
 };
 
 /* ── tiny helpers ─────────────────────────────────────────────────── */
+const canWrite = () => S.role === 'owner' || S.role === 'edit';
+const isOwner = () => S.role === 'owner';
+
+async function guard() {
+  if (canWrite()) return true;
+  say($('.msg', $(`.panel[data-stage="${S.stage}"]`) || document.body), 'this funnel is shared read-only', 'bad');
+  return false;
+}
 function say(el, text, state) {
   el.textContent = text || '';
   if (state) el.dataset.state = state;
@@ -77,6 +87,13 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 /* ── gate ─────────────────────────────────────────────────────────── */
 async function boot() {
   lowerField($('#email'));
+  const code = new URLSearchParams(location.search).get('s');
+  if (code) {
+    wireChrome();
+    $('#gate').hidden = true;
+    await enterGuest(code);
+    return;
+  }
   saveTheme(document.documentElement.dataset.theme || 'light');
   $('#gate-theme').onclick = toggleTheme;
   $('#gate-form').addEventListener('submit', (e) => { e.preventDefault(); login(); });
@@ -123,7 +140,13 @@ async function enter() {
   $('#app').hidden = false;
   $('#who').textContent = displayName(S.session);
   $('#who').title = S.session.user.email;
+  wireChrome();
+  await loadProjects();
+}
 
+/* Everything that reacts to a press. Wire it once, for a signed-in person and
+ * for a guest alike — the role, not the wiring, decides what may happen. */
+function wireChrome() {
   $('#btn-ai').onclick = openAiDialog;
   $('#btn-projects').onclick = () => $('#projects').classList.toggle('open');
   $('#btn-new-project').onclick = newProject;
@@ -148,9 +171,9 @@ async function enter() {
   $('#pick-ai').onclick = suggestWithAi;
 
   wireAiDialog();
+  wireShare();
   $('#ai-hint-open').onclick = openAiDialog;
   paintAiHint();
-  await loadProjects();
 }
 
 /* ── projects rail ────────────────────────────────────────────────── */
@@ -188,6 +211,7 @@ function paintProjects() {
 }
 
 async function newProject() {
+  if (!isOwner()) return;
   const p = await db.createProject();
   S.projects.unshift(p);
   await openProject(p.id);
@@ -197,10 +221,40 @@ async function newProject() {
 }
 
 async function removeProject(p) {
+  if (!isOwner()) return;
   if (!confirm(`delete “${p.title}” and everything in it?`)) return;
   await db.deleteProject(p.id);
   if (S.project && S.project.id === p.id) S.project = null;
   await loadProjects();
+}
+
+/* One attribute, one place: CSS hides what this person may not press, and the
+ * painters still add .o-only to the buttons they build themselves. */
+function applyRole() {
+  document.body.dataset.role = S.role;
+  document.body.classList.toggle('guest', !!S.guest);
+  $('#btn-out').hidden = !!S.guest;   // a guest was never signed in
+  // a reader has no model, so the "set a key" hint is not their business
+  const hint = $('#ai-hint');
+  if (hint && S.role === 'view') hint.hidden = true;
+  const banner = $('#guest-banner');
+  if (S.guest) {
+    banner.hidden = false;
+    banner.innerHTML = `<b>shared funnel</b> — you are reading a link. nothing you do here is saved.`;
+    $('#projects').hidden = true;
+    $('#btn-projects').hidden = true;
+  } else {
+    banner.hidden = true;
+    if (S.role === 'view') {
+      banner.hidden = false;
+      banner.innerHTML = `<b>shared with you</b> — you can read this funnel and nothing else.`;
+    } else if (S.role === 'edit') {
+      banner.hidden = false;
+      banner.innerHTML = `<b>shared with you for writing</b> — text, not decisions. choosing and parking stay with the owner.`;
+    }
+  }
+  $('#proj-title').readOnly = S.role !== 'owner';
+  $('#btn-share').hidden = S.role !== 'owner';
 }
 
 function showWelcome() {
@@ -219,6 +273,8 @@ async function openProject(id) {
   $('#ctx-text').value = p.context || '';
   $('#sim-text').value = p.simulation || '';
   paintProjects();
+  S.role = (await db.roleOn(p)) || 'owner';
+  applyRole();
   await loadIdeas();
   setStage(defaultStage());
   $('#projects').classList.remove('open');
@@ -351,6 +407,7 @@ function bubble(stage, { text, label, onUse, links = [], busy = false }) {
 
 /* ── context ──────────────────────────────────────────────────────── */
 async function saveContext() {
+  if (!canWrite()) return;
   const msg = $('#ctx-msg');
   const context = $('#ctx-text').value;
   try {
@@ -361,6 +418,7 @@ async function saveContext() {
 }
 
 async function formulateContext() {
+  if (!canWrite()) return;
   const msg = $('#ctx-msg');
   const raw = $('#ctx-text').value.trim();
   if (!raw) return say(msg, 'write a pile of words first, then formulate', 'bad');
@@ -388,7 +446,7 @@ function paintNotes() {
     li.innerHTML = `<span>${esc(n.text)}</span>
       ${n.stage === 'selected' ? '<span class="note-flag">chosen</span>' : ''}
       <button class="go" type="button" title="explore this one">explore</button>
-      <button class="kill" type="button" title="remove this note">✕</button>`;
+      <button class="kill o-only" type="button" title="remove this note">✕</button>`;
     li.querySelector('.kill').onclick = () => killNote(n);
     li.querySelector('.go').onclick = () => { S.pick = n.id; setStage('exploration'); paintExplore(); };
     ul.append(li);
@@ -397,6 +455,7 @@ function paintNotes() {
 }
 
 async function addNote() {
+  if (!canWrite()) return;
   const input = $('#note-input');
   const text = input.value.trim();
   if (!text) return;
@@ -413,6 +472,7 @@ async function addNote() {
 }
 
 async function killNote(n) {
+  if (!isOwner()) return;
   try {
     await db.deleteIdea(n.id);
     S.ideas = S.ideas.filter((x) => x.id !== n.id);
@@ -422,6 +482,7 @@ async function killNote(n) {
 }
 
 async function notesWithAi() {
+  if (!canWrite()) return;
   const msg = $('#notes-msg');
   bubble('ideation', { text: 'thinking of a few', busy: true });
   try {
@@ -473,6 +534,7 @@ function paintExplore() {
 }
 
 async function saveExploration() {
+  if (!canWrite()) return;
   const msg = $('#explore-msg');
   const n = S.ideas.find((i) => i.id === S.pick);
   if (!n) return;
@@ -486,6 +548,7 @@ async function saveExploration() {
 }
 
 async function exploreWithAi() {
+  if (!canWrite()) return;
   const msg = $('#explore-msg');
   const n = S.ideas.find((i) => i.id === S.pick);
   if (!n) return;
@@ -535,7 +598,7 @@ function paintSelect() {
     c.className = 'pick-card' + (n.stage === 'selected' ? ' on' : '');
     c.innerHTML = `<span class="num">${n.stage === 'selected' ? '✓' : i + 1}</span>
       <div><h3>${esc(n.text)}</h3><p>${esc((n.exploration || '').slice(0, 260))}</p></div>
-      <button type="button" class="${n.stage === 'selected' ? 'ghost' : 'primary'}">${n.stage === 'selected' ? 'chosen' : 'choose'}</button>`;
+      <button type="button" class="${n.stage === 'selected' ? 'ghost' : 'primary'} o-only">${n.stage === 'selected' ? 'chosen' : 'choose'}</button>`;
     c.querySelector('button').onclick = () => choose(n);
     box.append(c);
   });
@@ -550,6 +613,7 @@ function paintSelect() {
 }
 
 async function choose(n) {
+  if (!isOwner()) return;
   const reason = $('#pick-reason').value.trim();
   try {
     const old = chosen();
@@ -612,6 +676,7 @@ function pickOut(out, list) {
 }
 
 async function suggestWithAi() {
+  if (!canWrite()) return;
   const list = explored().filter((i) => i.stage !== 'parked');
   if (list.length < 2) return say($('#notes-msg'), 'explore at least two ideas first', 'bad');
   bubble('selection', { text: 'weighing the two', busy: true });
@@ -638,6 +703,7 @@ function paintSim() {
 }
 
 async function saveSimulation() {
+  if (!canWrite()) return;
   const msg = $('#sim-msg');
   try {
     S.project = await db.updateProject(S.project.id, { simulation: $('#sim-text').value });
@@ -647,6 +713,7 @@ async function saveSimulation() {
 }
 
 async function simulateWithAi() {
+  if (!canWrite()) return;
   const msg = $('#sim-msg');
   const c = chosen();
   bubble('simulation', { text: 'sketching the tests', busy: true });
@@ -679,7 +746,7 @@ function paintParked() {
     const hasChosen = !!chosen();
     li.innerHTML = `<div><div class="t">${esc(n.text)}</div>
         <input class="r" type="text" value="${esc(n.reason)}" placeholder="why not now" aria-label="reason"></div>
-      <div class="acts">
+      <div class="acts o-only">
         <button type="button" class="ghost" data-a="restore">restore</button>
         ${hasChosen ? '<button type="button" class="ghost" data-a="swap">swap</button>' : ''}
       </div>`;
@@ -692,6 +759,7 @@ function paintParked() {
 }
 
 async function setReason(n, reason) {
+  if (!isOwner()) return;
   try {
     const row = await db.updateIdea(n.id, { reason });
     Object.assign(n, row);
@@ -700,6 +768,7 @@ async function setReason(n, reason) {
 }
 
 async function restore(n) {
+  if (!isOwner()) return;
   try {
     const row = await db.updateIdea(n.id, { stage: 'ideation', reason: '' });
     Object.assign(n, row);
@@ -709,6 +778,7 @@ async function restore(n) {
 }
 
 async function swap(n) {
+  if (!isOwner()) return;
   const c = chosen();
   if (!c) return;
   try {
@@ -757,6 +827,7 @@ async function lookupFacts(n, query) {
 }
 
 async function searchFacts() {
+  if (!canWrite()) return;
   const msg = $('#explore-msg');
   const n = S.ideas.find((i) => i.id === S.pick);
   if (!n) return;
@@ -783,6 +854,115 @@ async function searchFacts() {
       },
     });
   } catch (e) { clearBubble('exploration'); say(msg, e.message, 'bad'); }
+}
+
+/* ── sharing ──────────────────────────────────────────────────────── */
+function shareLink(row) {
+  return `${location.origin}${location.pathname}?s=${row.code}`;
+}
+
+async function paintShares() {
+  const ul = $('#share-list');
+  ul.innerHTML = '';
+  if (!S.project) return;
+  const rows = await db.listShares(S.project.id);
+  const link = rows.find((r) => r.code);
+  $('#share-link').value = link ? shareLink(link) : '';
+  $('#share-make').textContent = link ? 'new link' : 'make link';
+  $('#share-copy').disabled = !link;
+  rows.forEach((r) => {
+    const li = document.createElement('li');
+    const who = r.code ? 'anyone with the link' : r.email;
+    li.innerHTML = `<span class="who">${esc(who)}</span>
+      <span class="role">${r.code ? 'read' : r.role}</span>
+      <button class="ghost" type="button">revoke</button>`;
+    li.querySelector('button').onclick = async () => {
+      await db.revokeShare(r.id);
+      say($('#share-msg'), 'revoked', 'ok');
+      paintShares();
+    };
+    ul.append(li);
+  });
+  if (!rows.length) ul.innerHTML = '<li class="muted">not shared with anyone yet.</li>';
+}
+
+function openShare() {
+  if (!isOwner()) return;
+  say($('#share-msg'), '');
+  $('#share-email').value = '';
+  $('#share-link').value = '';
+  paintShares().catch((e) => say($('#share-msg'), e.message, 'bad'));
+  $('#share-dialog').showModal();
+}
+
+function wireShare() {
+  $('#btn-share').onclick = openShare;
+  $('#share-x').onclick = () => $('#share-dialog').close();
+  $('#share-make').onclick = async () => {
+    try {
+      const rows = await db.listShares(S.project.id);
+      const old = rows.find((r) => r.code);
+      if (old) await db.revokeShare(old.id);
+      const row = await db.makeLink(S.project.id);
+      $('#share-link').value = shareLink(row);
+      say($('#share-msg'), 'link ready — copy it, anyone with it can read', 'ok');
+      paintShares();
+    } catch (e) { say($('#share-msg'), e.message, 'bad'); }
+  };
+  $('#share-copy').onclick = async () => {
+    const v = $('#share-link').value;
+    if (!v) return;
+    try {
+      await navigator.clipboard.writeText(v);
+      say($('#share-msg'), 'copied', 'ok');
+    } catch {
+      $('#share-link').select();
+      say($('#share-msg'), 'press ⌘C / Ctrl+C — it is selected', 'ok');
+    }
+  };
+  $('#share-add').onclick = async () => {
+    const email = $('#share-email').value.trim().toLowerCase();
+    if (!email) return say($('#share-msg'), 'an address, please', 'bad');
+    try {
+      await db.shareWith(S.project.id, email, $('#share-role').value);
+      say($('#share-msg'), `shared with ${email}`, 'ok');
+      $('#share-email').value = '';
+      paintShares();
+    } catch (e) { say($('#share-msg'), e.message, 'bad'); }
+  };
+}
+
+/* A public link: the funnel is fetched by its code, no session, no rail, no
+ * writes. It is the same screen with every verb hidden by applyRole(). */
+async function enterGuest(code) {
+  const rows = await db.readShare(code).catch(() => []);
+  if (!rows.length) {
+    $('#gate').hidden = false;
+    return say($('#gate-msg'), 'that link leads nowhere — ask for a fresh one', 'bad');
+  }
+  const p = rows[0];
+  S.guest = code;
+  S.role = 'view';
+  S.project = {
+    id: p.project_id, title: p.title, context: p.context, exploration: p.exploration,
+    simulation: p.simulation, chosen_id: p.chosen_id, user_id: null,
+  };
+  S.ideas = rows.filter((r) => r.idea_id).map((r) => ({
+    id: r.idea_id, text: r.idea_text, stage: r.stage, color: r.color, reason: r.reason,
+    exploration: r.idea_exploration, position: r.position, project_id: p.project_id,
+  }));
+  $('#gate').hidden = true;
+  $('#app').hidden = false;
+  $('#who').textContent = 'guest';
+  $('#who').title = '';
+  $('#welcome').hidden = true;
+  $('#funnel').hidden = false;
+  $('#proj-title').value = p.title;
+  $('#ctx-text').value = p.context || '';
+  $('#sim-text').value = p.simulation || '';
+  applyRole();
+  paintAll();
+  setStage(defaultStage());
 }
 
 /* ── the model ────────────────────────────────────────────────────── */
@@ -890,6 +1070,7 @@ async function ask(messages) {
 
 /* ── title ────────────────────────────────────────────────────────── */
 async function saveTitle() {
+  if (!canWrite()) return;
   const title = $('#proj-title').value.trim() || 'untitled funnel';
   if (S.project.title === title) return;
   try {

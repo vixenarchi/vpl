@@ -211,9 +211,38 @@ market needs a source, and an assumption is written as `[assumption]`.
 3. ~~the search: Tavily or Serper through `/api/search`, results as facts with
    sources in Exploration; the person brings their own key~~ done (`/search` on
    api.terg.hr)
-4. sharing: public link and per-email grants, `vi_shares`
+4. ~~sharing: public link and per-email grants, `vi_shares`~~ done — see
+   *Sharing a funnel* below
 5. import: parked idea → a note in `vn` through copy-paste markdown, never a
    cross-app write
+
+## Sharing a funnel
+
+The unit is the whole funnel, not one stage: the stages only mean something in
+order, and half a funnel is a pile of sentences. Two ways in, both from the share
+button beside the title:
+
+- **a public link** — `vi.terg.hr/?s=<code>`, read-only, no account needed. The
+  rows come from `vi_read_share(code)`, which is handed the code and returns
+  nothing else; there is no listing and no account to make.
+- **one person** — an address and a role. `view` reads everything and touches
+  nothing. `edit` writes text: the context, an exploration, the test plan, a new
+  note on the wall. It cannot decide.
+
+**Decisions stay with the owner.** Choosing, parking, reordering and deleting do
+not move for a guest, and that is not a UI promise: a trigger
+(`vi_decisions_are_the_owners`) raises `23514` if anyone but the owner changes
+`stage`, `reason`, `position` or `chosen_id`. Tried it as a real editor account —
+text saved, parking refused with `only the owner chooses or parks an idea`.
+
+The guest screen is the same screen with the verbs taken out. One attribute on
+`<body>` (`data-role="view" | "edit" | "owner"`) plus two CSS classes decides
+what is pressable, so no painter can forget the rule, and the banner says out
+loud what this person may do.
+
+Parking reasons are the reason not to hand a link out casually: “a feature of the
+quote builder, not a product on its own” is honest, and it is not for everyone.
+A link is a decision, like a choice.
 
 ## Non-goals
 

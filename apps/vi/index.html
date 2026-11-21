@@ -72,7 +72,7 @@
     <nav id="projects" class="projects" aria-label="projects">
       <div class="proj-head">
         <span>projects</span>
-        <button id="btn-new-project" class="icon" type="button" title="new funnel">＋</button>
+        <button id="btn-new-project" class="icon o-only" type="button" title="new funnel">＋</button>
       </div>
       <ul id="proj-list" class="proj-list"></ul>
       <p id="proj-none" class="proj-none muted">no funnels yet. one project is one funnel.</p>
@@ -87,7 +87,9 @@
         <input id="proj-title" class="title" type="text" placeholder="untitled funnel"
                aria-label="funnel title" autocomplete="off">
         <p id="proj-meta" class="proj-meta muted"></p>
+        <button id="btn-share" class="ghost o-only" type="button" title="a link or a person">share</button>
       </div>
+      <p id="guest-banner" class="guest-banner" hidden></p>
 
       <!-- the road: five stops on a winding line -->
       <nav class="road" aria-label="the road">
@@ -171,8 +173,8 @@
           placeholder="Write what you already know, not an example. Who do you sell to, and where? What are you good at that others are not? What is saturated, and what can you build faster than you can sell?"></textarea>
         <div class="panel-foot">
           <span id="ctx-msg" class="msg"></span>
-          <button id="ctx-formulate" class="ghost" type="button">formulate with AI</button>
-          <button id="ctx-save" class="primary" type="button">save</button>
+          <button id="ctx-formulate" class="ghost w-only" type="button">formulate with AI</button>
+          <button id="ctx-save" class="primary w-only" type="button">save</button>
         </div>
       </section>
 
@@ -184,11 +186,11 @@
           <p>one line per idea, on the wall. no judging here — the funnel does
             that later.</p>
         </div>
-        <form id="note-form" class="note-form">
+        <form id="note-form" class="note-form w-only">
           <input id="note-input" type="text" maxlength="160" autocomplete="off"
                  placeholder="one idea, one sticky note" aria-label="new idea">
           <button class="primary" type="submit">add</button>
-          <button id="notes-ai" class="ghost" type="button" title="let the model add a few">add with AI</button>
+          <button id="notes-ai" class="ghost w-only" type="button" title="let the model add a few">add with AI</button>
         </form>
         <ul id="notes" class="notes"></ul>
         <p id="notes-none" class="notes-none muted">nothing on the wall yet.</p>
@@ -213,9 +215,9 @@
             placeholder="customer: …&#10;problem: …&#10;size: …&#10;proves it: …"></textarea>
           <div class="panel-foot">
             <span id="explore-msg" class="msg"></span>
-            <button id="explore-search" class="ghost" type="button" title="find a fact with a source">find facts</button>
-            <button id="explore-ai" class="ghost" type="button">explore with AI</button>
-            <button id="explore-save" class="primary" type="button">save</button>
+            <button id="explore-search" class="ghost w-only" type="button" title="find a fact with a source">find facts</button>
+            <button id="explore-ai" class="ghost w-only" type="button">explore with AI</button>
+            <button id="explore-save" class="primary w-only" type="button">save</button>
           </div>
         </div>
         <p id="explore-none" class="muted">no ideas yet — start at ideate.</p>
@@ -233,7 +235,7 @@
         <div class="panel-foot">
           <label for="pick-reason" class="sr-only">why this one</label>
           <input id="pick-reason" type="text" placeholder="why this one, in one line">
-          <button id="pick-ai" class="ghost" type="button">suggest with AI</button>
+          <button id="pick-ai" class="ghost w-only" type="button">suggest with AI</button>
         </div>
         <p id="pick-none" class="muted">nothing explored yet — explore a few first.</p>
         <div id="chosen" class="chosen" hidden></div>
@@ -253,8 +255,8 @@
           placeholder="tests: …&#10;&#10;refinement: …&#10;&#10;projection: … (assumptions in brackets)"></textarea>
         <div class="panel-foot">
           <span id="sim-msg" class="msg"></span>
-          <button id="sim-ai" class="ghost" type="button">simulate with AI</button>
-          <button id="sim-save" class="primary" type="button">save</button>
+          <button id="sim-ai" class="ghost w-only" type="button">simulate with AI</button>
+          <button id="sim-save" class="primary w-only" type="button">save</button>
         </div>
       </section>
     </main>
@@ -309,5 +311,37 @@
 
 <script src="config.local.js"></script>
 <script type="module" src="app.js"></script>
+</dialog>
+
+<!-- ── sharing: one funnel, a link or a person ─────────────────────── -->
+<dialog id="share-dialog" class="dialog">
+  <button id="share-x" class="dialog-x" type="button" aria-label="close">✕</button>
+  <h2>share this funnel</h2>
+  <p>the whole funnel, in order. a guest who is <b>view</b> reads and touches
+    nothing; <b>edit</b> may write text but never decides — choosing, parking
+    and deleting stay with you.</p>
+
+  <p class="dialog-sep">a public link — anyone with it can read</p>
+  <div class="share-link-row">
+    <input id="share-link" type="text" readonly placeholder="no link yet">
+    <button id="share-make" class="ghost" type="button">make link</button>
+  </div>
+  <button id="share-copy" class="ghost" type="button">copy the link</button>
+
+  <p class="dialog-sep">one person</p>
+  <div class="share-person-row">
+    <input id="share-email" type="text" spellcheck="false" autocapitalize="none"
+           placeholder="name@example.com or a username">
+    <select id="share-role">
+      <option value="view">can read</option>
+      <option value="edit">can write</option>
+    </select>
+    <button id="share-add" class="primary" type="button">share</button>
+  </div>
+
+  <ul id="share-list" class="share-list"></ul>
+  <p id="share-msg" class="share-msg" aria-live="polite"></p>
+</dialog>
+
 </body>
 </html>

@@ -37,7 +37,7 @@ in `vi`.
 ## The rules that are not style choices
 
 1. **One table per app, prefixed.** `vn_notes`, `vn_shares`, `vi_projects`,
-   `vi_ideas`. An app never writes into another app's table. `vpl_prefix_check()`
+   `vi_ideas`, `vi_shares`. An app never writes into another app's table. `vpl_prefix_check()`
    guards the convention.
 2. **Migrations are numbered and re-runnable.** A schema change is a new file in
    `supabase/migrations/`, pushed with
@@ -79,6 +79,7 @@ Playwright lives in `apps/vn/test/node_modules`; run everything from
 ```bash
 VI_URL=http://127.0.0.1:8100 node vi-check.mjs       # funnel, 20 checks
 VPL_SEARCH_KEY=… VI_URL=http://127.0.0.1:8100 node vi-ai.mjs   # balloons, 14 checks
+VI_URL=http://127.0.0.1:8100 node vi-share.mjs       # sharing, 12 checks
 VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "project title"
 ```
 
@@ -141,7 +142,7 @@ project and keeps every answer in `/tmp/model-*.txt`.
 ## What is deliberately missing
 
 - No scores, no kanban, no deadlines, no charts, no drag-and-drop between stages.
-- No sharing in `vi` yet (the `vn` shape is the model to copy: public link + per
-  email grants).
+- No per-stage sharing in `vi`: a funnel is shared whole, `view` or `edit`, and
+  only the owner decides.
 - No central settings app: the shared file is `packages/shell/ai.js`, the keys are
   per browser per address.

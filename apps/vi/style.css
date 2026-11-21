@@ -600,3 +600,44 @@ button.google:hover { background: var(--paper-2); }
   text-decoration: underline; text-underline-offset: 3px;
 }
 .ai-hint .link:focus-visible { outline: 2px solid var(--ink-line); outline-offset: 3px; border-radius: 4px; }
+
+/* ── who is looking ──────────────────────────────────────────────── *
+ * A guest's screen is the same page with the verbs taken out: no accept, no
+ * decide, and for a reader not even the keyboard. The rule is one attribute on
+ * <body>, so no painter can forget it. */
+[data-role='view'] .w-only,
+[data-role='view'] .o-only,
+[data-role='edit'] .o-only { display: none !important; }
+[data-role='view'] textarea,
+[data-role='view'] input:not(#proj-title),
+[data-role='view'] #parked-list .r { pointer-events: none; opacity: .72; }
+
+.guest-banner {
+  margin: .4rem 0 1rem;
+  padding: .6rem .85rem;
+  font-family: var(--round), system-ui, sans-serif;
+  font-size: .93rem;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--c-exp) 30%, transparent);
+  border: 2px solid color-mix(in srgb, var(--ink-line) 55%, transparent);
+  border-radius: 10px;
+}
+.guest-banner b { font-weight: 800; }
+
+.share-link-row, .share-person-row { display: flex; gap: .5rem; align-items: center; }
+.share-link-row input, .share-person-row input { flex: 1 1 auto; min-width: 0; }
+.share-person-row select { flex: 0 0 9.5rem; }
+.share-list { list-style: none; margin: .6rem 0 0; padding: 0; }
+.share-list li {
+  display: flex; gap: .5rem; align-items: center;
+  padding: .4rem 0; border-bottom: 1px dashed color-mix(in srgb, var(--ink-line) 25%, transparent);
+  font-size: .92rem;
+}
+.share-list li:last-child { border-bottom: 0; }
+.share-list .who { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.share-list .role { font-family: var(--hand), cursive; font-size: 1rem; color: var(--ink-2); }
+
+/* A guest has no rail, so the grid must not keep a column for one. Without
+ * this the funnel is squeezed into the left third and the road overlaps. */
+body.guest .body { grid-template-columns: minmax(0, 1fr); }
+body.guest #projects { display: none; }
