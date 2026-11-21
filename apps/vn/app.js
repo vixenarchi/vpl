@@ -2096,25 +2096,46 @@ function aiEndpoint(url) {
  * served over http(s) it asks its own /api/chat (a Pages Function in
  * production, serve.py locally), which goes server to server where CORS does
  * not exist. If that door is not there, it tries the endpoint directly. */
-let proxyKnown = null;
+/* Model endpoints do not send CORS headers, so a browser cannot call them
+ * directly: the request has to leave from our own origin. There are two doors.
+ *
+ *   /api/chat              this app's own Pages Function (and serve.py locally)
+ *   https://api.terg.hr/chat   the suite's shared proxy, for apps that ship no
+ *                              function of their own
+ *
+ * Same origin first, because it is the nearest door; the shared one second, so
+ * a published app still works if its own function is missing. `proxyMode`
+ * remembers which one answered, so the test button can say so out loud and a
+ * CORS wall is never mistaken for a bad key. */
+const SHARED_PROXY = 'https://api.terg.hr/chat';
+let proxyMode = null;   /* 'same' | 'shared' | 'direct' */
 
 async function chatCall({ url, key, model, messages, max_tokens, temperature }) {
-  const sameOrigin = /^https?:$/.test(location.protocol);
-  const body = { url: aiEndpoint(url), key, model, messages, max_tokens, temperature };
+  const target = aiEndpoint(url);
+  const body = JSON.stringify({ url: target, key, model, messages, max_tokens, temperature });
+  const doors = proxyMode === 'shared' ? [SHARED_PROXY, '/api/chat'] : ['/api/chat', SHARED_PROXY];
 
-  if (sameOrigin && proxyKnown !== false) {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const isProxy = res.headers.get('X-Vpl-Proxy') === '1';
-    proxyKnown = isProxy;
-    if (isProxy) return res;
-    /* a static host with no function answers 404/405 here; fall through */
+  for (const door of doors) {
+    let res;
+    try {
+      res = await fetch(door, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      });
+    } catch {
+      continue;   /* no such door (or offline) — try the next one */
+    }
+    if (res.headers.get('X-Vpl-Proxy') === '1') {
+      proxyMode = door === SHARED_PROXY ? 'shared' : 'same';
+      return res;
+    }
   }
 
-  return fetch(aiEndpoint(url), {
+  /* Nothing answered as a proxy. Last resort: the endpoint itself, which only
+   * works for a host that does send CORS headers. */
+  proxyMode = 'direct';
+  return fetch(target, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
     body: JSON.stringify({ model, messages, max_tokens, temperature }),
@@ -2207,7 +2228,9 @@ async function testAiEndpoint() {
     const json = await res.json().catch(() => null);
     const said = json?.choices?.[0]?.message?.content;
     if (!said) return fail('it answered, but not in the chat format this app expects.');
-    const via = proxyKnown === false ? 'directly' : 'through this app';
+    const via = proxyMode === 'direct' ? 'directly'
+      : proxyMode === 'shared' ? 'through api.terg.hr'
+      : 'through this app';
     say(`works — ${model} answered in ${ms} ms ${via}: “${String(said).trim().slice(0, 40)}”`);
   } catch (err) {
     if (err.name === 'AbortError') return fail('no answer in 25 s — wrong url, or the model is slow.');

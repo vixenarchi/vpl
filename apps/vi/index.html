@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vi · vpl</title>
+<meta name="theme-color" content="#faf8f4">
+<link rel="icon" href="icons/v.svg" type="image/svg+xml">
+
+<!-- the shell: palette, type scale, page foundation. Copied into vendor/ by
+     ./stage, so this app ships with its own copy of the shared look. -->
+<link rel="stylesheet" href="vendor/tokens.css">
+<link rel="stylesheet" href="style.css">
+
+<script>
+  /* the saved theme is applied before first paint, same as in vn */
+  try { var t = localStorage.getItem('vpl.theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</head>
+<body>
+
+<section id="gate" class="gate" hidden>
+  <button id="gate-theme" class="corner-theme" type="button" aria-label="light or dark">◐</button>
+  <form id="gate-form" class="gate-form">
+    <div class="gate-brand">
+      <span class="gate-mark" aria-hidden="true">v</span>
+      <h1>vi</h1>
+      <span class="gate-sub">vixen ideas</span>
+    </div>
+    <label for="email">e-mail or username</label>
+    <input id="email" type="text" autocomplete="username" spellcheck="false" placeholder="you@example.com or username">
+    <label for="pass">password</label>
+    <input id="pass" type="password" autocomplete="current-password">
+    <p id="gate-msg" class="gate-msg" aria-live="polite"></p>
+    <div class="confirm-row">
+      <button id="btn-register" class="ghost" type="button">create account</button>
+      <button id="btn-login" class="primary" type="submit">sign in</button>
+    </div>
+    <p class="gate-fine">one account for the whole suite — what you create here works in vn too.</p>
+  </form>
+</section>
+
+<div id="app" class="app" hidden>
+  <header class="bar">
+    <span class="brand-mark" aria-hidden="true">v</span>
+    <span class="brand-word">vi</span>
+    <span class="brand-sub">ideas</span>
+    <span class="grow"></span>
+    <span id="who" class="who"></span>
+    <button id="btn-theme" class="icon" type="button" title="light or dark" aria-label="light or dark">◐</button>
+    <button id="btn-out" class="ghost" type="button" title="sign out">out</button>
+  </header>
+
+  <main class="workspace">
+    <form id="add-form" class="add">
+      <input id="idea" type="text" placeholder="one idea, one line" autocomplete="off"
+             aria-label="new idea" maxlength="240">
+      <button id="add-btn" class="primary" type="submit">add</button>
+    </form>
+
+    <p id="count" class="count muted"></p>
+    <ul id="ideas" class="ideas"></ul>
+    <p id="empty" class="empty muted">nothing here yet. the first line is the hardest.</p>
+  </main>
+</div>
+
+<!-- project url and anon key: git-ignored, copied from config.example.js -->
+<script src="config.local.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

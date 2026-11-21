@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>vpl · api</title>
+  <style>
+    body { margin: 0; min-height: 100dvh; display: grid; place-items: center;
+           font-family: ui-sans-serif, system-ui, sans-serif;
+           background: #faf8f4; color: #1f1d1a; }
+    main { max-width: 34rem; padding: 2rem; }
+    h1 { font-size: 1.1rem; letter-spacing: .02em; }
+    p { color: #55504a; line-height: 1.6; }
+    code { background: #f2eee6; padding: .1rem .3rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>vpl · api</h1>
+    <p>One door for the suite: <code>POST /chat</code> forwards a model request
+       from our own origin, because model APIs do not send CORS headers.</p>
+    <p>The key travels in the request body, is used once, and is never stored
+       or logged. Only the hosts on the allowlist are reachable, and only the
+       apps of this suite may call it.</p>
+  </main>
+</body>
+</html>

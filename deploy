@@ -41,9 +41,9 @@ BRANCH=${BRANCH:-main}
 STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 
+[ -f "$SRC/index.html" ] || { echo "missing apps/$APP/index.html" >&2; exit 1; }
 for f in index.html app.js style.css config.local.js _headers; do
-  [ -f "$SRC/$f" ] || { echo "missing apps/$APP/$f" >&2; exit 1; }
-  cp "$SRC/$f" "$STAGE/"
+  [ -f "$SRC/$f" ] && cp "$SRC/$f" "$STAGE/"
 done
 for d in lib icons vendor functions; do
   [ -d "$SRC/$d" ] && cp -r "$SRC/$d" "$STAGE/"
@@ -81,4 +81,7 @@ EOF
   exit 1
 fi
 
-npx --yes wrangler pages deploy "$STAGE" --project-name "$PROJECT" --branch "$BRANCH"
+# Run from inside the stage: wrangler looks for `functions/` relative to the
+# working directory, not relative to the argument, so deploying from the repo
+# root would silently ship the assets without the function.
+(cd "$STAGE" && npx --yes wrangler pages deploy . --project-name "$PROJECT" --branch "$BRANCH")

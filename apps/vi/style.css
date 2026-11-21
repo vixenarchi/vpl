@@ -1,0 +1,83 @@
+/* vpl · vi — the ideas workspace.
+ *
+ * Palette, type scale and page foundation come from the shell
+ * (packages/shell/tokens.css → vendor/tokens.css). What is here is only what
+ * an ideas list needs: a bar, one input, one list. Deliberately short — the
+ * second app should be able to afford its own small stylesheet.
+ */
+
+/* the bar: the one piece of layout every app in the suite repeats, because it
+ * is three lines of flex and a shared file for it would be ceremony */
+.bar {
+  display: flex; align-items: center; gap: 0.5rem;
+  height: var(--bar-h); padding: 0 0.9rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  position: sticky; top: 0; z-index: 3;
+}
+.grow { flex: 1 1 auto; }
+.app { min-height: 100dvh; }
+.brand-mark {
+  display: grid; place-items: center;
+  width: 1.5rem; height: 1.5rem; border-radius: 5px;
+  background: var(--mark); color: var(--paper);
+  font-weight: 800; font-size: 0.85rem;
+}
+.brand-word { font-weight: 700; letter-spacing: 0.02em; }
+.brand-sub { color: var(--ink-3); font-size: 0.8rem; margin-left: -0.35rem; }
+.who { color: var(--ink-3); font-size: 0.78rem; max-width: 14rem; overflow: hidden;
+       text-overflow: ellipsis; white-space: nowrap; }
+
+.gate { min-height: 100dvh; display: grid; place-items: center; padding: 1.5rem; }
+.gate-form {
+  width: min(23rem, 100%); display: flex; flex-direction: column; gap: 0.4rem;
+  background: var(--paper); border: 1px solid var(--line);
+  border-radius: 14px; padding: 1.5rem 1.4rem;
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.10);
+}
+.gate-brand { display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.6rem; }
+.gate-brand h1 { font-size: 1.15rem; margin: 0; letter-spacing: 0.02em; }
+.gate-sub { color: var(--ink-3); font-size: 0.78rem; }
+.gate-sub::before { content: '·'; margin-right: 0.45rem; }
+.gate-mark {
+  display: grid; place-items: center; width: 1.5rem; height: 1.5rem;
+  border-radius: 5px; background: var(--mark); color: var(--paper);
+  font-weight: 800; font-size: 0.85rem;
+}
+.gate-form label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
+.gate-form input {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--paper-2); padding: 0.5rem 0.6rem; font-size: 0.9rem;
+}
+.gate-msg { margin: 0.1rem 0; font-size: 0.78rem; color: var(--danger); min-height: 1.05rem; }
+.gate-fine { margin: 0.35rem 0 0; font-size: 0.72rem; color: var(--ink-3); line-height: 1.45; }
+.confirm-row { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.35rem; }
+
+.workspace { max-width: 40rem; margin: 0 auto; padding: 1.6rem 1.25rem 4rem; }
+.add { display: flex; gap: 0.5rem; }
+.add input {
+  flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--paper-2); padding: 0.55rem 0.7rem; font-size: 0.95rem;
+}
+.count { margin: 0.9rem 0 0.3rem; font-size: 0.75rem; }
+.ideas { list-style: none; margin: 0; padding: 0; }
+.idea {
+  display: flex; align-items: baseline; gap: 0.6rem;
+  padding: 0.5rem 0.25rem; border-bottom: 1px solid var(--line);
+}
+.idea .text { flex: 1; line-height: 1.5; }
+.idea.done .text { color: var(--ink-3); text-decoration: line-through; }
+.tick {
+  flex: 0 0 auto; width: 1.35rem; height: 1.35rem; padding: 0;
+  display: grid; place-items: center; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--ink-3); font-size: 0.8rem;
+}
+.idea.done .tick { color: var(--tone-shared); border-color: var(--tone-shared); }
+.del {
+  flex: 0 0 auto; border-color: transparent; color: var(--ink-3);
+  padding: 0.1rem 0.35rem; font-size: 0.8rem;
+}
+.del:hover { color: var(--danger); border-color: var(--danger); }
+.empty { font-size: 0.85rem; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
