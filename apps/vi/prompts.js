@@ -36,8 +36,8 @@ export const prompts = {
     { role: 'user', content: 'Six ideas, one per line.' },
   ],
 
-  /* exploration — one idea becomes a business sketch */
-  explore: (idea, context, draft) => [
+  /* exploration — one idea becomes a business sketch, on facts if there are any */
+  explore: (idea, context, draft, facts = []) => [
     { role: 'system', content:
       'You sketch the business behind one idea. Four short sections, each on its own line, ' +
       'plain text, no markdown, no praise.\n' +
@@ -48,10 +48,21 @@ export const prompts = {
       '[1 900 firms] x [15 %] x [200 EUR x 12]; write [assumption] before a guess. ' +
       'Never write a market size without brackets.\n' +
       'proves it: one check this month, with the number that means fail\n' +
-      'Four lines. No preamble, no headings, no closing sentence.' },
+      'Four lines. No preamble, no headings, no closing sentence.\n' +
+      (facts.length
+        ? 'You were given search results. They are the only source of numbers you may use: ' +
+          'a figure that is not in them is written as [assumption], never as fact. ' +
+          'Put the host of the result the figure came from in brackets after it, ' +
+          'like (statista.com).'
+        : 'You have no search results, so every number is a guess: write [assumption] ' +
+          'in front of it and keep the arithmetic visible.') },
     { role: 'user', content:
       `Idea: ${idea}\n` + (context ? `Context: ${context}\n` : '') +
-      (draft ? `Draft so far (improve it, keep what is still true):\n${draft}` : '') },
+      (draft ? `Draft so far (improve it, keep what is still true):\n${draft}\n` : '') +
+      (facts.length
+        ? 'Search results:\n' + facts.map((f, i) =>
+            `${i + 1}. ${f.title || ''} — ${f.snippet || ''} (${f.host || ''})`).join('\n')
+        : '') },
   ],
 
   /* selection — compare, recommend, but the person chooses */

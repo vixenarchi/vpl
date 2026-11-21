@@ -231,7 +231,7 @@ VPL_EMAIL=… VPL_PASS=… node mode-check.mjs   # 23 checks
 
 PORT=8100 ./serve vi in another shell, then:
 VI_URL=http://127.0.0.1:8100 node vi-check.mjs   # 20 checks
-VPL_SEARCH_KEY=… node vi-ai.mjs                  # 11 checks (model mocked, search live)
+VPL_SEARCH_KEY=… node vi-ai.mjs                  # 14 checks (model mocked, search live)
 VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "a project"
                                                  # one real pass through the funnel
 ```

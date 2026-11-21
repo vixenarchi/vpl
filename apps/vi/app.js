@@ -24,6 +24,7 @@ const S = {
   ideas: [],
   stage: 'ideation',
   pick: null,      // idea id being explored
+  facts: {},       // idea id → the search results this session saw
   busy: false,
 };
 
@@ -471,11 +472,31 @@ async function exploreWithAi() {
   const msg = $('#explore-msg');
   const n = S.ideas.find((i) => i.id === S.pick);
   if (!n) return;
-  bubble('exploration', { text: 'sketching the business', busy: true });
+  const hasSearch = !!(searchCfg().key && searchCfg().provider);
+  bubble('exploration', {
+    text: hasSearch ? 'looking for facts first' : 'sketching the business',
+    busy: true,
+  });
   try {
-    const out = (await ask(prompts.explore(n.text, S.project.context, n.exploration))).trim();
+    // Evidence before prose: the model gets real results and may not invent a
+    // figure that is not in them. If search is not configured, it still works —
+    // every number is then an [assumption], which is the honest answer.
+    let facts = [];
+    if (hasSearch) {
+      try {
+        facts = await lookupFacts(n, factQuery(n));
+        bubble('exploration', {
+          text: facts.length ? `${facts.length} sources found, sketching on them` : 'nothing found, sketching on assumptions',
+          busy: true,
+        });
+      } catch (e) {
+        say(msg, `search said: ${e.message.slice(0, 80)} — sketching on assumptions`, 'bad');
+      }
+    }
+    const out = (await ask(prompts.explore(n.text, S.project.context, n.exploration, facts))).trim();
     bubble('exploration', {
       text: out,
+      links: facts.map((f) => ({ title: f.title, url: f.url })),
       label: 'use as draft',
       onUse: (t) => {
         const ta = $('#explore-text');
@@ -693,6 +714,34 @@ function searchCfg() {
   try { return JSON.parse(localStorage.getItem(SEARCH_KEY) || '{}'); } catch { return {}; }
 }
 
+/* One query, two to four results with sources. Returns rows, throws with a
+ * sentence a person can act on. The key travels in the body and is never kept
+ * anywhere but this browser. */
+function factQuery(n) {
+  return [n.text, (S.project.context || '').split(/[·.]/)[0]].filter(Boolean).join(' — ').slice(0, 240);
+}
+
+async function lookupFacts(n, query) {
+  const c = searchCfg();
+  if (!c.key || !c.provider) return [];
+  const body = JSON.stringify({ provider: c.provider, key: c.key, query, results: 4 });
+  let res = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+  if (res.status === 404 || res.status === 405) {
+    res = await fetch(SHARED_SEARCH, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+  }
+  const text = await res.text();
+  let data = null;
+  try { data = JSON.parse(text); } catch {}
+  if (!res.ok) throw new Error((data && (data.error?.message || data.error)) || text.slice(0, 160) || 'search failed');
+  const rows = ((data && data.results) || []).map((r) => {
+    let host = '';
+    try { host = new URL(r.url).hostname.replace(/^www\./, ''); } catch {}
+    return { ...r, host };
+  });
+  S.facts[n.id] = rows;
+  return rows;
+}
+
 async function searchFacts() {
   const msg = $('#explore-msg');
   const n = S.ideas.find((i) => i.id === S.pick);
@@ -703,21 +752,12 @@ async function searchFacts() {
     say($('#ai-msg'), 'add a search key below — one per browser', 'bad');
     return;
   }
-  const query = [n.text, (S.project.context || '').split(/[·.]/)[0]].filter(Boolean).join(' — ').slice(0, 240);
+  const query = factQuery(n);
   bubble('exploration', { text: `searching: ${query}`, busy: true });
-  const body = JSON.stringify({ provider: c.provider, key: c.key, query, results: 4 });
   try {
-    let res = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-    if (res.status === 404 || res.status === 405) {
-      res = await fetch(SHARED_SEARCH, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-    }
-    const text = await res.text();
-    let data = null;
-    try { data = JSON.parse(text); } catch {}
-    if (!res.ok) throw new Error((data && (data.error?.message || data.error)) || text.slice(0, 160) || 'search failed');
-    const rows = (data && data.results) || [];
+    const rows = await lookupFacts(n, query);
     if (!rows.length) throw new Error('nothing found for that wording');
-    const lines = rows.map((r) => `— ${(r.snippet || '').replace(/\s+/g, ' ').slice(0, 190)} (${new URL(r.url).hostname})`);
+    const lines = rows.map((r) => `— ${(r.snippet || '').replace(/\s+/g, ' ').slice(0, 190)} (${r.host})`);
     bubble('exploration', {
       text: lines.join('\n'),
       links: rows.map((r) => ({ title: r.title, url: r.url })),

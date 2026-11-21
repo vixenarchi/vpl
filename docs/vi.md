@@ -183,7 +183,16 @@ The prompt work that came out of this — labels on every line, brackets on ever
 figure, "multiply it out before you answer", a `plain()` belt that strips
 markdown anyway — is what makes the cheap models usable.
 
-**Evidence is search, not imagination.** Exploration has a `find facts` button
+**Evidence comes before prose.** `explore with AI` now searches first: one
+query, two to four results, and those results go into the prompt as the *only*
+numbers the model may use. A figure that is not in them must be written as
+`[assumption]`, and a figure that is gets its host in brackets — “losing 78 % of
+jobs to slow quotes (builderlync.com)”. The sources stay in the balloon as
+clickable links, so the draft is readable and the proof is one click away. With
+no search key the same button still works: every number is then an assumption,
+and the screen says so.
+
+Exploration also has a `find facts` button
 that sends one query to `/api/search` (our proxy) and returns two to four real
 results with their sources, which are added to the draft as bracketed facts.
 The key is the person's own, chosen in the same settings dialog: Tavily (1000

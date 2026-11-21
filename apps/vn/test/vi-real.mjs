@@ -22,9 +22,10 @@ pg.on('pageerror', (e) => console.log('E', e.message));
 pg.on('console', (m) => m.type() === 'error' && console.log('C', m.text().slice(0, 120)));
 
 await pg.goto(B, { waitUntil: 'networkidle' });
-await pg.evaluate(([u, k, m]) => {
+await pg.evaluate(([u, k, m, sp, sk]) => {
   localStorage.setItem('vpl.ai', JSON.stringify({ url: u, key: k, model: m }));
-}, [url, key, model]);
+  if (sp && sk) localStorage.setItem('vpl.search', JSON.stringify({ provider: sp, key: sk }));
+}, [url, key, model, process.env.VPL_SEARCH_PROVIDER || '', process.env.VPL_SEARCH_KEY || '']);
 await pg.reload({ waitUntil: 'networkidle' });
 await pg.fill('#email', 'vpl-agent@terg.hr');
 await pg.fill('#pass', 'agent-vpl-2026!');

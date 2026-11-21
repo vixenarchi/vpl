@@ -25,7 +25,9 @@ const canned = [
   'customer: roofing firms of 20-80 people in Croatia and Austria\nproblem: quotes live in Excel and nobody knows the margin\nsize: about 1 900 firms, [assumption] 15 % would pay 200 EUR a month\nproves it: five firms hand over one real quote to rebuild',
 ];
 let call = 0;
+const sent = [];
 await pg.route('**/api/chat', async (route) => {
+  try { sent.push(JSON.parse(route.request().postData() || '{}')); } catch {}
   const content = canned[Math.min(call++, canned.length - 1)];
   await route.fulfill({
     status: 200,
@@ -84,7 +86,18 @@ ok((await pg.inputValue('#explore-text')).includes('http') === false && (await p
 
 // ── explore: the model sketches, the person takes it
 await pg.click('#explore-ai');
-await pg.waitForSelector('.panel[data-stage="exploration"] .bubble');
+// the search bubble is already on screen, so wait for the sketch itself
+for (let i = 0; i < 40 && !/customer:/.test(await pg.textContent('.panel[data-stage="exploration"] .bubble-text').catch(() => '')); i++) {
+  await pg.waitForTimeout(500);
+}
+// the model no longer writes from memory: the search happens first and its
+// results travel in the prompt, as the only numbers allowed
+const withFacts = sent.map((b) => (b.messages || []).find((m) => m.role === 'user')?.content || '')
+  .filter((t) => t.includes('Search results:'));
+const asked = withFacts[0] || '';
+ok(withFacts.length >= 1, 'the sketch was handed the search results');
+ok(/\([a-z0-9.-]+\.[a-z]{2,}\)/i.test(asked), 'and a host to cite them by');
+ok((await pg.locator('.panel[data-stage="exploration"] .bubble-src').count()) >= 1, 'the sketch shows its sources');
 ok((await pg.textContent('.panel[data-stage="exploration"] .bubble-text')).includes('customer:'), 'the sketch names a customer');
 await pg.click('.panel[data-stage="exploration"] .bubble-act button.primary');
 await pg.waitForTimeout(300);
