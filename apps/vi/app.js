@@ -10,6 +10,7 @@
  */
 
 import * as db from './lib/db.js';
+import * as ai from './vendor/ai.js';
 import { prompts } from './prompts.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -723,12 +724,9 @@ async function swap(n) {
 }
 
 /* ── evidence: one query, a few results with sources ──────────────── */
-const SEARCH_KEY = 'vpl.search';
 const SHARED_SEARCH = 'https://api.terg.hr/search';
 
-function searchCfg() {
-  try { return JSON.parse(localStorage.getItem(SEARCH_KEY) || '{}'); } catch { return {}; }
-}
+function searchCfg() { return ai.readSearch(); }
 
 /* One query, two to four results with sources. Returns rows, throws with a
  * sentence a person can act on. The key travels in the body and is never kept
@@ -789,31 +787,35 @@ async function searchFacts() {
 
 /* ── the model ────────────────────────────────────────────────────── */
 const SHARED_PROXY = 'https://api.terg.hr/chat';
-const AI_KEY = 'vpl.ai';
 
-function aiCfg() {
-  try { return JSON.parse(localStorage.getItem(AI_KEY) || '{}'); } catch { return {}; }
-}
+function aiCfg() { return ai.readAi(); }
 
 function wireAiDialog() {
   const dlg = $('#ai-dialog');
   $('#ai-x').onclick = () => dlg.close();
+  // the provider list and the url/model dance come from the suite (vendor/ai.js)
+  const form = ai.mountAi({
+    provider: $('#ai-provider'),
+    url: $('#ai-url'),
+    model: $('#ai-model'),
+    models: $('#ai-models'),
+  });
+  $('#search-provider').innerHTML = ai.SEARCH_PROVIDERS
+    .map((p) => `<option value="${p.id}">${p.label}</option>`).join('');
+
   $('#ai-save').onclick = () => {
-    const url = $('#ai-url').value.trim();
-    const key = $('#ai-key').value.trim();
-    const model = $('#ai-model').value.trim() || 'gpt-4o-mini';
+    const { url, model } = form.read();
+    const key = $('#ai-key').value.trim() || aiCfg().key;
     if (!url || !key) return say($('#ai-msg'), 'both url and key, please', 'bad');
-    localStorage.setItem(AI_KEY, JSON.stringify({ url, key, model }));
+    ai.writeAi({ url, key, model: model || 'gpt-4o-mini' });
     const provider = $('#search-provider').value;
     const searchKey = $('#search-key').value.trim();
-    if (provider && searchKey) localStorage.setItem(SEARCH_KEY, JSON.stringify({ provider, key: searchKey }));
-    if (!provider || !searchKey) localStorage.removeItem(SEARCH_KEY);
+    ai.writeSearch({ provider: provider && searchKey ? provider : '', key: provider && searchKey ? searchKey : '' });
     say($('#ai-msg'), 'saved in this browser', 'ok');
     paintAiHint();
   };
   $('#ai-forget').onclick = () => {
-    localStorage.removeItem(AI_KEY);
-    localStorage.removeItem(SEARCH_KEY);
+    ai.forgetKeys();
     $('#ai-key').value = '';
     $('#search-key').value = '';
     say($('#ai-msg'), 'keys forgotten', 'ok');
@@ -830,9 +832,7 @@ function paintAiHint() {
 
 function openAiDialog() {
   const c = aiCfg();
-  $('#ai-url').value = c.url || '';
   $('#ai-key').value = c.key || '';
-  $('#ai-model').value = c.model || 'gpt-4o-mini';
   const sc = searchCfg();
   $('#search-provider').value = sc.provider || '';
   $('#search-key').value = sc.key || '';
@@ -840,16 +840,9 @@ function openAiDialog() {
   $('#ai-dialog').showModal();
 }
 
-/* A base URL or the full one; people paste both. */
-function aiEndpoint(url) {
-  const u = (url || '').trim().replace(/\/+$/, '');
-  if (!u) return '';
-  if (/\/chat\/completions$/.test(u)) return u;
-  // gemini and a few others expose an OpenAI-compatible base ending in /openai
-  if (/\/openai$/.test(u)) return u + '/chat/completions';
-  if (/\/v\d+$/.test(u)) return u + '/chat/completions';
-  return u + '/v1/chat/completions';
-}
+/* The suite's rule for endpoints lives in vendor/ai.js now, so vn and vi cannot
+ * disagree about whether Gemini wants /v1 or not. */
+const aiEndpoint = ai.aiEndpoint;
 
 /* The prompts ask for plain text. Models sometimes answer in markdown anyway,
  * and a draft full of ** and ## is not a draft. This is the belt, the prompt is

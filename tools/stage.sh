@@ -19,7 +19,9 @@ DST="$ROOT/apps/$APP/vendor"
 [ -d "$ROOT/apps/$APP" ] || { echo "no such app: $APP" >&2; exit 2; }
 
 mkdir -p "$DST"
-rm -f "$DST"/*.css 2>/dev/null || true
+# what the shell owns: the look (tokens.css) and the model list (ai.js). Both
+# are copies, so an app keeps working when the rest of the repo is gone.
+rm -f "$DST"/*.css "$DST"/ai.js 2>/dev/null || true
 for f in "$SRC"/*; do
   [ -f "$f" ] || continue
   cp "$f" "$DST/"

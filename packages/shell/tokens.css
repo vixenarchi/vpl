@@ -110,3 +110,19 @@ button.icon {
   border: none; padding: 0.35rem 0.5rem; font-size: 1.05rem; line-height: 1;
   border-radius: var(--radius);
 }
+
+/* ── selects ─────────────────────────────────────────────────────── */
+/* A <select> left alone renders as a small native control next to our wide
+ * inputs, which reads as "unfinished". Same box, same radius, same height;
+ * only the arrow stays native, because a custom one is a dropdown of its own. */
+select {
+  width: 100%;
+  min-height: 2.15rem;
+  padding: .45rem .5rem;
+  border: 1px solid var(--line-strong, var(--line));
+  border-radius: 8px;
+  background: var(--paper, #fff);
+  color: var(--ink, inherit);
+  appearance: auto;
+}
+[data-theme='dark'] select { border-color: var(--line); }

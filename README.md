@@ -82,6 +82,17 @@ come from a CDN (supabase-js, DOMPurify). `./serve` and `./deploy` both run
 app ships with its own copy of the shared look, never with a link back into the
 repo.
 
+`packages/shell/ai.js` is the second shared file, and the answer to "why do vn
+and vi offer different models?". It holds the provider list (url, a few models,
+one line about each), the endpoint rule (`…/openai` gets `/chat/completions`,
+everything else `/v1/…`), and nothing else. Both apps import their own staged
+copy, so they cannot drift, and either still works alone.
+
+Keys are **per address**, deliberately: `vn.terg.hr` and `vi.terg.hr` are two
+origins, so one paste does not cover both and no cookie carries a key to a server
+that has no business seeing it. A shared settings app would need an iframe or an
+account table to get around that, and both cost more than pasting twice.
+
 ## The database
 
 One Supabase project for the suite, one `auth.users`, and a **prefix per app**:
@@ -196,6 +207,8 @@ apps/vi/                  ideas: the same shape, much smaller
 apps/api/                 the shared proxy (one function, one page)
 packages/shell/tokens.css palette, type scale, page foundation — copied into
                           each app's vendor/ by tools/stage.sh
+packages/shell/ai.js      providers, models and the endpoint rule, shared by every
+                          app that talks to a model — same copying, same idea
 tools/stage.sh            "copy the shared look into this app"
 deploy                    publish one app: ./deploy vn | vi | api
 serve  serve.py           local server that refuses to cache

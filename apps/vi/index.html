@@ -168,7 +168,7 @@
             what you can already do. A pile of words is enough.</p>
         </div>
         <textarea id="ctx-text" class="prose" rows="6"
-          placeholder="construction · saturated market · capabilities: high-rise, commercial, residential, roofing"></textarea>
+          placeholder="Write what you already know, not an example. Who do you sell to, and where? What are you good at that others are not? What is saturated, and what can you build faster than you can sell?"></textarea>
         <div class="panel-foot">
           <span id="ctx-msg" class="msg"></span>
           <button id="ctx-formulate" class="ghost" type="button">formulate with AI</button>
@@ -278,12 +278,17 @@
   <h2>the model</h2>
   <p>your own key, kept in this browser. nothing is sent anywhere except the
     endpoint you name, through this app's own origin.</p>
+  <label for="ai-provider">provider</label>
+  <select id="ai-provider"></select>
   <label for="ai-url">api url</label>
-  <input id="ai-url" type="text" spellcheck="false" placeholder="https://api.openai.com/v1">
+  <input id="ai-url" type="text" spellcheck="false" autocapitalize="off"
+         placeholder="https://api.openai.com/v1">
   <label for="ai-key">api key</label>
-  <input id="ai-key" type="password" spellcheck="false" placeholder="sk-…">
+  <input id="ai-key" type="password" spellcheck="false" autocapitalize="off" placeholder="sk-…">
   <label for="ai-model">model</label>
-  <input id="ai-model" type="text" spellcheck="false" placeholder="gpt-4o-mini">
+  <input id="ai-model" type="text" spellcheck="false" autocapitalize="off"
+         list="ai-models" placeholder="gpt-4o-mini">
+  <datalist id="ai-models"></datalist>
 
   <p class="dialog-sep">evidence — optional, used by “find facts”</p>
   <label for="search-provider">search</label>

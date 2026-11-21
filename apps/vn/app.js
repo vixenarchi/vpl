@@ -10,6 +10,7 @@
 import * as db from './lib/supabase.js';
 import { render as renderMd, hint } from './lib/markdown.js';
 import { mdToHtml, htmlToMd, wrapInBox } from './lib/editor.js';
+import * as ai from './vendor/ai.js';
 
 /* ── elements ─────────────────────────────────────────────────────── */
 const $ = (id) => document.getElementById(id);
@@ -28,6 +29,7 @@ const el = {
   setX: $('set-x'), setCancel: $('set-cancel'),
   setNameForm: $('set-name-form'), setName: $('set-name'), setNameHint: $('set-name-hint'),
   setAiUrl: $('set-ai-url'), setAiModel: $('set-ai-model'), setAiKey: $('set-ai-key'),
+  setAiProvider: $('set-ai-provider'),
   setAiSave: $('set-ai-save'), setAiClear: $('set-ai-clear'), setAiMsg: $('set-ai-msg'),
   setAiTest: $('set-ai-test'), setAiEye: $('set-ai-eye'),
   setPass: $('set-pass'), setPassEye: $('set-pass-eye'), btnSetPass: $('btn-set-pass'),
@@ -2095,13 +2097,18 @@ function setAiConfig(next) {
   paintAgent();
 }
 
-/* A base URL or the full one; both are accepted, because people paste both. */
-function aiEndpoint(url) {
-  const u = (url || '').trim().replace(/\/+$/, '');
-  if (!u) return '';
-  if (/\/chat\/completions$/.test(u)) return u;
-  if (/\/v\d+$/.test(u)) return u + '/chat/completions';
-  return u + '/v1/chat/completions';
+/* The suite's rule for endpoints lives in vendor/ai.js, so vn and vi cannot
+ * disagree about whether Gemini wants /v1 or not. */
+const aiEndpoint = ai.aiEndpoint;
+
+// one list of providers for the whole suite, staged from packages/shell/ai.js
+if (el.setAiProvider) {
+  ai.mountAi({
+    provider: el.setAiProvider,
+    url: el.setAiUrl,
+    model: el.setAiModel,
+    models: document.querySelector('#ai-models'),
+  });
 }
 
 /* Model APIs do not send CORS headers, so the browser throws their answer
