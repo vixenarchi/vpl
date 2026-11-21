@@ -50,7 +50,7 @@ cannot be skipped by a client bug.
 
 ## Sharing
 
-Two kinds of grant, one table (`note_shares`), enforced by Postgres:
+Two kinds of grant, one table (`vn_shares`, then named `note_shares`), enforced by Postgres:
 
 | grant | who can open it | can they write |
 |---|---|---|
