@@ -521,3 +521,28 @@ That is why notes load in 120 KB instead of 362 KB.
 
 The rule for anything added later: a component earns its own directory when
 it has its own table and a reason to exist alone. Notes and diagrams both do.
+
+## Where the redirect URL goes: Supabase, never Cloudflare
+
+When Google sign-in "lands on the wrong app", nothing is wrong with Cloudflare
+and nothing is wrong with the button. The OAuth allow-list lives in **Supabase →
+Authentication → URL Configuration**, because Supabase Auth is what finishes the
+round trip. Cloudflare Pages only serves the files; it has no opinion about
+where a login may return to.
+
+For this suite the intended configuration is:
+
+- **Site URL** — `https://vn.terg.hr` (one value, the default landing place)
+- **Redirect URLs** — one entry per app, with the wildcard so query strings work:
+  `https://vn.terg.hr/**`, `https://vi.terg.hr/**`, and for local work
+  `http://127.0.0.1:8099/**` and `http://127.0.0.1:8100/**`
+- **Confirm email** — off, deliberately: the suite has no recovery address habit
+  and a confirmation link is a second place to get stuck
+
+The failure mode is quiet, which is why it reads like a bug in the app: Supabase
+can only redirect to an address on the list, so a round trip from `vi` with only
+`vn` allowed returns to `vn`, already signed in. Add the entry, sign out, sign in
+again from `vi`, and it stays in `vi`.
+
+None of this is a repository change. It is a dashboard step, done once, and it is
+the one step in the whole suite that cannot be code.

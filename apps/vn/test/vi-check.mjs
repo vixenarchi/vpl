@@ -97,9 +97,11 @@ await pg.waitForTimeout(800);
 ok((await pg.textContent('#band-selection')) === '1', 'still exactly one chosen after swap');
 ok((await pg.locator('#parked-list li').count()) === 1, 'and one parked');
 
-// restore
+// restore (the drawer repaints after a swap, so wait for the row itself)
+await ensureOpen();
+await pg.waitForSelector('#parked-list [data-a="restore"]', { timeout: 8000 });
 await pg.locator('#parked-list [data-a="restore"]').first().click();
-ok(await until(async () => (await pg.locator('.note').count()) === 2), 'restore puts the idea back on the wall');
+ok(await until(async () => (await pg.locator('.note').count()) === 2, 8000), 'restore puts the idea back on the wall');
 
 // one selected per project is enforced by the database, not by the UI
 await pg.click('.step[data-stage="ideation"]');

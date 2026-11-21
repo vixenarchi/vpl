@@ -275,11 +275,24 @@ el.btnEye.addEventListener('click', () => {
   el.pass.focus();
 });
 el.btnGoogle.addEventListener('click', () => doAuth('google'));
+if (el.email) lowerField(el.email);
 
 /* Supabase signs in with an address. A bare name is turned into one on a
  * domain that cannot receive mail — deliberately, so it is obvious that the
  * account has no recovery address and no invitations by email. */
 const NAME_DOMAIN = '@vpl.local';
+
+/* Phones capitalise the first letter of a text field and computers do not.
+ * Compared in lower case, shown in lower case; the password is never touched. */
+function lowerField(el) {
+  el.addEventListener('input', () => {
+    const low = el.value.toLowerCase();
+    if (low === el.value) return;
+    const at = el.selectionStart;
+    el.value = low;
+    try { el.setSelectionRange(at, at); } catch {}
+  });
+}
 
 function toAuthEmail(raw) {
   const v = (raw || '').trim().toLowerCase();

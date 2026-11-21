@@ -581,3 +581,22 @@ button.google:hover { background: var(--paper-2); }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* the one hint that explains the balloon, shown only while no key exists */
+.ai-hint {
+  margin: .2rem 0 1rem;
+  padding: .55rem .8rem;
+  font-family: var(--round), system-ui, sans-serif;
+  font-size: .92rem;
+  color: var(--ink-2);
+  background: color-mix(in srgb, var(--c-ide) 26%, transparent);
+  border: 2px dashed color-mix(in srgb, var(--ink-line) 45%, transparent);
+  border-radius: 10px;
+}
+.ai-hint b { font-weight: 800; color: var(--ink); }
+.ai-hint .link {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-weight: 800; color: var(--ink);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.ai-hint .link:focus-visible { outline: 2px solid var(--ink-line); outline-offset: 3px; border-radius: 4px; }

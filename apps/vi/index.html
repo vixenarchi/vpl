@@ -31,6 +31,7 @@
     </div>
     <label for="email">e-mail or username</label>
     <input id="email" type="text" autocomplete="username" spellcheck="false"
+           autocapitalize="none" autocorrect="off"
            placeholder="you@example.com or username">
     <label for="pass">password</label>
     <input id="pass" type="password" autocomplete="current-password">
@@ -78,6 +79,10 @@
     </nav>
 
     <main id="funnel" class="funnel" hidden>
+      <p id="ai-hint" class="ai-hint" hidden>
+        the <b>AI</b> buttons speak in balloons — they need a model key first.
+        <button id="ai-hint-open" class="link" type="button">open settings</button>
+      </p>
       <div class="proj-title">
         <input id="proj-title" class="title" type="text" placeholder="untitled funnel"
                aria-label="funnel title" autocomplete="off">

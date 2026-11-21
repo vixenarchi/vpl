@@ -53,6 +53,19 @@ function displayName(session) {
   return name;
 }
 
+/* Phones capitalise the first letter of a text field and computers do not, so
+ * the same person types two different names. Names and addresses are compared
+ * in lower case — the password is not touched, ever. */
+function lowerField(el) {
+  el.addEventListener('input', () => {
+    const low = el.value.toLowerCase();
+    if (low === el.value) return;
+    const at = el.selectionStart;
+    el.value = low;
+    try { el.setSelectionRange(at, at); } catch {}
+  });
+}
+
 function toAuthEmail(v) {
   const t = v.trim();
   return t.includes('@') ? t.toLowerCase() : t.toLowerCase().replace(/\s+/g, '') + '@vpl.local';
@@ -62,6 +75,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 
 /* ── gate ─────────────────────────────────────────────────────────── */
 async function boot() {
+  lowerField($('#email'));
   saveTheme(document.documentElement.dataset.theme || 'light');
   $('#gate-theme').onclick = toggleTheme;
   $('#gate-form').addEventListener('submit', (e) => { e.preventDefault(); login(); });
@@ -133,6 +147,8 @@ async function enter() {
   $('#pick-ai').onclick = suggestWithAi;
 
   wireAiDialog();
+  $('#ai-hint-open').onclick = openAiDialog;
+  paintAiHint();
   await loadProjects();
 }
 
@@ -793,6 +809,7 @@ function wireAiDialog() {
     if (provider && searchKey) localStorage.setItem(SEARCH_KEY, JSON.stringify({ provider, key: searchKey }));
     if (!provider || !searchKey) localStorage.removeItem(SEARCH_KEY);
     say($('#ai-msg'), 'saved in this browser', 'ok');
+    paintAiHint();
   };
   $('#ai-forget').onclick = () => {
     localStorage.removeItem(AI_KEY);
@@ -800,7 +817,15 @@ function wireAiDialog() {
     $('#ai-key').value = '';
     $('#search-key').value = '';
     say($('#ai-msg'), 'keys forgotten', 'ok');
+    paintAiHint();
   };
+}
+
+/* No key, no balloon: say that out loud instead of letting a click open a
+ * dialog nobody asked for. The hint disappears the moment a key exists. */
+function paintAiHint() {
+  const el = $('#ai-hint');
+  if (el) el.hidden = !!aiCfg().key;
 }
 
 function openAiDialog() {
