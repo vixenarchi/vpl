@@ -35,16 +35,41 @@ No teams, no roles beyond view and edit, no realtime collaboration, no
 attachments, no search index, no framework, no bundler, no build step, no
 service worker, no monthly bill.
 
-## Running it
+## From nothing to running
+
+You need: this repo, **Python 3** (the local server), and a browser. Node 18+
+only for the test suites and for publishing; the apps themselves need nothing.
 
 ```bash
+git clone https://github.com/vixenarchi/vpl && cd vpl
 cd apps/vn
-cp config.example.js config.local.js   # fill in your Supabase url + anon key
+cp config.example.js config.local.js    # two values: the project url and its anon key
 cd ../..
-./serve            # apps/vn on http://localhost:8099, also prints the LAN address
-./serve vi         # the same, for another app
+./serve                                 # http://localhost:8099 (also prints the LAN address)
+./serve vi                              # another app, same project
 ./serve stop
 ```
+
+Getting the two values: create a free project at supabase.com → *Settings →
+API* → **Project URL** and the **anon / public** key. The anon key is public by
+design; RLS is the lock, not the key. Never put the `service_role` key in
+`config.local.js` — `./deploy` refuses to publish if it finds one.
+
+### Building the database
+
+```bash
+npx supabase link --project-ref <your-project-ref>
+npx supabase db push --remote
+```
+
+`supabase/migrations/` builds everything from empty: the tables, the policies,
+the grants, the prefix guard. `20261120000000_vpl_schema.sql` is the whole
+schema as one file; every file after it is one change, applied in order.
+
+In the dashboard, leave **Confirm email off** while you are trying things out:
+an account made with a bare name (`miki` → `miki@vpl.local`) has no mailbox to
+confirm from. Set **Site URL** to your `vn` host and add `https://<app-host>/**`
+to **Redirect URLs**, or Google sign-in lands on localhost.
 
 `serve` runs `serve.py`, which sends `Cache-Control: no-store`. Without it a
 browser silently keeps yesterday's `app.js` and the app looks broken.
@@ -122,8 +147,11 @@ really signed in (it exits 0 when it is not, so the script reads its output),
 and refuses to publish a `service_role` key. A code change ships with
 `./deploy`; a database change ships as a new migration. Nothing else ships.
 
-The custom domain is a CNAME to `<project>.pages.dev`. In Supabase, Site URL and
-the redirect urls must name the same host, or Google sign-in lands on localhost.
+One Pages project per app, named in `deploy` (`vpl` for vn, `vpl-vi`, `vpl-api`);
+override with `PROJECT=… ./deploy vn`. The custom domain is a CNAME to
+`<project>.pages.dev`, added once in the Cloudflare dashboard and once as the
+project's custom domain. In Supabase, Site URL and the redirect urls must name
+the same hosts, or Google sign-in lands on localhost.
 
 ## Talking to a model without CORS
 
@@ -177,7 +205,9 @@ docs/build-notes.md       why v2 exists, and what it fixed
    `./deploy xx`, then add the custom domain.
 5. Add `https://xx.terg.hr` to the origin list in `apps/api/functions/chat.js`
    and to Supabase's redirect urls; add its table to `vpl_delete_my_account()`.
-6. Run `vpl_prefix_check()` — it should still come back empty.
+6. `VPL_EMAIL=… VPL_PASS=… node tools/prefix-check.mjs` — it should print
+   `clean`. It asks the database, through `vpl_prefix_check()`, for any table,
+   function or trigger that has no app prefix.
 
 ## Tests
 

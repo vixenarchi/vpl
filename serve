@@ -26,8 +26,11 @@ case "${1:-start}" in
 esac
 "$DIR/tools/stage.sh" "$APP" >/dev/null
 APP_DIR="$DIR/apps/$APP"
-LOG="/tmp/vpl-serve-$APP.log"
-PIDFILE="/tmp/vpl-serve-$APP.pid"
+# One server per app *and port*: two clones of this repo on one machine are a
+# normal thing (a fresh clone to test the README, for instance) and they must
+# not answer "already running" to each other.
+LOG="/tmp/vpl-serve-$APP-$PORT.log"
+PIDFILE="/tmp/vpl-serve-$APP-$PORT.pid"
 
 
 # Google sign-in comes back to the Supabase project's "Site URL", which on this
@@ -36,8 +39,8 @@ PIDFILE="/tmp/vpl-serve-$APP.pid"
 # the round trip land on the app instead of a refused connection. Drop this
 # listener once the Site URL is the real address.
 OAUTH_PORT="${OAUTH_PORT:-8788}"
-OAUTH_PIDFILE=/tmp/vpl-serve-oauth.pid
-OAUTH_LOG=/tmp/vpl-serve-oauth.log
+OAUTH_PIDFILE=/tmp/vpl-serve-oauth-$PORT.pid
+OAUTH_LOG=/tmp/vpl-serve-oauth-$PORT.log
 
 case "${1:-start}" in
   stop)
