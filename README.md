@@ -1,9 +1,18 @@
 # vpl — vixen productivity light
 
-Notes with chapters, a bin, sharing without accounts, and an assistant.
-One table in one database, one deploy target, no servers, no monthly bill.
+A suite of small, independent apps that share one look and one signed-in person.
 
-Live at **https://vn.terg.hr**
+- **vn** — notes with chapters, a bin, sharing by link or by person, an
+  assistant. At https://vn.terg.hr
+- **vi** — ideas, one line each. At https://vi.terg.hr
+- **api** — the suite's one CORS door to a model endpoint, at
+  https://api.terg.hr
+
+Each app is its own folder, its own Cloudflare Pages project, its own domain,
+and its own tables (`vn_notes`, `vi_ideas`, …). What they share is a palette
+(`packages/shell`), one database, one login. Nothing else.
+
+No servers, no bundler, no build step, no monthly bill.
 
 ## What it is
 
@@ -29,39 +38,57 @@ service worker, no monthly bill.
 ## Running it
 
 ```bash
+cd apps/vn
 cp config.example.js config.local.js   # fill in your Supabase url + anon key
-./serve                                # http://localhost:8099, also prints the LAN address
+cd ../..
+./serve            # apps/vn on http://localhost:8099, also prints the LAN address
+./serve vi         # the same, for another app
 ./serve stop
 ```
 
 `serve` runs `serve.py`, which sends `Cache-Control: no-store`. Without it a
 browser silently keeps yesterday's `app.js` and the app looks broken.
 
-The app is plain files: `index.html`, `app.js`, `style.css`, `lib/*.js`. Nothing
+An app is plain files: `index.html`, `app.js`, `style.css`, `lib/*.js`. Nothing
 is compiled, so what is in the folder is what the browser runs. Two libraries
-come from a CDN (supabase-js, DOMPurify).
+come from a CDN (supabase-js, DOMPurify). `./serve` and `./deploy` both run
+`tools/stage.sh`, which copies `packages/shell` into `apps/<name>/vendor/` — an
+app ships with its own copy of the shared look, never with a link back into the
+repo.
 
 ## The database
 
-Two tables, in `supabase/migrations/`, built from one baseline file with
-numbered changes after it.
+One Supabase project for the suite, one `auth.users`, and a **prefix per app**:
+everything an app owns starts with its name. `vn_` for notes, `vi_` for ideas,
+`va_`/`vg_` when they exist. Renaming a table is cheap now and expensive later,
+so the rule is stated once and checked.
 
-**notes** — `id, user_id, title, body, tags, parent_id, position, is_public,
+**vn_notes** — `id, user_id, title, body, tags, parent_id, position, is_public,
 deleted_at, created_at, updated_at`. The tree is `parent_id` + `position`.
 
-**note_shares** — `id, note_id, owner_id, code, email, role, pending,
+**vn_shares** — `id, note_id, owner_id, code, email, role, pending,
 created_at`. One row is either a public link (a code, no email) or a grant to
 one address (an email, role `view` or `edit`). This is the second table, and the
 only one justified: a permission is not a property of a note, it is a relation
 between a note and a person.
 
+**vi_ideas** — `id, user_id, text, done, created_at, updated_at`. Its own table,
+its own policies, no join to notes.
+
+### The prefix rule, and its guard
+
+`vpl_prefix_check()` lists any table, function or trigger in `public` that does
+not start with `vn_`, `vi_`, `va_`, `vg_` or `vpl_`. Names only, signed-in
+callers only. Since each app shares one project, this is what keeps app A from
+quietly writing into app B's namespace.
+
 What the database enforces, so a client bug cannot:
 
 - **row level security** decides what any query may return;
-- **`share_role(note, email)`** walks up to 64 ancestors and answers `view`,
+- **`vn_share_role(note, email)`** walks up to 64 ancestors and answers `view`,
   `edit` or nothing — a personal grant beats a public link, edit beats view;
 - **a code is a capability, not a grant**: reading a link goes through
-  `read_share(code)`, so a shared note never appears in anyone else's list;
+  `vn_read_share(code)`, so a shared note never appears in anyone else's list;
 - **triggers** cover what RLS cannot see (only the owner may bin or restore);
 - **delete** is granted only where `deleted_at` is not null — a live note
   cannot be dropped in one step, and children move up rather than cascade.
@@ -80,9 +107,15 @@ New changes go beside it as new files; that one is never edited again.
 ## Publishing a change
 
 ```bash
-./deploy --dry-run     # what would go out
-./deploy               # stage + upload to Cloudflare Pages
+./deploy vn --dry-run   # what would go out
+./deploy vn             # stage apps/vn + the shell, upload to Cloudflare Pages
+./deploy vi             # the same for the other app
+./deploy api            # the proxy
 ```
+
+One Pages project per app (`vpl`, `vpl-vi`, `vpl-api`), one custom domain per
+project. Deploying one app never touches another; the free plan's 500 builds a
+month is shared, so `./deploy vn` only ships `vn`.
 
 `deploy` stages only the files a browser needs, checks that `wrangler` is
 really signed in (it exits 0 when it is not, so the script reads its output),
@@ -92,17 +125,26 @@ and refuses to publish a `service_role` key. A code change ships with
 The custom domain is a CNAME to `<project>.pages.dev`. In Supabase, Site URL and
 the redirect urls must name the same host, or Google sign-in lands on localhost.
 
-## The one function
+## Talking to a model without CORS
 
-`functions/api/chat.js` exists because almost every model API answers the
-browser without `Access-Control-Allow-Origin`, and the browser then throws the
-answer away — the same key that works in `curl` fails on a page. Requests go to
-`/api/chat`, which calls the endpoint server to server and returns the answer
-from our own origin. Only `https`, and only hosts on its allowlist. The key is
-never stored or logged there.
+Almost every model API answers the browser without `Access-Control-Allow-Origin`,
+and the browser then throws the answer away — the same key that works in `curl`
+fails on a page. So the call leaves from an origin of ours:
 
-`serve.py` speaks the same route locally, so development and production behave
-alike.
+- **`apps/api/functions/chat.js`** — the suite's shared proxy at
+  `https://api.terg.hr/chat`. One allowlist of hosts, one allowlist of origins
+  (`vn.terg.hr`, `vi.terg.hr`, … and local development). The key travels in the
+  body, is used once, and is never stored or logged.
+- **`apps/vn/functions/api/chat.js`** — the same door on the app's own origin,
+  which is what a local `./serve` and a single-app deployment use.
+
+`app.js` tries its own origin first and falls back to the shared proxy, so an
+app with no function of its own still works. `serve.py` speaks the same route
+locally, so development and production behave alike.
+
+To support another provider, add its host to `ALLOWED` in
+`apps/api/functions/chat.js` (and to `serve.py` for local work), then
+`./deploy api`.
 
 ## Keys
 
@@ -113,22 +155,34 @@ alike.
 ## Layout
 
 ```
-index.html  app.js  style.css     the app
-lib/                              markdown ⇄ html, the editor, the database
-functions/api/chat.js             the CORS door to a model endpoint
-supabase/migrations/              the schema, and every change since
-serve  serve.py                   local server that refuses to cache
-deploy  _headers                  publish, and production's cache rules
-test/                             playwright suites: dnd, sharing, tree, e2e,
-                                  plain, touch, mode
-docs/specification.md             the 0-architecture this is built against
-docs/build-notes.md               why v2 exists, and what it fixed
+apps/vn/                  notes: index.html, app.js, style.css, lib/, test/
+apps/vi/                  ideas: the same shape, much smaller
+apps/api/                 the shared proxy (one function, one page)
+packages/shell/tokens.css palette, type scale, page foundation — copied into
+                          each app's vendor/ by tools/stage.sh
+tools/stage.sh            "copy the shared look into this app"
+deploy                    publish one app: ./deploy vn | vi | api
+serve  serve.py           local server that refuses to cache
+supabase/migrations/      the schema, and every change since
+docs/specification.md     the 0-architecture this is built against
+docs/build-notes.md       why v2 exists, and what it fixed
 ```
+
+### Adding an app
+
+1. `mkdir apps/xx`, copy `apps/vi` as the smallest starting point.
+2. Give it its own `config.local.js` (same project url + anon key).
+3. Every table, function and trigger it owns starts with `xx_`.
+4. `./serve xx`, then `npx wrangler pages project create vpl-xx`, then
+   `./deploy xx`, then add the custom domain.
+5. Add `https://xx.terg.hr` to the origin list in `apps/api/functions/chat.js`
+   and to Supabase's redirect urls; add its table to `vpl_delete_my_account()`.
+6. Run `vpl_prefix_check()` — it should still come back empty.
 
 ## Tests
 
 ```bash
-cd test && npm install
+cd apps/vn/test && npm install
 node tree-check.mjs     # 12 checks
 node dnd-check.mjs      # 24 checks
 node share-check.mjs    # 22 checks
