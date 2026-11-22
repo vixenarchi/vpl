@@ -116,7 +116,6 @@ const shot = async (name, opts = {}, steps = []) => {
 
 await shot('vr-sheet');
 await shot('vr-open', {}, [async (page) => page.locator('#rows tr[data-id]').nth(2).locator('.req-open').click()]);
-await shot('vr-columns', {}, [async (page) => page.click('#btn-columns')]);
 await shot('vr-dark', { colorScheme: 'dark' }, [async (page) => page.click('#btn-theme')]);
 await shot('vr-print', {}, [async (page) => page.emulateMedia({ media: 'print' })]);
 await shot('vr-phone', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 });

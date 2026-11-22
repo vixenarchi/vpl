@@ -122,19 +122,16 @@
 
       <div class="tools">
         <div class="tools-l">
-          <input id="q" type="search" placeholder="find: id, words, source" aria-label="find a row">
+          <input id="q" type="search" placeholder="find a requirement" aria-label="find a requirement">
         </div>
         <div class="tools-r">
           <span id="pager" class="pager"></span>
-          <button id="btn-columns" class="ghost" type="button" aria-pressed="false">all columns</button>
           <button id="btn-glossary" class="ghost" type="button">glossary</button>
           <button id="btn-paste" class="ghost w-only" type="button">paste rows</button>
           <button id="btn-review" class="ghost w-only" type="button">review with AI</button>
           <button id="btn-copy" class="ghost" type="button">copy</button>
         </div>
       </div>
-
-      <p id="gaps" class="gaps" hidden></p>
 
       <table id="sheet" class="sheet">
         <thead>
@@ -143,17 +140,13 @@
             <th class="c-strength sortable" data-sort="strength">how hard</th>
             <th class="c-status sortable" data-sort="status">status</th>
             <th class="c-theme sortable" data-sort="theme">theme</th>
-            <th class="c-extra sortable" data-sort="ref">id</th>
-            <th class="c-extra sortable" data-sort="kind">kind</th>
-            <th class="c-extra">source</th>
-            <th class="c-extra">how we know</th>
             <th class="c-tools"><span class="sr-only">row</span></th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
         <tfoot>
           <tr class="add-row w-only">
-            <td colspan="9">
+            <td colspan="5">
               <span id="add-theme" class="add-theme muted"></span>
               <input id="req-add" type="text" spellcheck="true"
                      placeholder="one testable sentence — then Enter">

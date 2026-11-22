@@ -83,8 +83,11 @@ for (const s of [
   n++;
 }
 ok((await pg.locator('#rows tr[data-id]').count()) === 3, 'three rows are in the sheet');
-const refs = await pg.locator('#rows tr[data-id] .c-req .ref').allTextContents();
-ok(refs.join(',') === 'VR-001,VR-002,VR-003', 'rows are named in order: ' + refs.join(' '));
+const refs = await pg.locator('#rows tr[data-id]').evaluateAll((rows) => rows.map((r) => r.dataset.ref));
+ok(refs.join(',') === 'VR-001,VR-002,VR-003', 'rows are named in order in the database: ' + refs.join(' '));
+const shown = await pg.locator('#rows tr[data-id] .c-req').allTextContents();
+ok(!shown.join(' ').includes('VR-'), 'and no name is shown on the sheet');
+ok(shown.join(' ').includes('The floor shall be raised'), 'the requirement is the sentence');
 ok((await pg.textContent('#proj-meta')).includes('3 rows'), 'the count above the sheet agrees');
 
 // ── strength: one click cycles, the mark and the word change together
@@ -102,34 +105,30 @@ ok(s3.includes('wish') && s3.includes('◇'), 'third row cycled to wish');
 // ── sorting: a heading sorts, a second click turns it round
 await pg.locator('#sheet thead th[data-sort="strength"]').click();
 await pg.waitForTimeout(400);
-let order = await pg.locator('#rows tr[data-id] .c-req .ref').allTextContents();
+let order = await pg.locator('#rows tr[data-id]').evaluateAll((rows) => rows.map((r) => r.dataset.ref));
 ok(order[0] === 'VR-001', 'sorting by how hard follows the document`s order, not the alphabet: ' + order.join(' '));
 await pg.locator('#sheet thead th[data-sort="strength"]').click();
 await pg.waitForTimeout(500);
-order = await pg.locator('#rows tr[data-id] .c-req .ref').allTextContents();
+order = await pg.locator('#rows tr[data-id]').evaluateAll((rows) => rows.map((r) => r.dataset.ref));
 ok(order[0] === 'VR-003', 'and the second click turns it round: ' + order.join(' '));
 await pg.locator('#sheet thead th[data-sort="pos"]').click();
 await pg.waitForTimeout(300);
 
 // ── find
-await pg.fill('#q', 'VR-002');
+await pg.fill('#q', 'shed rain');
 ok(await until(async () => (await pg.locator('#rows tr[data-id]').count()) === 1, 6000),
   'the find box narrows the sheet');
 await pg.fill('#q', '');
 ok(await until(async () => (await pg.locator('#rows tr[data-id]').count()) === 3, 6000), 'and clearing it brings them back');
 
-// ── the gaps
-ok((await pg.textContent('#gaps')).includes('1 must without proof'), 'one must has no proof, and the sheet says so');
-
 // ── the detail opens in place and autosaves
 await pg.locator('#rows tr[data-id]').first().locator('.req-open').click();
 await pg.waitForTimeout(500);
 ok(await pg.locator('tr.detail').isVisible(), 'a row opens into its own detail');
-await pg.fill('#rows tr.detail input[data-field="verification"]', 'lift it by hand and it does not move');
+await pg.fill('#rows tr.detail textarea[data-field="statement"]', 'The floor shall be raised 5 cm above the grass.');
 await pg.waitForTimeout(1400);
-ok((await pg.textContent('#gaps')) !== '' && !(await pg.textContent('#gaps')).includes('1 must without proof'), 'giving it a proof clears the gap');
-await pg.fill('#rows tr.detail textarea[data-field="asis"]', 'a cardboard box');
-await pg.waitForTimeout(1400);
+ok((await pg.locator('#rows tr[data-id]').first().textContent()).includes('above the grass'),
+  'editing the sentence in the detail changes the row');
 
 // ── one attachment per row, and two megabytes is the limit
 const rid = await pg.locator('#rows tr.detail').evaluate((tr) => tr.previousElementSibling.dataset.id);
@@ -150,20 +149,18 @@ await pg.click(`button[data-drop-file="${rid}"]`);
 ok(await until(async () => (await pg.locator(`button[data-open-file="${rid}"]`).count()) === 0, 15000),
   'and an attachment can be taken off again');
 
-// ── all columns
-ok(!(await pg.locator('#sheet thead th.c-extra').first().isVisible()), 'extra columns are off by default');
-await pg.click('#btn-columns');
-await pg.waitForTimeout(300);
-ok(await pg.locator('#sheet thead th.c-extra').first().isVisible(), 'all columns brings them on');
-ok((await pg.locator('#rows tr[data-id] td.c-extra').count()) >= 12, 'and every row fills them');
-await pg.click('#btn-columns');
-await pg.waitForTimeout(200);
+// ── the sheet is a sentence and two words, nothing else
+ok((await pg.locator('#sheet thead th').count()) === 5, 'five headings: requirement, how hard, status, theme, tools');
+ok((await pg.locator('#btn-columns').count()) === 0, 'and no all-columns switch to bring the rest back');
+const detailLabels = await pg.locator('#rows tr.detail label').allTextContents();
+ok(detailLabels.length <= 6, 'the detail is short: ' + detailLabels.length + ' fields');
+ok(!detailLabels.join(' ').toLowerCase().includes('long version'), 'no long version anywhere');
 
 // ── moving a row up
 await pg.locator('#rows tr[data-id]').nth(2).hover();
 await pg.locator('#rows tr[data-id]').nth(2).locator('button[data-move="-1"]').click();
 await pg.waitForTimeout(900);
-const moved = await pg.locator('#rows tr[data-id] .c-req .ref').allTextContents();
+const moved = await pg.locator('#rows tr[data-id]').evaluateAll((rows) => rows.map((r) => r.dataset.ref));
 ok(moved[1] === 'VR-003' && moved[2] === 'VR-002', 'a row moves up by one: ' + moved.join(' '));
 
 // ── the glossary
@@ -181,7 +178,7 @@ await pg.bringToFront();
 await pg.click('#btn-copy');
 const clip = await until(() => pg.evaluate(() => navigator.clipboard.readText()), 6000) || '';
 ok(clip.includes('# vr-check dog house'), 'copy gives a markdown document' + (clip.includes('# vr-check dog house') ? '' : ' — got: ' + JSON.stringify(clip.slice(0, 60))));
-ok(clip.includes('**VR-001**'), 'with the stable names in it');
+ok(!clip.includes('VR-001'), 'and no internal names in the markdown');
 ok(clip.includes('## glossary'), 'and the glossary');
 ok(clip.includes('a dog house for one medium dog'), 'and the brief');
 
@@ -198,10 +195,10 @@ ok((await pg.inputValue('#brief-text')).includes('medium dog'), 'the brief survi
 // ── the keyboard moves a row
 await pg.locator('#rows tr[data-id]').nth(1).locator('.req-open').click();
 await pg.waitForTimeout(400);
-await pg.locator('#rows tr.detail input[data-field="title"]').focus();
+await pg.locator('#rows tr.detail textarea[data-field="statement"]').focus();
 await pg.keyboard.press('Alt+ArrowUp');
 await pg.waitForTimeout(900);
-const kb = await pg.locator('#rows tr[data-id] .c-req .ref').allTextContents();
+const kb = await pg.locator('#rows tr[data-id]').evaluateAll((rows) => rows.map((r) => r.dataset.ref));
 ok(kb[0] === 'VR-003', 'alt+↑ moves the focused row up: ' + kb.join(' '));
 await pg.keyboard.press('Escape').catch(() => {});
 

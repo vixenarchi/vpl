@@ -20,8 +20,8 @@ is wanted but nobody would block on it. "functional" is what the system does,
 a limit nobody chose (a law, a standard, an existing system), "rule" is a
 business rule the software must respect.`;
 
-/* Which rows to send: with 300 rows a single call is a novel, so the app sends
- * the strongest musts and the rows that are incomplete. */
+/* Which rows to send: a document of twenty rows fits in one call, so the sheet
+ * goes whole. The ref is only a handle for the answer — it is never shown. */
 function sheet(rows) {
   return rows.map((r) => [
     r.ref,
@@ -29,7 +29,6 @@ function sheet(rows) {
     r.strength,
     r.theme || '-',
     r.statement || '(no statement)',
-    r.verification ? `proof: ${r.verification}` : 'proof: none',
   ].join(' | ')).join('\n');
 }
 
@@ -40,14 +39,14 @@ export const prompts = {
       { role: 'user', content:
 `${RULES}
 
-Here is the sheet of "${project.title}". Lines are: ref | kind | strength | theme | statement | proof.
+Here is the sheet of "${project.title}". Lines are: ref | kind | strength | theme | statement.
 
 ${sheet(rows)}
 
 Answer with one line per correction, and nothing else:
 ref | field | value | why
 
-field is one of: theme, kind, strength, verification, metric.
+field is one of: statement, kind, strength, theme.
 value is the replacement text, short. why is under twelve words.
 Propose a field only when the current value is wrong or empty. At most 12 lines.
 If a row is compound, propose a shorter statement that keeps one testable claim.

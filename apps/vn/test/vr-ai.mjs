@@ -22,7 +22,7 @@ const ok = (cond, what) => { cond ? pass++ : fail++; console.log(`  ${cond ? 'ok
 
 const REVIEW = [
   'Here is what I would change.',
-  'VR-001 | verification | a two-winter test in the garden | the only proof that matters',
+  'VR-001 | statement | The hut shall keep the rain off the wood. | says what it does, not how',
   'VR-002 | strength | optional | nobody would block on it',
 ].join('\n');
 const DRAFT = [
@@ -107,12 +107,12 @@ await pg.waitForTimeout(1200);
 ok(proxyCalls === 1, 'the call went through the shared proxy');
 ok(await pg.locator('#review-dialog').isVisible(), 'the reading opens as a list');
 ok((await pg.locator('#review-list li').count()) === 2, 'two proposals, one per line');
-ok((await pg.textContent('#review-list')).includes('a two-winter test'), 'the why is kept next to the value');
+ok((await pg.textContent('#review-list')).includes('keep the rain off'), 'the value is kept next to the why');
 
 // before pressing anything, the sheet is untouched
 await pg.click('#review-x');
 await pg.waitForTimeout(300);
-ok(!(await pg.textContent('#rows')).includes('two-winter'), 'closing the dialog changes nothing');
+ok(!(await pg.textContent('#rows')).includes('keep the rain off'), 'closing the dialog changes nothing');
 
 await pg.click('#btn-review');
 await pg.waitForTimeout(1200);
@@ -120,18 +120,16 @@ await pg.locator('#review-list li button[data-use]').first().click();
 await pg.waitForTimeout(1200);
 await pg.click('#review-x');
 await pg.waitForTimeout(300);
-ok((await pg.locator('#rows').textContent()).includes('a two-winter test in the garden'), 'use it writes the row');
-await pg.click('#btn-columns');
-await pg.waitForTimeout(300);
-ok((await pg.locator('#rows').textContent()).includes('the only proof that matters') === false, 'the why is not written anywhere');
-ok((await pg.locator('#rows').textContent()).includes('a two-winter test in the garden'), 'the proof is visible in its column');
+ok((await pg.locator('#rows').textContent()).includes('keep the rain off the wood'), 'use it writes the sentence');
+ok((await pg.locator('#rows').textContent()).includes('says what it does') === false, 'the why is not written anywhere');
 
 await pg.click('#btn-review');
 await pg.waitForTimeout(1200);
 await pg.click('#review-all');
 await pg.waitForTimeout(1400);
-ok(await until(async () => (await pg.textContent('#proj-meta')).includes('optional'), 6000),
-  'use all moved the second row to optional: ' + (await pg.textContent('#proj-meta')));
+const second = pg.locator('#rows tr[data-id]').nth(1).locator('.c-strength .chip-value');
+ok(await until(async () => (await second.textContent()).includes('optional'), 8000),
+  'use all moved the second row to optional: ' + (await second.textContent()).trim());
 
 // ── draft from the brief
 await pg.click('#brief summary');

@@ -50,7 +50,7 @@ await pg.click('#paste-do');
 await pg.waitForTimeout(1400);
 ok((await pg.locator('#rows tr[data-id]').count()) === 5, 'five rows: one typed, four pasted');
 
-const refs = await pg.locator('#rows tr[data-id] .c-req .ref').allTextContents();
+const refs = await pg.locator('#rows tr[data-id]').evaluateAll((rows) => rows.map((r) => r.dataset.ref));
 ok(refs.join(',') === 'VR-001,VR-002,VR-003,VR-004,VR-005', 'names continue instead of restarting: ' + refs.join(' '));
 
 const rows = await pg.locator('#rows tr[data-id]').evaluateAll((trs) => trs.map((tr) => ({

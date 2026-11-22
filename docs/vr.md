@@ -33,14 +33,17 @@ row with a smaller stake.
 
 ## A row
 
-Default columns (what a person with twenty rows sees): **requirement · how hard ·
-status**, and **theme** only when you are standing in *everything* (inside a
-theme the column would only repeat the drawer you came from). The requirement
-cell carries its stable name in small monospace, then the title, then the one
-testable sentence — one line each.
+A row is **a sentence, how hard it is, and where it stands**. That is the whole
+sheet: three columns, plus **theme** only when you are standing in *everything*
+(inside a theme the column would only repeat the drawer you came from). No
+`VR-001` in the display, no title line, no long version, no source, no proof
+column, no "all columns" switch — nothing to bring back.
 
-*all columns* adds **id · kind · source · how we know**, remembered in the
-browser, not in the document.
+The reason is arithmetic, not taste: a document of twenty rows can be read, and
+a document of twenty rows read in one pass does not need names to be referred
+to. The name still exists in the database — the log needs a stable handle, the
+model answers with one, a report will order by it — it is simply never in the
+way.
 
 Twenty rows to a page, `page 1 / 13 · 247 rows`, arrows beside the counter; every
 column heading sorts (how-hard and status sort by the document's own order, not
@@ -82,26 +85,21 @@ on a phone, is the door to the drawer. A row typed into the box at the bottom
 lands in the theme you are standing in, marked by the line above the box — no
 extra click, and no theme picker in the row.
 
-Everything else a row may know lives in the row, opened in place by clicking it:
+Clicking a row opens it in place, and what opens is small:
 
-- `statement` — one testable sentence ("The visit form shall accept entries with
-  no network connection."). The add box writes this one field.
-- `title` — a few words for the sheet.
-- `detail` — the long version.
-- `asis` / `tobe` — what it is today, what it should be. The Excel's
-  "Trenutno/željeno stanje" was the most useful column it had.
-- `horizon` — free text. "short", "2014/15", "Q3 2027" all appear in real
-  sheets; the model may suggest a tidier form, never rewrite it.
-- `source` — who asked, or what forces it.
-- `verification` — how we will know: a test, a review, a demo.
-- `metric`, `target`, `conditions` — for a non-functional row, the number: *what*
-  is measured, the figure it must reach, and under which conditions. "The system
-  shall be fast" is not a requirement; `p95 < 300 ms` under `500 concurrent
-  users` is.
-- `clause` — a law or a standard, down to the clause (GDPR art. 32(1)(a), EN
-  1090-2 §7.3). "GDPR" alone means nothing.
-- `status` — `draft`, `agreed`, `built`, `verified`, `dropped`. Four states and
-  a drop; no workflow, no approvals chain.
+- **the sentence** — one testable claim ("The visit form shall accept entries
+  with no network connection."). The add box writes this one field, and this is
+  the field people come back to correct.
+- **theme · kind · how hard · status** — four words, three of them from the
+  document's own vocabulary.
+- **one attachment** — a photo, a scan, a pdf; up to 2 MB. It is the proof, and
+  it is the only thing here that is not a word.
+
+The table still holds more — a long version from the Excel, today and wanted,
+where it came from, how we will know, the clause, the number for a
+non-functional row. Those columns are not lost; they are simply not in the way,
+and `copy to mine` and the database keep them. If a report is ever wanted, it is
+a report, not a column.
 
 Rows move with the arrows in the row, or `Alt+↑` / `Alt+↓` from inside one.
 
@@ -113,7 +111,9 @@ assigns it on insert (`vr_ref_for`), and a unique index on
 own names in one statement so 271 rows do not fight over the counter.
 
 This is the difference between a sheet you can quote in a meeting and one you
-cannot.
+cannot — and, since the display no longer shows it, the name is now an internal
+handle: the log's stable key, the model's way of answering, a report's order.
+The promise held; the interface just stopped reciting it.
 
 ## The brief and the glossary
 
@@ -210,7 +210,7 @@ The whole document, from the share button beside the title:
   come from `vr_read_share(code)`, which returns the document, its rows and its
   glossary to that code and nothing else.
 - **one person** — an address and a role. `view` reads; `edit` writes text
-  (statements, detail, asis/tobe, theme, source, verification, a new row, a term).
+  (sentences, theme, a new row, an attachment, a term) but not decisions.
 
 **The shape of the document is the owner's.** The name, the strength, the kind,
 the status, the order and deleting do not move for a guest, and that is a
@@ -263,15 +263,16 @@ Importance, kind, name and order stay with the owner.
 
 ## Tests
 
-Five scripts (one is screenshots), 113 checks, all in `apps/vn/test` (Playwright lives there):
+Five scripts (one is screenshots), 114 checks, all in `apps/vn/test` (Playwright lives there):
 
-- `vr-check.mjs` — 53: naming, strength cycling, sorting, find, gaps, detail
-  autosave, one attachment (and the two-megabyte refusal), all columns, moving,
-  `Alt+↑`, the tree (a theme, the quick add going into it, the theme column
-  stepping aside), print media, a phone at 390 px, copy, reload, delete.
+- `vr-check.mjs` — 55: naming (in the database, not on the screen), strength
+  cycling, sorting, find, the sheet's five headings and nothing else, detail
+  autosave, one attachment (and the two-megabyte refusal), moving, `Alt+↑`, the
+  tree (a theme, the quick add going into it, the theme column stepping aside),
+  print media, a phone at 390 px, copy, reload, delete.
 - `vr-paste.mjs` — 11: a T-com shaped header, tabs, commas, quoted commas, names
   continuing, header not becoming a row.
-- `vr-ai.mjs` — 21: the no-key hint, the proxy call, proposals before writing,
+- `vr-ai.mjs` — 20: the no-key hint, the proxy call, proposals before writing,
   `use it` / `use all`, drafting from the brief, glossary suggestions.
 - `vr-share.mjs` — 28: the link read-only, the guest's rail, an editor writing a
   row, the screen refusing a decision, the database refusing it with 23514, an

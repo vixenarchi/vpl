@@ -309,12 +309,8 @@ function listed() {
   const q = S.q.trim().toLowerCase();
   return S.reqs.filter((r) => {
     if (!inTheme(r)) return false;
-    if (S.gap === 'noproof' && r.verification) return false;
-    if (S.gap === 'nonumber' && !(r.kind === 'nonfunctional' && !(r.metric || '').trim())) return false;
-    if (S.gap === 'nostatement' && (r.statement || r.title)) return false;
     if (!q) return true;
-    return [r.ref, r.title, r.statement, r.theme, r.category, r.source, r.verification,
-      r.clause, r.status, r.strength, themePath(r.theme_id)]
+    return [r.statement, r.title, r.theme, themePath(r.theme_id), r.strength, r.status]
       .some((v) => (v || '').toLowerCase().includes(q));
   });
 }
@@ -326,8 +322,6 @@ function sorted(rows) {
     if (f === 'strength') { x = orderOf('importance', a.strength); y = orderOf('importance', b.strength); }
     else if (f === 'status') { x = orderOf('status', a.status); y = orderOf('status', b.status); }
     else if (f === 'theme') { x = themePath(a.theme_id).toLowerCase(); y = themePath(b.theme_id).toLowerCase(); }
-    else if (f === 'ref') { x = a.ref || ''; y = b.ref || ''; }
-    else if (f === 'kind') { x = a.kind || ''; y = b.kind || ''; }
     else { x = a.pos || 0; y = b.pos || 0; }
     if (x === y) return (a.pos || 0) - (b.pos || 0);
     return (x > y ? 1 : -1) * d;
@@ -341,11 +335,9 @@ function paintSheet() {
   if (S.page < 1) S.page = 1;
   const start = (S.page - 1) * S.per;
   $('#rows').innerHTML = rows.slice(start, start + S.per).map(rowHTML).join('');
-  $('#sheet').dataset.all = S.all ? '1' : '0';
   $('#sheet').dataset.theme = S.themeId ? '1' : '0';
   paintSort();
   paintPager(rows.length, pages);
-  paintGaps();
   paintMeta(rows.length);
   paintHead();
   paintTree();
@@ -354,7 +346,7 @@ function paintSheet() {
   const none = $('#sheet-none');
   none.hidden = rows.length > 0;
   if (!S.reqs.length) none.textContent = 'no rows yet. the first one goes in the box above.';
-  else if (S.q || S.gap) none.textContent = 'nothing matches that.';
+  else if (S.q) none.textContent = 'nothing matches that.';
   else if (S.themeId) none.textContent = 'nothing here yet — type below, it goes into ' + themePath(S.themeId) + '.';
   else none.textContent = 'no rows yet.';
 }
@@ -366,19 +358,17 @@ function chipHTML(axis, value, extra = '') {
     <span class="mark" aria-hidden="true">${markOf(axis, value)}</span>${esc(label)}</button>`;
 }
 
+/* A row is a sentence and two words. No name, no id, no long version: a person
+ * writes what has to be true and clicks how hard it is and where it stands. */
 function rowHTML(r) {
-  const title = r.title ? `<span class="req-title">${esc(r.title)}</span>` : '';
-  const statement = r.statement || '';
-  const line = statement && statement !== r.title ? `<span class="req-statement">${esc(statement)}</span>` : '';
+  const text = (r.statement || r.title || '').trim();
   const open = S.open === r.id;
-  const ref = `<span class="ref">${esc(r.ref || '—')}</span>`;
   return `
-    <tr data-id="${r.id}" class="${open ? 'open' : ''}">
-      <td class="c-req"><div class="req-open">${ref}${title || esc(statement) || '<span class="muted">no sentence yet</span>'}${(title && line) ? '<br>' + line : ''}</div></td>
+    <tr data-id="${r.id}" data-ref="${esc(r.ref || '')}" class="${open ? 'open' : ''}">
+      <td class="c-req"><div class="req-open">${esc(text) || '<span class="muted">no sentence yet</span>'}</div></td>
       <td class="c-strength">${chipHTML('importance', r.strength, `data-s="${esc(r.strength)}" title="click to change"`)}</td>
       <td class="c-status">${chipHTML('status', r.status, `data-status="${esc(r.status)}" title="click to move it on"`)}</td>
       <td class="c-theme theme-cell" title="${esc(themePath(r.theme_id) || r.theme)}">${esc(themePath(r.theme_id) || r.theme) || '<span class="muted">—</span>'}</td>
-      ${extraCells(r)}
       <td class="c-tools"><div class="row-tools">
         <button type="button" data-move="-1" title="move up" aria-label="move up">↑</button>
         <button type="button" data-move="1" title="move down" aria-label="move down">↓</button>
@@ -386,14 +376,6 @@ function rowHTML(r) {
       </div></td>
     </tr>
     ${open ? detailHTML(r) : ''}`;
-}
-
-function extraCells(r) {
-  return `
-    <td class="c-extra extra-cell ref-cell">${esc(r.ref || '')}</td>
-    <td class="c-extra extra-cell">${esc(r.kind)}</td>
-    <td class="c-extra extra-cell ${r.source ? '' : 'empty'}">${sourceHTML(r.source)}</td>
-    <td class="c-extra extra-cell ${r.verification ? '' : 'empty'}">${esc(r.verification) || 'no proof'}</td>`;
 }
 
 /* a source that is an address is a link; everything else stays words */
@@ -407,17 +389,7 @@ function sourceHTML(src) {
 }
 
 const DETAIL_FIELDS = [
-  ['statement', 'one testable sentence', 'textarea', 'wide'],
-  ['detail', 'the long version', 'textarea', 'wide'],
-  ['asis', 'what it is today', 'textarea', ''],
-  ['tobe', 'what it should be', 'textarea', ''],
-  ['horizon', 'when — free text: short, 2014/15, Q3', 'text', ''],
-  ['source', 'source — who asked, or a link', 'text', ''],
-  ['verification', 'how we will know — test, review, demo', 'text', ''],
-  ['metric', 'for a non-functional: the measured thing', 'text', ''],
-  ['target', 'the number it must reach', 'text', ''],
-  ['conditions', 'under what conditions', 'text', ''],
-  ['clause', 'a law or standard, down to the clause', 'text', ''],
+  ['statement', 'the requirement, in one testable sentence', 'textarea', 'wide'],
 ];
 
 function sizeWord(n) {
@@ -533,20 +505,18 @@ function detailHTML(r) {
       <input id="d-${r.id}-${name}" type="text" data-field="${name}" value="${esc(r[name])}"></div>`;
   }).join('');
 
-  return `<tr class="detail"><td colspan="9">
+  return `<tr class="detail"><td colspan="5">
     <div class="detail-grid">
-      <div class="wide"><label for="d-${r.id}-title">title — a few words, for the sheet</label>
-        <input id="d-${r.id}-title" type="text" data-field="title" value="${esc(r.title)}" ${isOwner() ? '' : 'disabled'}></div>
+      ${fields}
       <div><label for="d-${r.id}-theme">theme</label>${themeSelect(r, !canWrite())}</div>
       <div><label for="d-${r.id}-kind">kind</label>${vocabSelect('kind', r.kind, `d-${r.id}-kind`, !canWrite())}</div>
       <div><label for="d-${r.id}-strength">how hard</label>${vocabSelect('importance', r.strength, `d-${r.id}-strength`, !isOwner())}</div>
       <div><label for="d-${r.id}-status">status</label>${vocabSelect('status', r.status, `d-${r.id}-status`, !canWrite())}</div>
-      ${fields}
       ${fileBox(r)}
     </div>
     <div class="detail-foot">
       <span class="msg" id="d-msg-${r.id}"></span>
-      <span class="muted small">${esc(r.ref)} — saved as you type${r.updated_at ? ' · last ' + new Date(r.updated_at).toLocaleString() : ''}</span>
+      <span class="muted small">saved as you type</span>
       <button class="ghost" type="button" data-close="${r.id}">close</button>
     </div>
   </td></tr>`;
@@ -557,14 +527,6 @@ function paintMeta(shown) {
   if (!S.project) return;
   const n = S.reqs.length;
   const bits = [`${n} row${n === 1 ? '' : 's'}`];
-  for (const v of vocabOf('importance')) {
-    const c = S.reqs.filter((r) => r.strength === v.value).length;
-    if (c) bits.push(`${c} ${v.value}`);
-  }
-  if (!vocabOf('importance').length) {
-    const must = S.reqs.filter((r) => r.strength === 'must').length;
-    if (must) bits.push(`${must} must`);
-  }
   if (shown !== n) bits.push(`${shown} shown`);
   if (S.role !== 'owner') bits.push(S.role === 'edit' ? 'you may write, not decide' : 'read only');
   $('#proj-meta').textContent = bits.join(' · ');
@@ -573,25 +535,6 @@ function paintMeta(shown) {
   $('#print-meta').textContent = S.project
     ? `${when} · ${S.project.title} · ${bits.join(' · ')} · vr.terg.hr`
     : '';
-}
-
-function paintGaps() {
-  const top = (vocabOf('importance')[0] || {}).value || 'must';
-  const noProof = S.reqs.filter((r) => !r.verification && r.strength === top).length;
-  const noNumber = S.reqs.filter((r) => r.kind === 'nonfunctional' && !(r.metric || '').trim()).length;
-  const noSource = S.reqs.filter((r) => !r.source).length;
-  const el = $('#gaps');
-  const bits = [];
-  if (noProof) bits.push(`<button type="button" data-gap="noproof">${noProof} ${esc(top)} without proof</button>`);
-  if (noNumber) bits.push(`<button type="button" data-gap="nonumber">${noNumber} non-functional without a number</button>`);
-  if (S.all && noSource) bits.push(`<span>${noSource} without a source</span>`);
-  if (S.gap) bits.push(`<button type="button" data-gap="">clear</button>`);
-  el.hidden = bits.length === 0;
-  el.innerHTML = bits.length ? bits.join('') : '';
-  if (!bits.length && S.reqs.length) {
-    el.hidden = false;
-    el.innerHTML = '<span class="none">every must has a proof, every non-functional has a number.</span>';
-  }
 }
 
 /* where you are, two words */
@@ -678,7 +621,7 @@ function queue(id, field, value) {
       const row = await db.updateReq(id, patch);
       const at = S.reqs.findIndex((r) => r.id === id);
       if (at >= 0) S.reqs[at] = row;
-      if (['strength', 'status', 'verification', 'metric', 'kind', 'source', 'theme', 'theme_id'].includes(field)) {
+      if (['strength', 'status', 'kind', 'theme', 'theme_id'].includes(field)) {
         paintSheet();
       } else if (field === 'title' || field === 'statement') {
         // repaint the line above the detail without closing it
@@ -694,10 +637,8 @@ function queue(id, field, value) {
 }
 
 function lineHTML(r) {
-  const title = r.title ? `<span class="req-title">${esc(r.title)}</span>` : '';
-  const line = r.statement && r.statement !== r.title
-    ? `<span class="req-statement">${esc(r.statement)}</span>` : '';
-  return title || esc(r.statement) || '<span class="muted">no sentence yet</span>';
+  const text = (r.statement || r.title || '').trim();
+  return esc(text) || '<span class="muted">no sentence yet</span>';
 }
 
 async function addRow(text) {
@@ -1050,7 +991,9 @@ async function runReview() {
   }
 }
 
-const FIELDS = ['theme', 'kind', 'strength', 'verification', 'metric'];
+/* the sheet shows a sentence and two words, so the reading proposes only what
+ * can land on the screen — a proposal into a hidden field would be invisible */
+const FIELDS = ['statement', 'theme', 'kind', 'strength'];
 
 /* Read the answer, not the shape: a model may add quotes, a colon, or a whole
  * preamble, but the four parts of a proposal are always there in order. */
@@ -1315,25 +1258,22 @@ function toMarkdown() {
     for (const t of S.terms) L.push(`- **${t.term}** — ${t.meaning}`);
     L.push('');
   }
+  /* What a person reads, not what the table holds: the sentence, how hard it is,
+   * what kind of thing it is, and the name of the proof if there is one. No
+   * names, no ids, no long version — the sheet is small enough to read. */
   const groups = new Map();
   for (const r of S.reqs) {
-    const k = r.theme || 'no theme';
+    const k = themePath(r.theme_id) || r.theme || 'no theme';
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(r);
   }
   for (const [theme, rows] of groups) {
     L.push(`## ${theme}`, '');
     for (const r of rows) {
-      L.push(`- **${r.ref}**${r.title ? ' ' + r.title + ' —' : ''} ${r.statement || '(no sentence)'}  `);
-      const meta = [r.strength, r.kind];
-      if (r.horizon) meta.push(r.horizon);
-      if (r.source) meta.push(`from ${r.source}`);
+      L.push(`- ${(r.statement || r.title || '(no sentence)').trim()}`);
+      const meta = [r.strength, r.kind].filter(Boolean);
+      if (r.file_name) meta.push('file: ' + r.file_name);
       L.push(`  _${meta.join(' · ')}_`);
-      if (r.verification) L.push(`  proof: ${r.verification}`);
-      if (r.metric) L.push(`  number: ${r.metric}${r.target ? ' ≥ ' + r.target : ''}${r.conditions ? ' under ' + r.conditions : ''}`);
-      if (r.clause) L.push(`  reference: ${r.clause}`);
-      if (r.asis || r.tobe) L.push(`  today: ${r.asis || '—'} → wanted: ${r.tobe || '—'}`);
-      if (r.detail) L.push('', r.detail);
     }
     L.push('');
   }
@@ -1407,7 +1347,6 @@ async function enterGuest(code) {
     S.project = data.project;
     S.reqs = data.reqs || [];
     S.terms = data.terms || [];
-    S.all = S.reqs.some((r) => r.verification || r.source || r.clause || r.horizon);
     $('#spec').hidden = false;
     $('#welcome').hidden = true;
     applyRole();
@@ -1546,13 +1485,6 @@ function wireChrome() {
     }
   });
 
-  $('#gaps').addEventListener('click', (e) => {
-    const b = e.target.closest('button[data-gap]');
-    if (!b) return;
-    S.gap = b.dataset.gap;
-    S.page = 1;
-    paintSheet();
-  });
   $('#q').addEventListener('input', (e) => { S.q = e.target.value; S.page = 1; paintSheet(); });
   $('#q').addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
@@ -1634,16 +1566,8 @@ function wireChrome() {
   };
 
   try {
-    S.all = localStorage.getItem('vpl.vr.columns') === '1';
-    $('#btn-columns').setAttribute('aria-pressed', S.all ? 'true' : 'false');
   } catch {}
 
-  $('#btn-columns').onclick = () => {
-    S.all = !S.all;
-    $('#btn-columns').setAttribute('aria-pressed', S.all ? 'true' : 'false');
-    try { localStorage.setItem('vpl.vr.columns', S.all ? '1' : '0'); } catch {}
-    paintSheet();
-  };
   $('#btn-copy').onclick = copyDoc;
 
   /* Print is the document, so the brief opens for the paper and closes again

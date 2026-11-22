@@ -211,20 +211,11 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
 }
 .sheet td { padding: 0.34rem 0.45rem; border-bottom: 1px solid var(--rule); vertical-align: top; font-size: 0.87rem; }
 .sheet tbody tr:hover { background: color-mix(in srgb, var(--paper-3) 55%, transparent); }
-.c-ref { width: 5.2rem; font-family: var(--mono); font-size: 0.76rem !important; color: var(--ink-3); }
 .c-req { width: auto; }
-.c-req .req-statement, .c-req .req-title { display: inline; }
-.c-req .req-statement { display: block; }
 .c-strength { width: 6.6rem; }
 .c-status { width: 6.2rem; }
 .c-theme { width: 12rem; }
-.c-req .ref {
-  font-family: var(--mono); font-size: 0.72rem; color: var(--ink-3);
-  margin-right: 0.4rem; white-space: nowrap;
-}
 .c-tools { width: 4.4rem; }
-.c-extra { width: 9rem; }
-.sheet[data-all='1'] .c-theme { width: 7rem; }
 /* the theme is the context you are standing in, so its column appears only
  * when you are standing in all of them */
 .sheet[data-theme='1'] .c-theme { display: none; }
@@ -296,16 +287,9 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
 [data-role='view'] .chip-value { cursor: default; }
 :root[data-theme='dark'] .chip-value[data-color='blue'] { color: #8fb8d8; }
 :root[data-theme='dark'] .chip-value[data-color='violet'] { color: #bfa4d8; }
-/* the extra columns exist in the markup and are switched on by a flag, so the
- * same row can serve a ten year old and an engineer */
-.c-extra { display: none; }
-.sheet[data-all='1'] .c-extra { display: table-cell; }
-
-.sheet .req-title { font-weight: 600; }
-.sheet .req-statement { color: var(--ink-2); font-size: 0.84rem; }
-.sheet .req-title:empty, .sheet .req-statement:empty { display: none; }
+/* a requirement is one sentence, so it gets one line and the room it needs */
 .sheet .req-open { cursor: pointer; }
-.sheet .req-open:hover .req-title { text-decoration: underline; text-decoration-color: var(--rule-strong); }
+.sheet .req-open:hover { text-decoration: underline; text-decoration-color: var(--rule-strong); }
 
 /* strength is a word, a mark and a background — three signals */
 .strength {
@@ -532,7 +516,6 @@ body.guest #projects { display: none; }
   .chip-value[data-color] { color: #000; }
   .sheet[data-theme='1'] .c-theme { display: table-cell; }
   .pager-line .pager { display: none; }
-  .sheet .c-extra { display: none; }
   .pager, .crumb-line { display: none; }
   .title { border: none; font-size: 1.4rem; }
 }

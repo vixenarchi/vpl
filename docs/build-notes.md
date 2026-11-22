@@ -711,3 +711,40 @@ The one promise not kept: deleting an account deletes its rows but leaves its
 bytes, because only the storage API can remove objects and account deletion is
 SQL. It is written down in `docs/start-here.md` so it is a known gap and not a
 surprise.
+
+## vr, third pass: deleting the interface
+
+The second pass made the sheet navigable but left it honest to its data: a name
+in monospace, a title, a sentence, three extra columns behind a switch, a row of
+gaps ("78 must without proof"), and a detail panel with eleven fields. All of it
+was defensible and none of it was light. The person writing requirements is one
+person with twenty rows and no interest in a reference scheme: *"we are in the AI
+age, not in the age of paper and an index of requirements."*
+
+So the third pass is a subtraction, and it is the most useful one:
+
+- **the name left the screen.** `VR-001` still exists, is still unique, is still
+  what the log and the model use — but a document of twenty sentences does not
+  need to refer to itself by number. Reference schemes are for documents nobody
+  reads end to end.
+- **the title left the screen.** A model can write a title whenever one is
+  needed; a person typing a requirement should not be asked for a headline and a
+  body.
+- **the long version, source, proof, today/wanted, horizon, clause, metric left
+  the screen.** They are still columns; they are not the interface. The one
+  non-word a row keeps is the attachment, because a photo of the old roof is
+  evidence and evidence is the hard part.
+- **"all columns", the gaps bar and the per-word counts left with them.** A
+  switch that reveals seven more columns is a promise that somebody will be
+  looked at; nobody was.
+
+What is left is a sentence, how hard, where it stands, and the theme you are
+standing in — and a detail panel of five things. The model's review job was
+narrowed to match (`statement`, `theme`, `kind`, `strength`): a proposal into a
+field nobody can see is a change that happens behind the person's back, and the
+balloon rule means nothing if the balloon points off screen.
+
+The lesson worth keeping: **the data model can be richer than the interface, and
+should be, but only if the interface never apologises for it.** A hidden field is
+fine; a hidden field with a switch, a count, and a gap is a second interface
+pretending to be a setting.
