@@ -265,6 +265,9 @@ VR_URL=http://127.0.0.1:8101 node vr-ai.mjs        # 21 checks (model faked at t
 VR_URL=http://127.0.0.1:8101 node vr-share.mjs     # 21 checks (link, editor, the database's refusal)
 ```
 
+or all four at once, server and all: `tools/test-vr.sh`
+(`VR_URL=https://vpl-vr.pages.dev tools/test-vr.sh` against production).
+
 `vr-share.mjs` needs a second account (`vpl-guest@terg.hr`); it creates it if it
 is missing. The database's refusal is asserted by the error code (`23514`), not
 by the screen, because a rule that only lives in the screen is a wish.
