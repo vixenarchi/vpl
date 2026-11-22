@@ -248,6 +248,10 @@ function applyRole() {
   document.body.classList.toggle('guest', !!S.guest);
   $('#btn-out').hidden = !!S.guest;
   $('#btn-share').hidden = !isOwner();
+  /* A document somebody shared with you is theirs; this is how you take a copy
+   * where the strengths and the order are yours. Links and signed-in readers
+   * both get it, and nobody gets it on the owner's own screen. */
+  $('#btn-own').hidden = isOwner() || !S.session;
   if (S.guest) {
     $('#guest-banner').hidden = false;
     $('#guest-banner').textContent = 'shared document — you are reading a link. nothing you do here is saved.';
@@ -1162,6 +1166,19 @@ function wireChrome() {
     } catch (e) { console.error(e); }
   }, 600);
   $('#proj-title').addEventListener('input', saveTitle);
+
+  $('#btn-own').onclick = async () => {
+    if (!S.project) return;
+    if (!confirm('Copy this document into your own documents?')) return;
+    flash('copying…', 'ok');
+    try {
+      const p = await db.copyToMe(S.project, S.reqs, S.terms);
+      try { localStorage.setItem('vpl.vr.last', p.id); } catch {}
+      location.href = location.pathname;
+    } catch (e) {
+      flash(e.message || 'the copy failed', 'bad');
+    }
+  };
 
   $('#btn-new-project').onclick = newProject;
   $('#btn-first').onclick = newProject;

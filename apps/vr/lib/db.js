@@ -104,6 +104,40 @@ export async function updateProject(id, patch) {
   return data;
 }
 
+/* A shared document can become yours. Reading is allowed by the share, writing
+ * is allowed because the copy is inserted under your own id — the original's
+ * owner keeps their document, and you get one where the names, the strengths
+ * and the order are yours to change. */
+export async function copyToMe(src, rows = [], terms = []) {
+  const db = await client();
+  const s = await session();
+  const { data: p, error } = await db.from('vr_projects').insert({
+    user_id: s.user.id,
+    title: `${src.title} (copy)`.slice(0, 120),
+    brief: src.brief || '', assumptions: src.assumptions || '', scope: src.scope || '',
+  }).select(P).single();
+  if (error) throw error;
+  const keep = ['ref', 'kind', 'strength', 'theme', 'category', 'title', 'statement', 'detail',
+    'asis', 'tobe', 'horizon', 'source', 'verification', 'metric', 'target', 'conditions',
+    'clause', 'status', 'pos'];
+  for (let i = 0; i < rows.length; i += 40) {
+    const chunk = rows.slice(i, i + 40).map((r) => {
+      const out = { user_id: s.user.id, project_id: p.id };
+      for (const k of keep) out[k] = r[k] ?? '';
+      return out;
+    });
+    const { error: e2 } = await db.from('vr_reqs').insert(chunk);
+    if (e2) throw e2;
+  }
+  if (terms.length) {
+    const { error: e3 } = await db.from('vr_terms').insert(terms.map((t) => ({
+      user_id: s.user.id, project_id: p.id, term: t.term, meaning: t.meaning || '',
+    })));
+    if (e3) throw e3;
+  }
+  return p;
+}
+
 export async function deleteProject(id) {
   const db = await client();
   const { error } = await db.from('vr_projects').delete().eq('id', id);

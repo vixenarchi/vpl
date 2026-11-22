@@ -89,7 +89,7 @@ VI_URL=http://127.0.0.1:8100 node vi-share.mjs       # sharing, 12 checks
 VR_URL=http://127.0.0.1:8101 node vr-check.mjs      # sheet, 42 checks
 VR_URL=http://127.0.0.1:8101 node vr-paste.mjs      # spreadsheet, 11 checks
 VR_URL=http://127.0.0.1:8101 node vr-ai.mjs         # model proposals, 21 checks
-VR_URL=http://127.0.0.1:8101 node vr-share.mjs      # sharing + the database's refusal, 21 checks
+VR_URL=http://127.0.0.1:8101 node vr-share.mjs      # sharing + the database's refusal, 25 checks
 VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "project title"
 ```
 

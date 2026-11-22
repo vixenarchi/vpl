@@ -17,6 +17,14 @@ const GUEST = { email: 'vpl-guest@terg.hr', pass: 'guest-vpl-2026!' };
 
 let pass = 0, fail = 0;
 const ok = (cond, what) => { cond ? pass++ : fail++; console.log(`  ${cond ? 'ok  ' : 'FAIL'} ${what}`); };
+const until = async (fn, ms = 8000, step = 150) => {
+  const t0 = Date.now();
+  for (;;) {
+    try { const v = await fn(); if (v) return v; } catch {}
+    if (Date.now() - t0 > ms) return false;
+    await new Promise((r) => setTimeout(r, step));
+  }
+};
 
 /* the second account exists for tests; created once, harmless afterwards */
 async function ensureGuest() {
@@ -158,6 +166,24 @@ const good = await fetch(`${URL_}/rest/v1/vr_reqs?id=eq.${row.id}`, {
   body: JSON.stringify({ theme: 'the garden' }),
 });
 ok(good.ok, 'but the database accepts text from the same editor');
+
+// ── a shared document can become one of your own
+const beforeCopy = await sp.locator('#rows tr[data-id]').count();
+await sp.click('#btn-own');
+const copied = await until(async () => {
+  const t = await sp.inputValue('#proj-title').catch(() => '');
+  return t.endsWith('(copy)');
+}, 25000);
+ok(copied, 'an editor can take a copy where the decisions are theirs');
+ok((await sp.evaluate(() => document.body.dataset.role)) === 'owner', 'and the copy says: you are the owner');
+ok(await until(async () => (await sp.locator('#rows tr[data-id]').count()) === beforeCopy, 20000),
+  'every row came with the copy');
+await sp.locator('#rows tr[data-id] .strength').first().click();
+await sp.waitForTimeout(1200);
+const ownStrength = await sp.locator('#rows tr[data-id] .strength').first().textContent();
+ok(!ownStrength.includes('must'), 'in the copy the strength moves: ' + ownStrength.trim().slice(0, 20));
+await sp.locator('.proj-row.on .kill').first().click();
+await sp.waitForTimeout(1500);
 
 // ── revoking closes the door
 await pg.click('#share-list li button');

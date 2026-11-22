@@ -159,6 +159,12 @@ second account: text saved, a strength change refused.
 Guests see the same page with the verbs taken out: one `data-role` on `<body>`,
 two CSS classes, and a banner that says what this person may do.
 
+A shared document can become your own: **copy to mine** reads the sheet (a share
+allows reading) and inserts a fresh document under your id, with every row, its
+name, its strength and its order. The original stays where it was; the copy is
+yours to decide on. That is also the honest answer to "I was given a spec and I
+disagree with its priorities" — take it, change it, argue later.
+
 ## In and out
 
 **Copy** puts the document on the clipboard as markdown, grouped by theme, with
@@ -183,7 +189,7 @@ the date, the counts and `vr.terg.hr`.
 
 ## Tests
 
-Four scripts, 95 checks, all in `apps/vn/test` (Playwright lives there):
+Five scripts (one is screenshots), 99 checks, all in `apps/vn/test` (Playwright lives there):
 
 - `vr-check.mjs` — 42: naming, strength cycling, filters, find, gaps, detail
   autosave, all columns, moving, `Alt+↑`, print media, a phone at 390 px, copy,
@@ -192,8 +198,9 @@ Four scripts, 95 checks, all in `apps/vn/test` (Playwright lives there):
   continuing, header not becoming a row.
 - `vr-ai.mjs` — 21: the no-key hint, the proxy call, proposals before writing,
   `use it` / `use all`, drafting from the brief, glossary suggestions.
-- `vr-share.mjs` — 21: the link read-only, the guest's rail, an editor writing a
-  row, the screen refusing a decision, and the database refusing it with 23514.
+- `vr-share.mjs` — 25: the link read-only, the guest's rail, an editor writing a
+  row, the screen refusing a decision, the database refusing it with 23514, and
+  an editor taking a copy where the strength does move.
 
 All four run against `https://vpl-vr.pages.dev` as well as locally.
 
