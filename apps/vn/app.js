@@ -65,7 +65,7 @@ const el = {
 
   reader: $('reader'), readerNav: $('reader-nav'), readerTitle: $('reader-title'),
   readerMd: $('reader-md'), readerRole: $('reader-role'), readerHome: $('reader-home'),
-  readerCopy: $('reader-copy'),
+  readerCopy: $('reader-copy'), readerMdCopy: $('reader-md-copy'), readerOwn: $('reader-own'),
 
   tabs: [...document.querySelectorAll('.tab')],
   paneWrite: $('pane-write'), paneView: $('pane-view'),
@@ -1943,6 +1943,9 @@ function isShareRoute(hash = location.hash) {
 }
 
 let readerToken = 0;
+/* what the reader is looking at, kept so the two transfer buttons work without
+ * another round trip: the code, the subtree, and the chapter on screen */
+const readerNow = { code: '', rows: [], rootId: null, noteId: null };
 
 function readerSay(msg) {
   el.readerNav.innerHTML = '';
@@ -1975,6 +1978,11 @@ async function showShare(code, noteId) {
 
     const byId = new Map(rows.map((n) => [n.id, n]));
     const root = byId.get(share.note_id) || rows[0];
+
+    readerNow.code = code;
+    readerNow.rows = rows;
+    readerNow.rootId = root.id;
+    el.readerOwn.hidden = !S.session;
 
     paintReaderNav(code, rows);
     await drawReaderPage(byId.get(noteId) || root);
@@ -2024,6 +2032,8 @@ async function drawReaderPage(note) {
     a.setAttribute('aria-current', String(here));
   }
 
+  readerNow.noteId = note.id;
+
   /* Rendered into a detached node: marked arrives from a CDN, so a slow older
    * render used to be able to land after a newer one and win. */
   const holder = document.createElement('div');
@@ -2038,6 +2048,93 @@ async function drawReaderPage(note) {
   } catch (err) {
     if (token !== readerToken) return;
     el.readerMd.textContent = 'could not render: ' + friendly(err);
+  }
+}
+
+/* ── taking something with you ─────────────────────────────────────── */
+
+/* A shared note is markdown already; what is missing is the shape. The root
+ * becomes the title, each level one # more, and the chapters keep the order the
+ * reader saw. Anything the reader builds from this is their own text. */
+function subtreeMarkdown(rows, rootId) {
+  const byParent = new Map();
+  const ids = new Set(rows.map((n) => n.id));
+  for (const n of rows) {
+    const p = n.parent_id && ids.has(n.parent_id) ? n.parent_id : null;
+    if (!byParent.has(p)) byParent.set(p, []);
+    byParent.get(p).push(n);
+  }
+  for (const list of byParent.values()) {
+    list.sort((a, b) => (a.position ?? 0) - (b.position ?? 0)
+      || new Date(a.created_at) - new Date(b.created_at));
+  }
+
+  const byId = new Map(rows.map((n) => [n.id, n]));
+  const out = [];
+  const walk = (id, depth) => {
+    const n = byId.get(id);
+    if (!n) return;
+    const hashes = '#'.repeat(Math.min(depth, 6));
+    out.push(`${hashes} ${n.title?.trim() || 'untitled'}`, '');
+    if (n.body?.trim()) out.push(n.body.trim(), '');
+    for (const kid of byParent.get(id) || []) walk(kid.id, depth + 1);
+  };
+  walk(rootId, 1);
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+}
+
+/* The document, not the chapter you happen to stand on: the reader's nav is a
+ * table of contents, and what you take away is the thing it is a contents of. */
+async function copyReaderMarkdown() {
+  const text = subtreeMarkdown(readerNow.rows, readerNow.rootId);
+  if (await copyText(text)) toast('the whole note is on your clipboard, as markdown.');
+  else toast('the clipboard said no; select the text instead.');
+}
+
+/* Copying into my notes is not importing: every row is inserted under my own
+ * id with fresh note ids, so the copy is mine to rename, move and delete. */
+async function copyReaderToMine() {
+  if (!S.session) return toast('sign in first — a copy needs an owner.');
+  const btn = el.readerOwn;
+  const was = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'copying…';
+  try {
+    const rows = readerNow.rows;
+    const byParent = new Map();
+    const ids = new Set(rows.map((n) => n.id));
+    for (const n of rows) {
+      const p = n.parent_id && ids.has(n.parent_id) ? n.parent_id : null;
+      if (!byParent.has(p)) byParent.set(p, []);
+      byParent.get(p).push(n);
+    }
+    for (const list of byParent.values()) {
+      list.sort((a, b) => (a.position ?? 0) - (b.position ?? 0)
+        || new Date(a.created_at) - new Date(b.created_at));
+    }
+
+    const rootId = readerNow.rootId;
+    const clone = async (src, parentId, position) => {
+      const made = await db.createNote({
+        title: src.title || '',
+        body: src.body || '',
+        parent_id: parentId,
+        position,
+      });
+      let i = 0;
+      for (const kid of byParent.get(src.id) || []) await clone(kid, made.id, i++);
+      return made;
+    };
+    const rootSrc = rows.find((r) => r.id === rootId) || rows[0];
+    const made = await clone(rootSrc, null, S.notes.length);
+    await loadNotes();
+    btn.textContent = 'copied';
+    toast('a copy is in your notes.');
+    setTimeout(() => { location.hash = '#/n/' + made.id; }, 900);
+  } catch (err) {
+    toast(friendly(err));
+  } finally {
+    setTimeout(() => { btn.disabled = false; btn.textContent = was; }, 1600);
   }
 }
 
@@ -2577,6 +2674,9 @@ el.shareEmail.addEventListener('input', () => {
 });
 
 /* ── a link to the chapter you are reading ─────────────────────────── */
+el.readerMdCopy.addEventListener('click', copyReaderMarkdown);
+el.readerOwn.addEventListener('click', copyReaderToMine);
+
 el.readerCopy.addEventListener('click', async () => {
   const ok = await copyText(location.href);
   const was = el.readerCopy.textContent;

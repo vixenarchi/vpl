@@ -153,6 +153,42 @@ export async function deleteIdea(id) {
   if (error) throw error;
 }
 
+/* A funnel someone shared can become yours. Every row is inserted under your
+ * own id, so the stages, the reasons and the choice are yours to change — the
+ * owner's funnel is not touched, and this is not an import but a copy. */
+export async function copyToMe(project, ideas) {
+  const db = await client();
+  const s = await session();
+  const title = (project.title || 'untitled funnel').trim() || 'untitled funnel';
+  const made = await createProject(title);
+
+  const patch = {};
+  for (const k of ['context', 'exploration', 'simulation']) {
+    if (project[k]) patch[k] = project[k];
+  }
+  if (Object.keys(patch).length) await updateProject(made.id, patch);
+
+  if (!ideas.length) return made;
+
+  const rows = ideas.map((i, n) => ({
+    user_id: s.user.id,
+    project_id: made.id,
+    text: i.text,
+    stage: i.stage || 'ideation',
+    color: i.color || 'butter',
+    reason: i.reason || '',
+    exploration: i.exploration || '',
+    position: n,
+  }));
+  const { data, error } = await db.from('vi_ideas').insert(rows).select(I);
+  if (error) throw error;
+
+  /* the choice travels with the copy, but it points at the copy's own row */
+  const at = ideas.findIndex((i) => i.id === project.chosen_id);
+  if (at >= 0 && data[at]) await updateProject(made.id, { chosen_id: data[at].id });
+  return made;
+}
+
 /* ── sharing: one funnel, a link or a person ──────────────────────── */
 const SH = 'id,project_id,owner_id,code,email,role,pending,created_at';
 

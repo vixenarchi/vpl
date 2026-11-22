@@ -91,6 +91,9 @@ async function boot() {
   if (code) {
     wireChrome();
     $('#gate').hidden = true;
+    /* a link is readable without an account, but a signed-in reader may still
+     * take a copy home — so ask who is here, and do not insist on an answer */
+    S.session = await db.session().catch(() => null);
     await enterGuest(code);
     return;
   }
@@ -172,6 +175,8 @@ function wireChrome() {
 
   wireAiDialog();
   wireShare();
+  $('#btn-md').onclick = copyMarkdown;
+  $('#btn-own').onclick = copyToMine;
   $('#ai-hint-open').onclick = openAiDialog;
   paintAiHint();
 }
@@ -241,8 +246,6 @@ function applyRole() {
   if (S.guest) {
     banner.hidden = false;
     banner.innerHTML = `<b>shared funnel</b> — you are reading a link. nothing you do here is saved.`;
-    $('#projects').hidden = true;
-    $('#btn-projects').hidden = true;
   } else {
     banner.hidden = true;
     if (S.role === 'view') {
@@ -253,8 +256,16 @@ function applyRole() {
       banner.innerHTML = `<b>shared with you for writing</b> — text, not decisions. choosing and parking stay with the owner.`;
     }
   }
+  /* a guest has no rail; everybody else does, including a reader who has just
+   * taken a copy home and is no longer a guest at all */
+  $('#projects').hidden = !!S.guest;
+  $('#btn-projects').hidden = !!S.guest;
   $('#proj-title').readOnly = S.role !== 'owner';
   $('#btn-share').hidden = S.role !== 'owner';
+  /* the copy is the honest answer to "I was given this funnel and I disagree
+   * with it": a copy needs an account to land in, the original is untouched */
+  const own = $('#btn-own');
+  if (own) own.hidden = S.role === 'owner' || !S.session;
 }
 
 function showWelcome() {
@@ -313,6 +324,82 @@ function paintAll() {
   paintSelect();
   paintSim();
   paintParked();
+}
+
+/* ── taking a funnel with you ─────────────────────────────────────── */
+
+const STAGE_NAMES = [
+  ['selected', 'chosen'],
+  ['ideation', 'ideation'],
+  ['exploration', 'exploration'],
+  ['simulation', 'simulation'],
+  ['selection', 'selection'],
+  ['parked', 'parked'],
+];
+
+/* A funnel is not markdown, so the writer has to decide what a funnel *is* when
+ * it is written down: the question, then each band, then the choice first. */
+function funnelMarkdown() {
+  const p = S.project || {};
+  const out = [`# ${(p.title || 'untitled funnel').trim()}`, ''];
+  if (p.context?.trim()) out.push(p.context.trim(), '');
+  if (p.exploration?.trim()) out.push('## what we found', '', p.exploration.trim(), '');
+  if (p.simulation?.trim()) out.push('## what it would cost', '', p.simulation.trim(), '');
+
+  for (const [stage, name] of STAGE_NAMES) {
+    const list = S.ideas.filter((i) => (stage === 'selected' ? i.stage === 'selected' : i.stage === stage));
+    if (!list.length) continue;
+    out.push(`## ${name}`, '');
+    for (const i of list) {
+      const text = (i.text || '').trim().replace(/\n+/g, ' ');
+      out.push(`- ${stage === 'selected' ? '**' + text + '**' : text}${i.reason?.trim() ? ' — ' + i.reason.trim() : ''}`);
+      if (i.exploration?.trim()) out.push(`  ${i.exploration.trim().replace(/\n+/g, ' ')}`);
+    }
+    out.push('');
+  }
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+}
+
+async function copyMarkdown() {
+  const btn = $('#btn-md');
+  const was = btn.textContent;
+  try {
+    if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(funnelMarkdown());
+    else throw new Error('no clipboard here');
+    btn.textContent = 'copied';
+    btn.disabled = true;
+    setTimeout(() => { btn.textContent = was; btn.disabled = false; }, 1500);
+  } catch {
+    say($('#proj-meta'), 'the clipboard said no — the funnel can still be selected and copied by hand', 'bad');
+  }
+}
+
+async function copyToMine() {
+  const btn = $('#btn-own');
+  if (!S.session) return say($('#proj-meta'), 'sign in first — a copy needs an owner', 'bad');
+  const was = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'copying…';
+  try {
+    const made = await db.copyToMe({
+      title: S.project.title,
+      context: S.project.context,
+      exploration: S.project.exploration,
+      simulation: S.project.simulation,
+      chosen_id: S.project.chosen_id,
+    }, S.ideas);
+    /* the copy is not the shared funnel: drop the guest mode and the code from
+     * the address, or the reader stays locked out of their own rail */
+    S.guest = null;
+    history.replaceState(null, '', location.pathname);
+    await loadProjects();
+    await openProject(made.id);
+    say($('#proj-meta'), 'this funnel is yours now.', 'ok');
+  } catch (e) {
+    say($('#proj-meta'), e.message || String(e), 'bad');
+  } finally {
+    setTimeout(() => { btn.disabled = false; btn.textContent = was; }, 1500);
+  }
 }
 
 function paintMeta() {

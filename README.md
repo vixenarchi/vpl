@@ -39,6 +39,24 @@ No teams, no roles beyond view and edit, no realtime collaboration, no
 attachments, no search index, no framework, no bundler, no build step, no
 service worker, no monthly bill.
 
+## Moving things between apps
+
+No app writes into another app's tables. The transfer path is the person's
+clipboard, and every app has the same two buttons:
+
+- **copy** — writes what is on screen as markdown (the note and its chapters, a
+  funnel with its stages and reasons, a requirements sheet with its rows), ready
+  to paste into any of the others or into an e-mail.
+- **copy to mine** — the same content, inserted under the reader's own id with
+  fresh row ids, so a document somebody shared becomes a document they own and
+  may disagree with. The original is not touched, and the copy is not a grant:
+  names, priorities and order belong to whoever holds the copy.
+
+`copy to mine` only appears for someone who is signed in and is not the owner;
+`copy` appears for everyone who can read. `vr` writes its own document;
+`vn` copies a note and every chapter under it; `vi` copies a funnel with the
+chosen idea first.
+
 ## From nothing to running
 
 You need: this repo, **Python 3** (the local server), and a browser. Node 18+
@@ -250,11 +268,13 @@ node e2e.mjs            # 25 checks
 node plain.mjs          # 8  checks
 node touch-check.mjs    # 9  checks  (needs touch emulation)
 VPL_EMAIL=… VPL_PASS=… node mode-check.mjs   # 23 checks
+node take-check.mjs     # 12 checks  (copy markdown, copy to my notes)
 
 PORT=8100 ./serve vi in another shell, then:
 VI_URL=http://127.0.0.1:8100 node vi-check.mjs   # 20 checks
 VPL_SEARCH_KEY=… node vi-ai.mjs                  # 14 checks (model mocked, search live)
 VI_URL=http://127.0.0.1:8100 node vi-share.mjs    # 12 checks (link, guest, revoke)
+VI_URL=http://127.0.0.1:8100 node vi-take.mjs     # 16 checks (copy, copy to mine)
 VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "a project"
                                                  # one real pass through the funnel
 

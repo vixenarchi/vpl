@@ -644,3 +644,32 @@ attribute still matches `[data-theme]`, so it showed when it should have hidden.
 And the empty-state line keyed off `S.reqs.length` instead of the number of rows
 on screen, so a theme with nothing in it was a blank page with no sentence
 explaining itself. A place with nothing in it still has to say so.
+
+## The clipboard is the API
+
+Three apps, one person, and no cross-app writes: the way a thought gets from
+`vi` to `vr`, or a shared document into your own hands, is the clipboard. That
+is not a limitation to apologise for — it is the only transfer path that needs
+no schema, no token, no permission and no server, and it leaves the person in
+the middle, deciding what travels.
+
+So the pattern is two buttons, the same words everywhere:
+
+- **copy** — the thing on screen, as markdown. `vn` writes the note and its
+  chapters as `#` levels, because that is what a note is; `vi` writes the
+  question, then each band, with the chosen idea first and the reasons beside
+  it; `vr` writes rows grouped by theme, with the proof under each.
+- **copy to mine** — the same content inserted under the reader's id, with fresh
+  ids throughout. It is a copy, not an import and not a grant: the owner's
+  version is untouched, and the reader may rename, move, re-prioritise or delete
+  what they now hold. This is the honest answer to "I was given a spec and I
+  disagree with its priorities", which is the normal condition of being given a
+  spec.
+
+Two lessons from doing it three times. **The copy must change the mode**: in
+`vi` a reader who copies a funnel home is no longer a guest, so the guest flag,
+the `?s=` code and the hidden rail all have to be dropped in the same breath —
+otherwise the copy lands in a rail nobody can see. And **a subtree copy needs an
+id map**, not a recursive read of the same table: build `parent_id → children`
+once, walk from the root, insert parent first. The first version of `vn`'s
+writer looked up the node by its parent key and produced the chapter twice.

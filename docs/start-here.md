@@ -87,6 +87,8 @@ Playwright lives in `apps/vn/test/node_modules`; run everything from
 VI_URL=http://127.0.0.1:8100 node vi-check.mjs       # funnel, 20 checks
 VPL_SEARCH_KEY=… VI_URL=http://127.0.0.1:8100 node vi-ai.mjs   # balloons, 14 checks
 VI_URL=http://127.0.0.1:8100 node vi-share.mjs       # sharing, 12 checks
+node take-check.mjs                                 # copy markdown into my notes, 12
+node vi-take.mjs                                    # copy a funnel home, 16
 VR_URL=http://127.0.0.1:8101 node vr-check.mjs      # sheet, 49 checks
 VR_URL=http://127.0.0.1:8101 node vr-paste.mjs      # spreadsheet, 11 checks
 VR_URL=http://127.0.0.1:8101 node vr-ai.mjs         # model proposals, 21 checks
