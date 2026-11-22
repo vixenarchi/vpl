@@ -206,6 +206,9 @@ All four run against `https://vpl-vr.pages.dev` as well as locally.
   and every document update died with `42703`.
 - The shell has no dark input background of its own; vr sets fields to the paper
   colour, otherwise a white box glares out of a dark sheet.
+- The name field follows the document, not every repaint of it (`headFor` in
+  `paintHead`). The rows arrive after the document does; painting the stored name
+  on that second pass silently undid a name typed on a slow connection.
 - `wrangler pages project create vpl-vr` had to run before the first deploy; the
   custom domain was attached with one API call, and the CNAME is a dashboard
   step because the login token may write Pages but not DNS.

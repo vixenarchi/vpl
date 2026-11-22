@@ -226,9 +226,21 @@ async function openProject(p) {
   paintFilters();
 }
 
+/* Which document the name field is currently showing. The rows arrive a moment
+ * after the document does, and every repaint of the same document used to write
+ * the stored name back over whatever had just been typed — on a slow connection
+ * that meant naming a new document looked like it worked and silently did not.
+ * The field follows the document only when the document changes. */
+let headFor = null;
+
 function paintHead() {
-  $('#proj-title').value = S.project ? S.project.title : '';
-  $('#proj-title').readOnly = !isOwner();
+  const t = $('#proj-title');
+  const id = S.project ? S.project.id : '';
+  if (id !== headFor) {
+    headFor = id;
+    t.value = S.project ? S.project.title : '';
+  }
+  t.readOnly = !isOwner();
 }
 
 function applyRole() {
@@ -1145,6 +1157,7 @@ function wireChrome() {
       S.project = await db.updateProject(S.project.id, { title });
       const row = S.projects.find((p) => p.id === S.project.id);
       if (row) row.title = title;
+      if (document.activeElement !== $('#proj-title')) $('#proj-title').value = title;
       paintProjects();
     } catch (e) { console.error(e); }
   }, 600);

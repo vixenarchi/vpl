@@ -40,11 +40,25 @@ ok(await until(async () => (await pg.locator('#spec').isVisible()) || (await pg.
   'signed in, app or welcome is visible');
 
 // ── a document
+// A previous failed run can leave its document behind; a test that only passes
+// on the first attempt is not a test, so clear the name before creating it.
+for (let i = 0; i < 6; i++) {
+  const old = pg.locator('.proj-row', { hasText: 'vr-check dog house' });
+  if (!(await old.count())) break;
+  await old.first().click();
+  await pg.waitForTimeout(600);
+  await pg.locator('.proj-row.on .kill').click();
+  await pg.waitForTimeout(900);
+}
+// The document is created over the network. Naming it before it exists types
+// into whichever document was open before, so wait for the rail to grow.
+const railBefore = await pg.locator('.proj-row').count();
 await pg.click('#btn-new-project');
-await pg.waitForTimeout(1200);
+if (!(await until(async () => (await pg.locator('.proj-row').count()) === railBefore + 1, 12000)))
+  console.log('  note: the new document did not appear in the rail');
 await pg.fill('#proj-title', 'vr-check dog house');
-await pg.waitForTimeout(900);
-ok((await pg.inputValue('#proj-title')) === 'vr-check dog house', 'a document can be named');
+ok(await until(async () => (await pg.inputValue('#proj-title')) === 'vr-check dog house', 5000),
+  'a document can be named');
 ok(await pg.locator('#brief').isVisible(), 'the brief sits above the rows');
 
 // the brief saves and survives
@@ -53,10 +67,11 @@ await pg.waitForTimeout(200);
 await pg.fill('#brief-text', 'a dog house for one medium dog, built by three people in a weekend');
 await pg.fill('#brief-scope', 'no heating, no electricity');
 await pg.click('#brief-save');
-await pg.waitForTimeout(900);
-ok((await pg.textContent('#brief-msg')).trim() === 'saved', 'the brief saves');
+ok(await until(async () => (await pg.textContent('#brief-msg')).trim() === 'saved', 8000),
+  'the brief saves');
 
 // ── rows: type, Enter, next
+let n = 0;
 for (const s of [
   'The floor shall be raised 5 cm above the ground.',
   'The roof shall shed rain without a gutter.',
@@ -64,7 +79,8 @@ for (const s of [
 ]) {
   await pg.fill('#req-add', s);
   await pg.press('#req-add', 'Enter');
-  await pg.waitForTimeout(700);
+  await until(async () => (await pg.locator('#rows tr[data-id]').count()) >= n + 1, 8000);
+  n++;
 }
 ok((await pg.locator('#rows tr[data-id]').count()) === 3, 'three rows are in the sheet');
 const refs = await pg.locator('#rows tr[data-id] .c-ref').allTextContents();
@@ -73,33 +89,33 @@ ok((await pg.textContent('#proj-meta')).includes('3 rows'), 'the count above the
 
 // ── strength: one click cycles, the mark and the word change together
 await pg.locator('#rows tr[data-id]').nth(1).locator('.strength').click();
-await pg.waitForTimeout(800);
+await until(async () => (await pg.locator('#rows tr[data-id]').nth(1).locator('.strength').textContent()).includes('optional'), 8000);
 let s2 = await pg.locator('#rows tr[data-id]').nth(1).locator('.strength').textContent();
 ok(s2.includes('optional') && s2.includes('◆'), 'second row became optional, mark and word together');
 await pg.locator('#rows tr[data-id]').nth(2).locator('.strength').click();
-await pg.waitForTimeout(400);
+await until(async () => (await pg.locator('#rows tr[data-id]').nth(2).locator('.strength').textContent()).includes('optional'), 8000);
 await pg.locator('#rows tr[data-id]').nth(2).locator('.strength').click();
-await pg.waitForTimeout(800);
+await until(async () => (await pg.locator('#rows tr[data-id]').nth(2).locator('.strength').textContent()).includes('wish'), 8000);
 const s3 = await pg.locator('#rows tr[data-id]').nth(2).locator('.strength').textContent();
 ok(s3.includes('wish') && s3.includes('◇'), 'third row cycled to wish');
 
 // ── filters
 const chip = (f) => pg.locator(`#filters .chip[data-f="${f}"]`);
-ok((await chip('must').locator('b').textContent()) === '1', 'the must chip counts one');
+ok(await until(async () => (await chip('must').locator('b').textContent()) === '1', 6000), 'the must chip counts one');
 await chip('optional').click();
-await pg.waitForTimeout(300);
-ok((await pg.locator('#rows tr[data-id]').count()) === 1, 'filtering to optional shows one row');
+ok(await until(async () => (await pg.locator('#rows tr[data-id]').count()) === 1, 6000),
+  'filtering to optional shows one row');
 await chip('wish').click();
-await pg.waitForTimeout(300);
-ok((await pg.locator('#rows tr[data-id] .c-ref').textContent()) === 'VR-003', 'filtering to wish shows the third');
+ok(await until(async () => (await pg.locator('#rows tr[data-id] .c-ref').textContent()) === 'VR-003', 6000),
+  'filtering to wish shows the third');
 await chip('all').click();
-await pg.waitForTimeout(300);
+await until(async () => (await pg.locator('#rows tr[data-id]').count()) === 3, 6000);
 ok((await pg.locator('#rows tr[data-id]').count()) === 3, 'all brings the three back');
 
 // ── find
 await pg.fill('#q', 'VR-002');
-await pg.waitForTimeout(300);
-ok((await pg.locator('#rows tr[data-id]').count()) === 1, 'the find box narrows the sheet');
+ok(await until(async () => (await pg.locator('#rows tr[data-id]').count()) === 1, 6000),
+  'the find box narrows the sheet');
 await pg.fill('#q', '');
 await pg.waitForTimeout(300);
 
@@ -143,19 +159,20 @@ ok((await pg.locator('#term-list li').count()) === 1, 'a word goes into the glos
 await pg.click('#glossary-x');
 
 // ── copy as markdown
+await pg.bringToFront();
 await pg.click('#btn-copy');
-await pg.waitForTimeout(600);
-const clip = await pg.evaluate(() => navigator.clipboard.readText());
-ok(clip.includes('# vr-check dog house'), 'copy gives a markdown document');
+const clip = await until(() => pg.evaluate(() => navigator.clipboard.readText()), 6000) || '';
+ok(clip.includes('# vr-check dog house'), 'copy gives a markdown document' + (clip.includes('# vr-check dog house') ? '' : ' — got: ' + JSON.stringify(clip.slice(0, 60))));
 ok(clip.includes('**VR-001**'), 'with the stable names in it');
 ok(clip.includes('## glossary'), 'and the glossary');
 ok(clip.includes('a dog house for one medium dog'), 'and the brief');
 
 // ── it survives a reload
 await pg.reload({ waitUntil: 'networkidle' });
-await pg.waitForTimeout(1800);
-ok((await pg.locator('#rows tr[data-id]').count()) === 3, 'three rows after a reload');
-ok((await pg.inputValue('#proj-title')) === 'vr-check dog house', 'the document reopened as the last one');
+ok(await until(async () => (await pg.locator('#rows tr[data-id]').count()) === 3, 12000),
+  'three rows after a reload');
+ok(await until(async () => (await pg.inputValue('#proj-title')) === 'vr-check dog house', 12000),
+  'the document reopened as the last one');
 await pg.click('#brief summary');
 await pg.waitForTimeout(300);
 ok((await pg.inputValue('#brief-text')).includes('medium dog'), 'the brief survived');

@@ -595,3 +595,20 @@ And one design note, because it decides what the app is: a wish stays in the sam
 sheet. In `vi` parking is a decision and the drawer keeps those rows out of the
 way; a wish is not a decision, it is the same row with a smaller stake, so it is
 a colour, a word and a filter — not a second list.
+
+One more, found the morning after on the real address and not before: the name
+of a document. `openProject` paints the sheet twice — once with the document,
+once again when its rows arrive — and `paintHead` wrote the stored name into the
+field every time. On localhost the rows land in 10 ms, before anybody can type;
+on `vr.terg.hr` they land late, and naming a fresh document looked like it worked
+while the debounced save then read the restored old value, found it equal to the
+stored one and did nothing. Nothing errored, nothing was lost visibly, and the
+document stayed "untitled spec". The field now follows the document only when the
+document changes (`headFor`), so a repaint of the same sheet cannot overwrite a
+name being typed.
+
+The test had the same shape of flaw: it clicked *new document* and typed
+immediately, which on a slow link types into the previous document. It waits for
+the rail to grow now. A test that passes only because the network is quick is not
+a test — which is why all four vr scripts are run against production as well as
+against `127.0.0.1`.
