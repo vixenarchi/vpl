@@ -773,3 +773,37 @@ The lesson is the same one as the last pass, one level down: **space is a
 budget, and the interface spends it on the one thing the person is looking at.**
 A form that repeats the sentence you just clicked, with a label above every
 control, spends the budget twice.
+
+## vz: the last letter, and the dictionary
+
+Zed is the app the suite was missing without knowing it: every other app is a
+document, and a document is the wrong shape for `db2admin`/`db2admin`. What is
+needed there is a name and a value and no ceremony — a poor man's Redis with a
+page in front of it.
+
+Three decisions carried it:
+
+- **the key is the identity, and it ignores case.** `DB_HOST` and `db_host` are
+  one row, so the second write replaces instead of standing beside it. This is
+  the same rule as names and addresses in the rest of the suite, and it is the
+  reason a pasted `.env` twice does not double the dictionary.
+- **a value is text and stays text.** No markdown, no links, no formatting: a
+  dictionary is not an editor. The value is monospace, folded to dots until
+  asked for, and opened in place.
+- **publishing is a different promise from sharing, so it is a different
+  switch.** A share link is read by a person; a published project is read by a
+  program, over `*` CORS, with no account. Mixing the two would have produced a
+  share dialog that sometimes opened a machine door — so `/p/` exists on its
+  own, with its own checkbox and its own sentence in the dialog.
+
+Two things had to be said out loud rather than engineered away. **Hidden is a
+curtain, not a lock** — the value is plain text in the table and anybody with a
+link reads it. And **publishing includes hidden values** — a service that hides
+half a configuration would be a worse lie than a public password, so the
+checkbox warns once and then does exactly what it says.
+
+The build found one real bug of the "two writes in the air" kind: typing a key,
+pressing Enter, typing the next one made two `refresh()` calls, and the older
+answer could paint over the newer one, losing a row on screen. A sequence
+number fixes it — **only the last answer counts** — and it is the kind of thing
+that never shows up in a single-save test, only in a paste or a fast typist.

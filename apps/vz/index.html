@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vz · zed</title>
+<meta name="description" content="vixen zed — a project is a dictionary: a key, a value, and everything that fits in text.">
+<meta name="theme-color" content="#faf8f4">
+<link rel="icon" href="icons/z.svg" type="image/svg+xml">
+
+<link rel="stylesheet" href="vendor/tokens.css">
+<link rel="stylesheet" href="style.css">
+
+<script>
+  try { var t = localStorage.getItem('vpl.theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</head>
+<body>
+
+<!-- ── gate ──────────────────────────────────────────────────────── -->
+<section id="gate" class="gate" hidden>
+  <button id="gate-theme" class="corner-theme icon" type="button" aria-label="light or dark">◐</button>
+  <form id="gate-form" class="gate-form">
+    <div class="gate-brand">
+      <span class="gate-mark" aria-hidden="true">v</span>
+      <h1>vz</h1>
+      <span class="gate-sub">vixen zed</span>
+    </div>
+    <label for="email">e-mail or username</label>
+    <input id="email" type="text" autocomplete="username" spellcheck="false"
+           autocapitalize="none" autocorrect="off"
+           placeholder="you@example.com or username">
+    <label for="pass">password</label>
+    <input id="pass" type="password" autocomplete="current-password">
+    <p id="gate-msg" class="gate-msg" aria-live="polite"></p>
+    <div class="confirm-row">
+      <button id="btn-register" class="ghost" type="button">create account</button>
+      <button id="btn-login" class="primary" type="submit">sign in</button>
+    </div>
+    <button id="btn-google" type="button" class="google">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <path fill="#4285F4" d="M23 12.2c0-.8-.1-1.6-.2-2.3H12v4.4h6.2c-.3 1.4-1.1 2.6-2.4 3.4v2.8h3.9c2.3-2.1 3.3-5.2 3.3-8.3z"/>
+        <path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-2.8c-1.1.7-2.5 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3C3.4 21.5 7.4 24 12 24z"/>
+        <path fill="#FBBC05" d="M5.4 14.6c-.2-.7-.4-1.4-.4-2.2s.1-1.5.4-2.2v-3H1.4C.5 8.9 0 10.4 0 12s.5 3.1 1.4 4.4l4-2.6z"/>
+        <path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4C17.9 1.2 15.2 0 12 0 7.4 0 3.4 2.5 1.4 6.2l4 3C6.3 6.4 8.9 4.8 12 4.8z"/>
+      </svg>
+      continue with Google
+    </button>
+    <p class="gate-fine">one account for the whole suite — it works in vn, vi and vr too.</p>
+  </form>
+</section>
+
+<!-- ── the app ───────────────────────────────────────────────────── -->
+<div id="app" class="app" hidden>
+  <header class="bar">
+    <span class="brand-mark" aria-hidden="true">v</span>
+    <span class="brand-word">vz</span>
+    <span class="brand-sub">zed</span>
+    <button id="btn-projects" class="icon only-narrow" type="button" title="projects">☰</button>
+    <span class="grow"></span>
+    <span id="who" class="who"></span>
+    <button id="btn-theme" class="icon" type="button" title="light or dark">◐</button>
+    <button id="btn-out" class="ghost" type="button" title="sign out">out</button>
+  </header>
+
+  <div class="body">
+    <nav id="projects" class="projects" aria-label="projects">
+      <div class="proj-head">
+        <span>projects</span>
+        <button id="btn-new-project" class="icon o-only" type="button" title="new project">＋</button>
+      </div>
+      <ul id="proj-list" class="proj-list"></ul>
+      <p id="proj-none" class="proj-none muted">no projects yet. one project is one dictionary.</p>
+
+      <div id="bin-rail" class="bin-rail" hidden>
+        <button id="btn-bin" class="bin-pick" type="button">
+          <span class="bin-word">recycle bin</span>
+          <span id="bin-count" class="bin-n"></span>
+        </button>
+      </div>
+    </nav>
+
+    <main id="spec" class="spec" hidden>
+      <div class="spec-head">
+        <input id="proj-title" class="title" type="text" placeholder="untitled"
+               aria-label="project title" autocomplete="off" spellcheck="false">
+        <button id="btn-own" class="ghost" type="button" title="copy this dictionary into your own projects" hidden>copy to mine</button>
+        <button id="btn-share" class="ghost o-only" type="button" title="a link, a person, or a published service">share</button>
+      </div>
+      <p id="proj-meta" class="proj-meta muted"></p>
+      <p id="guest-banner" class="guest-banner" hidden></p>
+
+      <div class="tools">
+        <div class="tools-l">
+          <input id="q" type="search" placeholder="find a key or a value" aria-label="find a key or a value">
+        </div>
+        <div class="tools-r">
+          <span id="pager" class="pager"></span>
+          <button id="btn-values" class="ghost" type="button" title="show every value on the sheet">show values</button>
+          <button id="btn-copy" class="ghost" type="button">copy</button>
+        </div>
+      </div>
+
+      <ul id="pairs" class="pairs"></ul>
+      <p id="pairs-none" class="muted" hidden>nothing here yet — a key and a value go in the boxes below.</p>
+
+      <form id="add" class="add w-only" autocomplete="off">
+        <input id="add-key" class="a-key" type="text" spellcheck="false" autocapitalize="none"
+               placeholder="key — system.throttling" aria-label="key">
+        <input id="add-val" class="a-val" type="text" spellcheck="true"
+               placeholder="value — 30" aria-label="value">
+        <button class="primary" type="submit">add</button>
+      </form>
+      <p class="add-hint muted w-only">a key ignores case; a value can be long — open the row to write more.</p>
+
+      <div class="foot-tools">
+        <span id="add-msg" class="msg" aria-live="polite"></span>
+        <span class="grow"></span>
+        <button id="btn-paste" class="ghost w-only" type="button">paste keys</button>
+        <button id="btn-print" class="ghost" type="button" title="ctrl+p">print</button>
+      </div>
+    </main>
+
+    <main id="binview" class="spec" hidden>
+      <div class="spec-head">
+        <h2 class="bin-title">recycle bin</h2>
+        <button id="btn-bin-back" class="ghost" type="button">back to the sheet</button>
+      </div>
+      <p class="muted">keys that left this project. A restore puts one back where it was;
+        emptying is for good.</p>
+      <ul id="bin-list" class="pairs bin-list"></ul>
+      <p id="bin-none" class="muted" hidden>the bin is empty.</p>
+      <div class="foot-tools">
+        <span id="bin-msg" class="msg" aria-live="polite"></span>
+        <span class="grow"></span>
+        <button id="btn-empty" class="ghost danger o-only" type="button">empty the bin</button>
+      </div>
+    </main>
+
+    <section id="welcome" class="welcome">
+      <div class="welcome-card">
+        <span class="welcome-mark" aria-hidden="true">v</span>
+        <h2>a project is a dictionary</h2>
+        <p>A key, a value, both plain text. A glossary, a configuration, a list of
+          dev passwords, a phone book, a joke — the app does not care what the
+          value means, only that you can find it by its key.</p>
+        <button id="btn-first" class="primary" type="button">start a project</button>
+        <p class="welcome-fine muted">hidden values are a curtain, not a lock — a published
+          project is public text on the internet.</p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ── sharing: link, person, published service ───────────────────── -->
+<dialog id="share-dialog" class="dialog wide">
+  <button id="share-x" class="dialog-x" type="button" aria-label="close">✕</button>
+  <h2>share this project</h2>
+  <p>a guest who is <b>view</b> reads and touches nothing; <b>edit</b> may add
+    keys and values and move them to the bin. The name, the hiding, the
+    publishing and emptying the bin stay with you.</p>
+
+  <p class="dialog-sep">a public link — anyone with it can read</p>
+  <div class="share-link-row">
+    <input id="share-link" type="text" readonly placeholder="no link yet">
+    <button id="share-make" class="ghost" type="button">make link</button>
+  </div>
+  <button id="share-copy" class="ghost" type="button">copy the link</button>
+
+  <p class="dialog-sep">one person</p>
+  <div class="share-person-row">
+    <input id="share-email" type="text" spellcheck="false" autocapitalize="none"
+           placeholder="name@example.com or a username">
+    <select id="share-role">
+      <option value="view">can read</option>
+      <option value="edit">can write</option>
+    </select>
+    <button id="share-add" class="primary" type="button">share</button>
+  </div>
+
+  <ul id="share-list" class="share-list"></ul>
+
+  <p class="dialog-sep">publish as a service — read-only</p>
+  <p class="dialog-note">while this is on, every key and value here answers
+    <b>anyone</b> at <code>/p/&lt;code&gt;</code>, and hidden values are included:
+    a curtain on this screen is not a lock on the internet.</p>
+  <label class="publish-row">
+    <input id="publish-on" type="checkbox">
+    <span>publish this project as a read-only REST service</span>
+  </label>
+  <div id="publish-urls" class="publish-urls" hidden>
+    <label for="pub-human">for a person</label>
+    <input id="pub-human" type="text" readonly>
+    <label for="pub-map">the whole map, as JSON</label>
+    <input id="pub-map" type="text" readonly>
+    <label for="pub-one">one key, as text</label>
+    <input id="pub-one" type="text" readonly>
+  </div>
+
+  <p id="share-msg" class="share-msg" aria-live="polite"></p>
+</dialog>
+
+<!-- ── paste keys ─────────────────────────────────────────────────── -->
+<dialog id="paste-dialog" class="dialog wide">
+  <button id="paste-x" class="dialog-x" type="button" aria-label="close">✕</button>
+  <h2>paste keys</h2>
+  <p>One pair per line, as <code>key=value</code> or with a tab between them.
+    A JSON object pastes as many keys at once; a value may be a quoted string
+    or a block of code.</p>
+  <textarea id="paste-text" rows="10" spellcheck="false"
+            placeholder="db.host=db2.dev.local&#10;db.user=db2admin&#10;db.password=db2admin"></textarea>
+  <p id="paste-msg" class="msg" aria-live="polite"></p>
+  <div class="dialog-foot">
+    <button id="paste-x2" class="ghost" type="button">cancel</button>
+    <button id="paste-do" class="primary w-only" type="button">add the keys</button>
+  </div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="config.local.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -67,7 +67,7 @@ in `vi`.
 ```bash
 ./serve vn                 # http://127.0.0.1:8099
 PORT=8100 ./serve vi       # vi needs its own port; 8099 is vn
-./deploy vn | vi | api     # stage → upload to Cloudflare Pages
+./deploy vn | vi | vr | vz | api   # stage → upload to Cloudflare Pages
 ./tools/stage.sh vi        # copy packages/shell into apps/vi/vendor
 ```
 
@@ -95,6 +95,16 @@ storage API is the only way to remove the bytes, and `vpl_delete_my_account()`
 is SQL. A bucket sweep is a dashboard job; it is the one promise the suite does
 not keep on its own.
 
+### The published service
+
+`vz` is the only app with a second promise beside sharing: a published project
+answers anyone at `GET /p/<code>` (JSON map) and `GET /p/<code>/<key>`
+(`text/plain`, `404` for a key that is not there). Two Pages Functions in
+`apps/vz/functions/p/` call the RPC `vz_read_public` with the anon key — no
+server, and `*` on CORS on purpose. Publishing sends every value, hidden ones
+included; the checkbox says that once, in the dialog, because the alternative
+would be a service that quietly serves half a configuration.
+
 ## Tests
 
 Playwright lives in `apps/vn/test/node_modules`; run everything from
@@ -111,6 +121,7 @@ VR_URL=http://127.0.0.1:8101 node vr-check.mjs      # sheet, 59 checks
 VR_URL=http://127.0.0.1:8101 node vr-paste.mjs      # spreadsheet, 11 checks
 VR_URL=http://127.0.0.1:8101 node vr-ai.mjs         # model proposals, 21 checks
 VR_URL=http://127.0.0.1:8101 node vr-share.mjs      # sharing, the refusal, the copy + its file, 29 checks
+VZ_URL=http://127.0.0.1:8103 node vz-check.mjs      # dictionary, bin, guest, the service, phone, 59 checks
 VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "project title"
 ```
 

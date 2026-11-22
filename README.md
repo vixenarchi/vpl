@@ -9,12 +9,15 @@ A suite of small, independent apps that share one look and one signed-in person.
 - **vr** — requirements: a sheet of rows, one testable sentence each, marked
   must / optional / wish, with proof, a brief and a glossary.
   At https://vr.terg.hr — see `docs/vr.md`
+- **vz** — zed, a dictionary: a project is a box of keys, a value is any text,
+  and a project can be published as a read-only HTTP service.
+  At https://vz.terg.hr — see `docs/vz.md`
 - **api** — the suite's one CORS door to a model endpoint, at
   https://api.terg.hr
 
 Each app is its own folder, its own Cloudflare Pages project, its own domain,
-and its own tables (`vn_notes`, `vi_ideas`, …). What they share is a palette
-(`packages/shell`), one database, one login. Nothing else.
+and its own tables (`vn_notes`, `vi_ideas`, `vr_reqs`, `vz_pairs`, …). What they
+share is a palette (`packages/shell`), one database, one login. Nothing else.
 
 No servers, no bundler, no build step, no monthly bill.
 
@@ -56,7 +59,18 @@ clipboard, and every app has the same two buttons:
 `copy to mine` only appears for someone who is signed in and is not the owner;
 `copy` appears for everyone who can read. `vr` writes its own document;
 `vn` copies a note and every chapter under it; `vi` copies a funnel with the
-chosen idea first.
+chosen idea first; `vz` copies a dictionary as `**key** — value` lines.
+
+## Publishing a dictionary as a service
+
+`vz` has a second switch beside sharing, with a different promise: a published
+project answers anyone, read-only, without an account.
+
+- `GET /p/<code>` — the whole map as JSON
+- `GET /p/<code>/<key>` — one value as `text/plain`, `404` if the key is not there
+
+Every value is included, hidden ones too, and the checkbox says so once before
+it turns on: a curtain on the screen is not a lock on the internet.
 
 ## From nothing to running
 
@@ -176,10 +190,11 @@ New changes go beside it as new files; that one is never edited again.
 ./deploy vn             # stage apps/vn + the shell, upload to Cloudflare Pages
 ./deploy vi             # the same for the other app
 ./deploy vr             # requirements
+./deploy vz             # zed
 ./deploy api            # the proxy
 ```
 
-One Pages project per app (`vpl`, `vpl-vi`, `vpl-vr`, `vpl-api`), one custom domain per
+One Pages project per app (`vpl`, `vpl-vi`, `vpl-vr`, `vpl-vz`, `vpl-api`), one custom domain per
 project. Deploying one app never touches another; the free plan's 500 builds a
 month is shared, so `./deploy vn` only ships `vn`.
 
@@ -188,7 +203,7 @@ really signed in (it exits 0 when it is not, so the script reads its output),
 and refuses to publish a `service_role` key. A code change ships with
 `./deploy`; a database change ships as a new migration. Nothing else ships.
 
-One Pages project per app, named in `deploy` (`vpl` for vn, `vpl-vi`, `vpl-vr`, `vpl-api`);
+One Pages project per app, named in `deploy` (`vpl` for vn, `vpl-vi`, `vpl-vr`, `vpl-vz`, `vpl-api`);
 override with `PROJECT=… ./deploy vn`. The custom domain is a CNAME to
 `<project>.pages.dev`, added once in the Cloudflare dashboard and once as the
 project's custom domain. In Supabase, Site URL and the redirect urls must name
@@ -230,13 +245,14 @@ To support another provider, add its host to `ALLOWED` in
 apps/vn/                  notes: index.html, app.js, style.css, lib/, test/
 apps/vi/                  ideas: the same shape, much smaller
 apps/vr/                  requirements: a sheet, its brief, its glossary
+apps/vz/                  zed: a dictionary, and a read-only service at /p/
 apps/api/                 the shared proxy (one function, one page)
 packages/shell/tokens.css palette, type scale, page foundation — copied into
                           each app's vendor/ by tools/stage.sh
 packages/shell/ai.js      providers, models and the endpoint rule, shared by every
                           app that talks to a model — same copying, same idea
 tools/stage.sh            "copy the shared look into this app"
-deploy                    publish one app: ./deploy vn | vi | vr | api
+deploy                    publish one app: ./deploy vn | vi | vr | vz | api
 serve  serve.py           local server that refuses to cache
 supabase/migrations/      the schema, and every change since
 docs/start-here.md        a cold start: what this is, where it is written down,
@@ -284,6 +300,7 @@ VR_URL=http://127.0.0.1:8101 node vr-check.mjs     # 59 checks (tree, sort, file
 VR_URL=http://127.0.0.1:8101 node vr-paste.mjs     # 11 checks (a spreadsheet, commas, names)
 VR_URL=http://127.0.0.1:8101 node vr-ai.mjs        # 20 checks (model faked at the proxy)
 VR_URL=http://127.0.0.1:8101 node vr-share.mjs     # 29 checks (link, editor, refusal, the copy)
+VZ_URL=http://127.0.0.1:8103 node vz-check.mjs    # 59 checks (keys, bin, guest, the service, phone)
 ```
 
 or all four at once, server and all: `tools/test-vr.sh`
