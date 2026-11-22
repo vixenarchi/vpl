@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vr · requirements</title>
+<meta name="description" content="vixen requirements — a sheet of rows, one testable sentence each.">
+<meta name="theme-color" content="#faf8f4">
+<link rel="icon" href="icons/v.svg" type="image/svg+xml">
+
+<link rel="stylesheet" href="vendor/tokens.css">
+<link rel="stylesheet" href="style.css">
+
+<script>
+  try { var t = localStorage.getItem('vpl.theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</head>
+<body>
+
+<!-- ── gate ──────────────────────────────────────────────────────── -->
+<section id="gate" class="gate" hidden>
+  <button id="gate-theme" class="corner-theme icon" type="button" aria-label="light or dark">◐</button>
+  <form id="gate-form" class="gate-form">
+    <div class="gate-brand">
+      <span class="gate-mark" aria-hidden="true">v</span>
+      <h1>vr</h1>
+      <span class="gate-sub">vixen requirements</span>
+    </div>
+    <label for="email">e-mail or username</label>
+    <input id="email" type="text" autocomplete="username" spellcheck="false"
+           autocapitalize="none" autocorrect="off"
+           placeholder="you@example.com or username">
+    <label for="pass">password</label>
+    <input id="pass" type="password" autocomplete="current-password">
+    <p id="gate-msg" class="gate-msg" aria-live="polite"></p>
+    <div class="confirm-row">
+      <button id="btn-register" class="ghost" type="button">create account</button>
+      <button id="btn-login" class="primary" type="submit">sign in</button>
+    </div>
+    <button id="btn-google" type="button" class="google">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <path fill="#4285F4" d="M23 12.2c0-.8-.1-1.6-.2-2.3H12v4.4h6.2c-.3 1.4-1.1 2.6-2.4 3.4v2.8h3.9c2.3-2.1 3.3-5.2 3.3-8.3z"/>
+        <path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-2.8c-1.1.7-2.5 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3C3.4 21.5 7.4 24 12 24z"/>
+        <path fill="#FBBC05" d="M5.4 14.6c-.2-.7-.4-1.4-.4-2.2s.1-1.5.4-2.2v-3H1.4C.5 8.9 0 10.4 0 12s.5 3.1 1.4 4.4l4-2.6z"/>
+        <path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4C17.9 1.2 15.2 0 12 0 7.4 0 3.4 2.5 1.4 6.2l4 3C6.3 6.4 8.9 4.8 12 4.8z"/>
+      </svg>
+      continue with Google
+    </button>
+    <p class="gate-fine">one account for the whole suite — it works in vn and vi too.</p>
+  </form>
+</section>
+
+<!-- ── the app ───────────────────────────────────────────────────── -->
+<div id="app" class="app" hidden>
+  <header class="bar">
+    <span class="brand-mark" aria-hidden="true">v</span>
+    <span class="brand-word">vr</span>
+    <span class="brand-sub">requirements</span>
+    <button id="btn-projects" class="icon only-narrow" type="button" title="documents">☰</button>
+    <span class="grow"></span>
+    <span id="who" class="who"></span>
+    <button id="btn-ai" class="icon" type="button" title="the model this app may use">⚙</button>
+    <button id="btn-theme" class="icon" type="button" title="light or dark">◐</button>
+    <button id="btn-out" class="ghost" type="button" title="sign out">out</button>
+  </header>
+
+  <div class="body">
+    <nav id="projects" class="projects" aria-label="documents">
+      <div class="proj-head">
+        <span>documents</span>
+        <button id="btn-new-project" class="icon o-only" type="button" title="new document">＋</button>
+      </div>
+      <ul id="proj-list" class="proj-list"></ul>
+      <p id="proj-none" class="proj-none muted">no documents yet. one document is one sheet.</p>
+    </nav>
+
+    <main id="spec" class="spec" hidden>
+      <p id="ai-hint" class="ai-hint" hidden>
+        the <b>AI</b> buttons propose in a list — they need a model key first.
+        <button id="ai-hint-open" class="link" type="button">open settings</button>
+      </p>
+
+      <div class="spec-head">
+        <input id="proj-title" class="title" type="text" placeholder="untitled spec"
+               aria-label="document title" autocomplete="off">
+        <button id="btn-share" class="ghost o-only" type="button" title="a link or a person">share</button>
+      </div>
+      <p id="proj-meta" class="proj-meta muted"></p>
+      <p id="guest-banner" class="guest-banner" hidden></p>
+      <p id="print-meta" class="print-meta"></p>
+
+      <!-- the brief: what the sheet is about, before the rows -->
+      <details id="brief" class="brief">
+        <summary>the brief<span class="muted"> — what this is about, what it assumes, what it leaves out</span></summary>
+        <label for="brief-text">what this is about</label>
+        <textarea id="brief-text" rows="4" placeholder="For whom, why now, what exists today."></textarea>
+        <label for="brief-assume">assumptions</label>
+        <textarea id="brief-assume" rows="2" placeholder="One per line, each thing taken as true without proof."></textarea>
+        <label for="brief-scope">out of scope</label>
+        <textarea id="brief-scope" rows="2" placeholder="The things a reader might expect and will not get."></textarea>
+        <div class="brief-foot">
+          <span id="brief-msg" class="msg"></span>
+          <button id="brief-ai" class="ghost w-only" type="button">draft rows from this</button>
+          <button id="brief-save" class="primary w-only" type="button">save</button>
+        </div>
+      </details>
+
+      <div class="tools">
+        <div class="filters" id="filters" role="group" aria-label="how hard">
+          <button class="chip on" data-f="all" type="button">all <b></b></button>
+          <button class="chip must" data-f="must" type="button">■ must <b></b></button>
+          <button class="chip optional" data-f="optional" type="button">◆ optional <b></b></button>
+          <button class="chip wish" data-f="wish" type="button">◇ wish <b></b></button>
+        </div>
+        <div class="tools-r">
+          <input id="q" type="search" placeholder="find a row" aria-label="find a row">
+          <button id="btn-columns" class="ghost" type="button" aria-pressed="false">all columns</button>
+          <button id="btn-glossary" class="ghost" type="button">glossary</button>
+          <button id="btn-paste" class="ghost w-only" type="button">paste rows</button>
+          <button id="btn-review" class="ghost w-only" type="button">review with AI</button>
+          <button id="btn-copy" class="ghost" type="button">copy</button>
+        </div>
+      </div>
+
+      <p id="gaps" class="gaps" hidden></p>
+
+      <table id="sheet" class="sheet">
+        <thead>
+          <tr>
+            <th class="c-ref">id</th>
+            <th class="c-req">requirement</th>
+            <th class="c-strength">how hard</th>
+            <th class="c-theme">theme</th>
+            <th class="c-extra">kind</th>
+            <th class="c-extra">how we know</th>
+            <th class="c-extra">source</th>
+            <th class="c-extra">when</th>
+            <th class="c-extra">status</th>
+            <th class="c-tools"><span class="sr-only">row</span></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+        <tfoot>
+          <tr class="add-row w-only">
+            <td class="c-ref">new</td>
+            <td colspan="9">
+              <input id="req-add" type="text" spellcheck="true"
+                     placeholder="one testable sentence — then Enter">
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+      <p id="sheet-none" class="muted" hidden>no rows yet. the first one goes in the box above.</p>
+      <p class="print-note muted">prints as the document · <kbd>ctrl</kbd>+<kbd>p</kbd> · rows keep their names</p>
+    </main>
+
+    <section id="welcome" class="welcome">
+      <div class="welcome-card">
+        <span class="welcome-mark" aria-hidden="true">v</span>
+        <h2>one document, one sheet</h2>
+        <p>Rows in order, each one testable sentence. Mark what is a must, what
+          can wait, and what is only a wish. The glossary is for the words the
+          sheet assumes — press <b>glossary</b> and let it grow as you write.</p>
+        <button id="btn-first" class="primary" type="button">start a document</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ── model settings ─────────────────────────────────────────────── -->
+<dialog id="ai-dialog" class="dialog">
+  <button id="ai-x" class="dialog-x" type="button" aria-label="close">✕</button>
+  <h2>the model</h2>
+  <p>your own key, kept in this browser. nothing is sent anywhere except the
+    endpoint you name, through this app's own origin.</p>
+  <label for="ai-provider">provider</label>
+  <select id="ai-provider"></select>
+  <label for="ai-url">api url</label>
+  <input id="ai-url" type="text" spellcheck="false" autocapitalize="off"
+         placeholder="https://api.openai.com/v1">
+  <label for="ai-key">api key</label>
+  <input id="ai-key" type="password" spellcheck="false" autocapitalize="off" placeholder="sk-…">
+  <label for="ai-model">model</label>
+  <input id="ai-model" type="text" spellcheck="false" autocapitalize="off"
+         list="ai-models" placeholder="gpt-4o-mini">
+  <datalist id="ai-models"></datalist>
+
+  <p class="dialog-sep">evidence — optional, used by “suggest terms”</p>
+  <label for="search-provider">search</label>
+  <select id="search-provider"></select>
+  <label for="search-key">search key</label>
+  <input id="search-key" type="password" spellcheck="false" placeholder="tvly-… or a Serper key">
+
+  <p id="ai-msg" class="share-msg" aria-live="polite"></p>
+  <div class="confirm-row">
+    <button id="ai-forget" class="ghost" type="button">forget the key</button>
+    <button id="ai-save" class="primary" type="button">save</button>
+  </div>
+</dialog>
+
+<!-- ── sharing: one document, a link or a person ──────────────────── -->
+<dialog id="share-dialog" class="dialog">
+  <button id="share-x" class="dialog-x" type="button" aria-label="close">✕</button>
+  <h2>share this document</h2>
+  <p>a guest who is <b>view</b> reads and touches nothing; <b>edit</b> may write
+    text but never decides — the name, the strength, the kind, the order and
+    deleting stay with you.</p>
+
+  <p class="dialog-sep">a public link — anyone with it can read</p>
+  <div class="share-link-row">
+    <input id="share-link" type="text" readonly placeholder="no link yet">
+    <button id="share-make" class="ghost" type="button">make link</button>
+  </div>
+  <button id="share-copy" class="ghost" type="button">copy the link</button>
+
+  <p class="dialog-sep">one person</p>
+  <div class="share-person-row">
+    <input id="share-email" type="text" spellcheck="false" autocapitalize="none"
+           placeholder="name@example.com or a username">
+    <select id="share-role">
+      <option value="view">can read</option>
+      <option value="edit">can write</option>
+    </select>
+    <button id="share-add" class="primary" type="button">share</button>
+  </div>
+
+  <ul id="share-list" class="share-list"></ul>
+  <p id="share-msg" class="share-msg" aria-live="polite"></p>
+</dialog>
+
+<!-- ── the glossary: the words a document assumes ─────────────────── -->
+<dialog id="glossary-dialog" class="dialog wide">
+  <button id="glossary-x" class="dialog-x" type="button" aria-label="close">✕</button>
+  <h2>glossary</h2>
+  <p>the words this document assumes. Same acronym in another document may mean
+    something else, so this list belongs to this sheet, not to the suite.</p>
+  <div class="term-add w-only">
+    <input id="term-word" type="text" placeholder="term" aria-label="term">
+    <input id="term-mean" type="text" placeholder="what it means here — one sentence" aria-label="meaning">
+    <button id="term-add-b" class="primary w-only" type="button">add</button>
+  </div>
+  <ul id="term-list" class="term-list"></ul>
+  <p id="term-none" class="muted">no words yet.</p>
+  <div class="dialog-foot">
+    <span id="term-msg" class="msg" aria-live="polite"></span>
+    <button id="term-suggest" class="ghost w-only" type="button">suggest terms</button>
+  </div>
+</dialog>
+
+<!-- ── the model's reading, as a list of proposals ────────────────── -->
+<dialog id="review-dialog" class="dialog wide">
+  <button id="review-x" class="dialog-x" type="button" aria-label="close">✕</button>
+  <h2>the model's reading</h2>
+  <p>Nothing changes until you press <b>use it</b>. A proposal it cannot defend
+    is a proposal you drop.</p>
+  <ul id="review-list" class="review-list"></ul>
+  <p id="review-none" class="muted">nothing to change — or the model had nothing to say.</p>
+  <div class="dialog-foot">
+    <span id="review-msg" class="msg" aria-live="polite"></span>
+    <button id="review-all" class="primary w-only" type="button">use all</button>
+  </div>
+</dialog>
+
+<!-- ── paste from a spreadsheet ───────────────────────────────────── -->
+<dialog id="paste-dialog" class="dialog wide">
+  <button id="paste-x" class="dialog-x" type="button" aria-label="close">✕</button>
+  <h2>paste rows</h2>
+  <p>Select the cells in Excel (or anything with tabs or commas), copy, paste
+    here. The first column becomes the sentence; a column that looks like
+    must/optional/wish becomes the strength.</p>
+  <textarea id="paste-text" rows="8" spellcheck="false"
+            placeholder="one testable sentence&#9;must&#9;theme"></textarea>
+  <p id="paste-msg" class="msg" aria-live="polite"></p>
+  <div class="dialog-foot">
+    <button id="paste-x2" class="ghost" type="button">cancel</button>
+    <button id="paste-do" class="primary w-only" type="button">add the rows</button>
+  </div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="config.local.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -6,6 +6,9 @@ A suite of small, independent apps that share one look and one signed-in person.
   assistant. At https://vn.terg.hr
 - **vi** — an idea funnel: context, ideate, explore, select one, simulate.
   At https://vi.terg.hr — see `docs/vi.md`
+- **vr** — requirements: a sheet of rows, one testable sentence each, marked
+  must / optional / wish, with proof, a brief and a glossary.
+  At https://vr.terg.hr — see `docs/vr.md`
 - **api** — the suite's one CORS door to a model endpoint, at
   https://api.terg.hr
 
@@ -153,10 +156,11 @@ New changes go beside it as new files; that one is never edited again.
 ./deploy vn --dry-run   # what would go out
 ./deploy vn             # stage apps/vn + the shell, upload to Cloudflare Pages
 ./deploy vi             # the same for the other app
+./deploy vr             # requirements
 ./deploy api            # the proxy
 ```
 
-One Pages project per app (`vpl`, `vpl-vi`, `vpl-api`), one custom domain per
+One Pages project per app (`vpl`, `vpl-vi`, `vpl-vr`, `vpl-api`), one custom domain per
 project. Deploying one app never touches another; the free plan's 500 builds a
 month is shared, so `./deploy vn` only ships `vn`.
 
@@ -165,7 +169,7 @@ really signed in (it exits 0 when it is not, so the script reads its output),
 and refuses to publish a `service_role` key. A code change ships with
 `./deploy`; a database change ships as a new migration. Nothing else ships.
 
-One Pages project per app, named in `deploy` (`vpl` for vn, `vpl-vi`, `vpl-api`);
+One Pages project per app, named in `deploy` (`vpl` for vn, `vpl-vi`, `vpl-vr`, `vpl-api`);
 override with `PROJECT=… ./deploy vn`. The custom domain is a CNAME to
 `<project>.pages.dev`, added once in the Cloudflare dashboard and once as the
 project's custom domain. In Supabase, Site URL and the redirect urls must name
@@ -179,7 +183,7 @@ fails on a page. So the call leaves from an origin of ours:
 
 - **`apps/api/functions/chat.js`** — the suite's shared proxy at
   `https://api.terg.hr/chat`. One allowlist of hosts, one allowlist of origins
-  (`vn.terg.hr`, `vi.terg.hr`, … and local development). The key travels in the
+  (`vn.terg.hr`, `vi.terg.hr`, `vr.terg.hr`, … and local development). The key travels in the
   body, is used once, and is never stored or logged.
 - **`apps/api/functions/search.js`** — `https://api.terg.hr/search`, the same
   idea for evidence. The caller names a provider (`tavily` or `serper`), not a
@@ -206,13 +210,14 @@ To support another provider, add its host to `ALLOWED` in
 ```
 apps/vn/                  notes: index.html, app.js, style.css, lib/, test/
 apps/vi/                  ideas: the same shape, much smaller
+apps/vr/                  requirements: a sheet, its brief, its glossary
 apps/api/                 the shared proxy (one function, one page)
 packages/shell/tokens.css palette, type scale, page foundation — copied into
                           each app's vendor/ by tools/stage.sh
 packages/shell/ai.js      providers, models and the endpoint rule, shared by every
                           app that talks to a model — same copying, same idea
 tools/stage.sh            "copy the shared look into this app"
-deploy                    publish one app: ./deploy vn | vi | api
+deploy                    publish one app: ./deploy vn | vi | vr | api
 serve  serve.py           local server that refuses to cache
 supabase/migrations/      the schema, and every change since
 docs/start-here.md        a cold start: what this is, where it is written down,
@@ -252,7 +257,17 @@ VPL_SEARCH_KEY=… node vi-ai.mjs                  # 14 checks (model mocked, se
 VI_URL=http://127.0.0.1:8100 node vi-share.mjs    # 12 checks (link, guest, revoke)
 VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "a project"
                                                  # one real pass through the funnel
+
+PORT=8101 ./serve vr in another shell, then:
+VR_URL=http://127.0.0.1:8101 node vr-check.mjs     # 42 checks (rows, strength, gaps, print, phone)
+VR_URL=http://127.0.0.1:8101 node vr-paste.mjs     # 11 checks (a spreadsheet, commas, names)
+VR_URL=http://127.0.0.1:8101 node vr-ai.mjs        # 21 checks (model faked at the proxy)
+VR_URL=http://127.0.0.1:8101 node vr-share.mjs     # 21 checks (link, editor, the database's refusal)
 ```
+
+`vr-share.mjs` needs a second account (`vpl-guest@terg.hr`); it creates it if it
+is missing. The database's refusal is asserted by the error code (`23514`), not
+by the screen, because a rule that only lives in the screen is a wish.
 
 `vi-real.mjs` is how the model notes in `vn` were written: it opens a project,
 walks ideate → explore ×2 → select → simulate, and keeps every answer it got in

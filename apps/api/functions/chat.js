@@ -40,10 +40,13 @@ const ALLOWED = [
 const ORIGINS = [
   'https://vn.terg.hr',
   'https://vi.terg.hr',
+  'https://vr.terg.hr',
   'https://va.terg.hr',
   'https://vg.terg.hr',
   'https://vpl-ae9.pages.dev',
   '.vpl-ae9.pages.dev',
+  'https://vpl-vr.pages.dev',
+  '.vpl-vr.pages.dev',
 ];
 
 function corsFor(request) {

@@ -555,3 +555,43 @@ with a Google account finishing the round trip and watching the address bar.
 
 None of this is a repository change. It is a dashboard step, done once, and it is
 the one step in the whole suite that cannot be code.
+
+## vr: a name is a promise, and a guard has to know its table
+
+`vr` came out of a spreadsheet that was law — the 2012 T-HT CRM requirements
+sheet, 271 numbered rows, grouped two levels deep, with "current/desired state"
+and a free-text horizon. The sheet was good at capture and had no answer to *is
+this met?*, and its ID was the row number, so nothing could be quoted once the
+rows were sorted. Two decisions follow from that, and both are in the database
+rather than in the screen:
+
+- **`VR-001` is assigned once.** `vr_ref_for` fills a blank name on insert and a
+  unique index on `(project_id, ref)` makes a duplicate impossible. A pasted
+  batch passes its own names in one statement, because a per-row trigger cannot
+  see the rows inserted beside it.
+- **the owner alone changes the shape.** RLS can say who may update a row but not
+  which columns, so `vr_decisions_are_the_owners` refuses a change to `ref`,
+  `kind`, `strength`, `status` or `pos` by anybody but the owner, with `23514`.
+  Proved with a second account: text saved, strength refused.
+
+That trigger had a bug worth remembering. Its first version read
+`new.project_id` **before** asking which table it was on. `vr_projects` has no
+such column, so every document update — including the title and the brief — died
+with `record "new" has no field "project_id"` (42703). The screen looked broken
+in a way that had nothing to do with the screen: the title input accepted typing
+and nothing was saved. A guard's first line is `tg_table_name`.
+
+The third bug was quieter. `moveRow` swapped two `pos` values and repainted, and
+the sheet did not move: `paintSheet` read the array in memory, not the order in
+the database. Sorting in `visible()` fixed it. A list that is stored sorted is
+still a list that has to be painted sorted.
+
+Deploying found the fourth: `wrangler pages deploy` only deploys into an existing
+project, and `vpl-vr` did not exist. `npx wrangler pages project create` is a real
+step, now in `docs/start-here.md`. The custom domain was one API call with the
+login token; the CNAME is not, because that token may write Pages but not DNS.
+
+And one design note, because it decides what the app is: a wish stays in the same
+sheet. In `vi` parking is a decision and the drawer keeps those rows out of the
+way; a wish is not a decision, it is the same row with a smaller stake, so it is
+a colour, a word and a filter — not a second list.

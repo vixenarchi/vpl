@@ -15,6 +15,9 @@ Cloudflare Pages project.
 - **vn** — notes, at <https://vn.terg.hr> (tree, bins, sharing, agent chat)
 - **vi** — an idea funnel, at <https://vi.terg.hr>: context → ideate → explore →
   select one → simulate. See `docs/vi.md`.
+- **vr** — requirements, at <https://vr.terg.hr>: one document is one sheet of
+  rows, each a testable sentence, marked must / optional / wish, with proof and
+  a glossary. See `docs/vr.md`.
 - **api** — the shared proxy at <https://api.terg.hr>: `/chat` (model calls) and
   `/search` (Tavily/Serper evidence). Model APIs send no CORS headers, so the
   call leaves from our own origin.
@@ -27,6 +30,8 @@ in `vi`.
 
 - `README.md` — the suite, the database, the commands, the rules
 - `docs/vi.md` — why a funnel, the five stages, the look and why it is not a dashboard
+- `docs/vr.md` — why a requirements sheet, the three axes, the stable names, the
+  proof column, what is deliberately not there
 - `docs/build-notes.md` — why v2 exists, the gotchas, where Google's redirect URL lives
 - `docs/specification.md` — the 0-architecture this is built against
 - `~/.config/vpl/accounts.md` — **outside the repo, mode 600**: project ref, app
@@ -37,7 +42,8 @@ in `vi`.
 ## The rules that are not style choices
 
 1. **One table per app, prefixed.** `vn_notes`, `vn_shares`, `vi_projects`,
-   `vi_ideas`, `vi_shares`. An app never writes into another app's table. `vpl_prefix_check()`
+   `vi_ideas`, `vi_shares`, `vr_projects`, `vr_reqs`, `vr_terms`, `vr_shares`. An
+   app never writes into another app's table. `vpl_prefix_check()`
    guards the convention.
 2. **Migrations are numbered and re-runnable.** A schema change is a new file in
    `supabase/migrations/`, pushed with
@@ -80,6 +86,10 @@ Playwright lives in `apps/vn/test/node_modules`; run everything from
 VI_URL=http://127.0.0.1:8100 node vi-check.mjs       # funnel, 20 checks
 VPL_SEARCH_KEY=… VI_URL=http://127.0.0.1:8100 node vi-ai.mjs   # balloons, 14 checks
 VI_URL=http://127.0.0.1:8100 node vi-share.mjs       # sharing, 12 checks
+VR_URL=http://127.0.0.1:8101 node vr-check.mjs      # sheet, 42 checks
+VR_URL=http://127.0.0.1:8101 node vr-paste.mjs      # spreadsheet, 11 checks
+VR_URL=http://127.0.0.1:8101 node vr-ai.mjs         # model proposals, 21 checks
+VR_URL=http://127.0.0.1:8101 node vr-share.mjs      # sharing + the database's refusal, 21 checks
 VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "project title"
 ```
 
@@ -122,6 +132,11 @@ project and keeps every answer in `/tmp/model-*.txt`.
   `/v1beta/models` before blaming the app.
 - Flaky by nature: tests that wait for a repaint (parked drawer) need polling,
   not a fixed timeout. `until()` in the test files exists for that.
+- `vr`: the decision trigger branches on `tg_table_name` **before** it reads a
+  column; `vr_projects` has no `project_id` and the first version broke every
+  update with `42703`. A guard has to know which table it is on.
+- `vr`: rows are ordered by `pos` in `visible()`. The database may be right and
+  the sheet still look unchanged, if the paint reads the array order.
 
 ## Adding the next micro app
 
@@ -133,8 +148,11 @@ project and keeps every answer in `/tmp/model-*.txt`.
 3. `apps/<name>/vendor/tokens.css` gives the look — do not invent new colours;
    add app-local tokens only where the app has a language of its own (as `vi` does
    with its comic page).
-4. `./deploy <name>` creates `vpl-<name>` (the first app keeps `vpl`), then the
-   custom domain is attached via the Cloudflare API and DNS in the dashboard.
+4. `npx wrangler pages project create vpl-<name> --production-branch main`
+   (wrangler does **not** create the project on deploy; it only deploys into an
+   existing one — `vr` hit this), then `./deploy <name>`. The custom domain is one
+   API call, then the CNAME is a dashboard step, because the login token may write
+   Pages but not DNS.
 5. Add the origin to `ORIGINS` in `apps/api/functions/chat.js` and `search.js`.
 6. Update `README.md`: the app list, its tables, its tests. If it has a language
    of its own, give it `docs/<name>.md` like `docs/vi.md`.
@@ -144,5 +162,8 @@ project and keeps every answer in `/tmp/model-*.txt`.
 - No scores, no kanban, no deadlines, no charts, no drag-and-drop between stages.
 - No per-stage sharing in `vi`: a funnel is shared whole, `view` or `edit`, and
   only the owner decides.
+- No actors table in `vr`: a non-functional row carries its metric, target and
+  conditions, and the actor is a word in the text.
+- No links from a `vr` row to a test case yet (`verification` is a sentence).
 - No central settings app: the shared file is `packages/shell/ai.js`, the keys are
   per browser per address.
