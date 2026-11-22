@@ -35,7 +35,7 @@ function loadScript(src) {
 const P = 'id,user_id,title,brief,assumptions,scope,created_at,updated_at';
 const R = 'id,project_id,user_id,ref,kind,strength,theme,theme_id,category,title,statement,detail,'
         + 'asis,tobe,horizon,source,verification,metric,target,conditions,clause,status,pos,'
-        + 'created_at,updated_at';
+        + 'file_path,file_name,file_size,file_mime,created_at,updated_at';
 const T = 'id,project_id,term,meaning,created_at';
 
 /* ── auth ─────────────────────────────────────────────────────────── */
@@ -108,6 +108,46 @@ export async function updateProject(id, patch) {
  * is allowed because the copy is inserted under your own id — the original's
  * owner keeps their document, and you get one where the names, the strengths
  * and the order are yours to change. */
+/* ── one attachment per row ────────────────────────────────────────── */
+/* Two megabytes, and the bucket enforces it too: a limit that only exists in
+ * the screen is a suggestion. */
+export const BUCKET = 'vr-files';
+export const MAX_FILE = 2 * 1024 * 1024;
+
+function safeName(name) {
+  return String(name || 'file').normalize('NFKD').replace(/[^\w.\-]+/g, '_').slice(-60) || 'file';
+}
+
+export async function uploadFile(projectId, reqId, file) {
+  const db = await client();
+  const s = await session();
+  if (!s?.user) throw new Error('sign in first — a file needs an owner');
+  if (!file) throw new Error('no file chosen');
+  if (file.size > MAX_FILE) throw new Error('2 MB is the limit — a scan or a photo is enough');
+  const path = `${projectId}/${reqId}/${Date.now()}-${safeName(file.name)}`;
+  const { error } = await db.storage.from(BUCKET)
+    .upload(path, file, { upsert: false, contentType: file.type || 'application/octet-stream' });
+  if (error) throw error;
+  return path;
+}
+
+/* A private bucket means the screen has to ask for a link every time. An hour
+ * is longer than anybody looks at a proof. */
+export async function signFile(path, seconds = 3600) {
+  const db = await client();
+  if (!path) throw new Error('nothing attached');
+  const { data, error } = await db.storage.from(BUCKET).createSignedUrl(path, seconds);
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+export async function removeFile(path) {
+  if (!path) return;
+  const db = await client();
+  const { error } = await db.storage.from(BUCKET).remove([path]);
+  if (error) throw error;
+}
+
 export async function copyToMe(src, rows = [], terms = [], themes = [], vocab = []) {
   const db = await client();
   const s = await session();
@@ -137,6 +177,7 @@ export async function copyToMe(src, rows = [], terms = [], themes = [], vocab = 
     })));
     if (e1) throw e1;
   }
+  const made = [];               // new id, by ref, so a file can follow its row
   for (let i = 0; i < rows.length; i += 40) {
     const chunk = rows.slice(i, i + 40).map((r) => {
       const out = { user_id: s.user.id, project_id: p.id };
@@ -144,8 +185,33 @@ export async function copyToMe(src, rows = [], terms = [], themes = [], vocab = 
       out.theme_id = map.get(r.theme_id) || null;
       return out;
     });
-    const { error: e2 } = await db.from('vr_reqs').insert(chunk);
+    const { data, error: e2 } = await db.from('vr_reqs').insert(chunk).select('id,ref');
     if (e2) throw e2;
+    made.push(...(data || []));
+  }
+
+  /* the proof comes with the document: sign the source file, download it, put
+   * it in the copy's own folder. A blocked download must not lose the copy, so
+   * this is best-effort and quiet. */
+  const byRef = new Map(made.map((m) => [m.ref, m.id]));
+  for (const r of rows) {
+    if (!r.file_path) continue;
+    const to = byRef.get(r.ref);
+    if (!to) continue;
+    try {
+      const url = await signFile(r.file_path);
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      if (blob.size > MAX_FILE) continue;
+      const path = `${p.id}/${to}/${Date.now()}-${safeName(r.file_name)}`;
+      const up = await db.storage.from(BUCKET)
+        .upload(path, blob, { contentType: r.file_mime || blob.type || 'application/octet-stream' });
+      if (up.error) continue;
+      await db.from('vr_reqs').update({
+        file_path: path, file_name: r.file_name, file_size: blob.size, file_mime: r.file_mime || blob.type,
+      }).eq('id', to);
+    } catch { /* a copy without its proof is still a copy */ }
   }
   if (terms.length) {
     const { error: e3 } = await db.from('vr_terms').insert(terms.map((t) => ({

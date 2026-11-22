@@ -420,6 +420,27 @@ const DETAIL_FIELDS = [
   ['clause', 'a law or standard, down to the clause', 'text', ''],
 ];
 
+function sizeWord(n) {
+  if (!n) return '';
+  if (n < 1024) return n + ' B';
+  if (n < 1024 * 1024) return Math.round(n / 1024) + ' kB';
+  return (n / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function fileBox(r) {
+  if (!canWrite() && !r.file_path) return '';
+  const now = r.file_path
+    ? `<span class="file-now">
+         <button type="button" class="file-name" data-open-file="${r.id}"
+                 title="open in a new tab — the link is signed and lasts an hour">${esc(r.file_name || 'file')}</button>
+         <span class="muted small">${sizeWord(r.file_size)}</span>
+         ${canWrite() ? `<button class="ghost danger" type="button" data-drop-file="${r.id}">remove</button>` : ''}
+       </span>`
+    : `<button class="ghost" type="button" data-pick-file="${r.id}">attach a file…</button>`;
+  return `<div class="wide file-box"><label>attachment — one file, up to 2 MB (a photo, a scan, a pdf)</label>
+    ${now}<input type="file" data-file-input="${r.id}" hidden></div>`;
+}
+
 function vocabSelect(axis, current, id, locked) {
   const rows = vocabOf(axis);
   const known = rows.some((v) => v.value === current);
@@ -439,6 +460,66 @@ function themeSelect(r, locked) {
   return `<select id="d-${r.id}-theme" data-field="theme_id" ${locked ? 'disabled' : ''}>
     <option value="">— no theme —</option>${opts}
   </select>`;
+}
+
+async function takeFile(inp) {
+  const id = inp.dataset.fileInput;
+  const row = S.reqs.find((r) => r.id === id);
+  const file = inp.files && inp.files[0];
+  inp.value = '';                       // choosing the same file twice must work
+  if (!row || !file) return;
+  const msg = () => $(`#d-msg-${id}`);
+  if (file.size > db.MAX_FILE) {
+    return say(msg(), '2 MB is the limit — a photo, a scan or a short pdf', 'bad');
+  }
+  say(msg(), 'uploading…', 'busy');
+  try {
+    const path = await db.uploadFile(S.project.id, id, file);
+    const patch = {
+      file_path: path,
+      file_name: file.name.slice(0, 120),
+      file_size: file.size,
+      file_mime: file.type || '',
+    };
+    await db.updateReq(id, patch);
+    Object.assign(row, patch);
+    S.open = id;
+    paintSheet();
+    say($(`#d-msg-${id}`), 'attached', 'ok');
+  } catch (e) {
+    say(msg(), e.message || String(e), 'bad');
+  }
+}
+
+async function openFile(id) {
+  const row = S.reqs.find((r) => r.id === id);
+  if (!row?.file_path) return;
+  const msg = () => $(`#d-msg-${id}`);
+  try {
+    say(msg(), 'opening…', 'busy');
+    const url = await db.signFile(row.file_path);
+    window.open(url, '_blank', 'noopener');
+    say(msg(), '');
+  } catch (e) {
+    say(msg(), e.message || String(e), 'bad');
+  }
+}
+
+async function dropFile(id) {
+  if (!canWrite()) return;
+  const row = S.reqs.find((r) => r.id === id);
+  if (!row) return;
+  const msg = () => $(`#d-msg-${id}`);
+  try {
+    await db.removeFile(row.file_path);
+    const patch = { file_path: null, file_name: null, file_size: null, file_mime: null };
+    await db.updateReq(id, patch);
+    Object.assign(row, patch);
+    paintSheet();
+    say($(`#d-msg-${id}`), 'attachment removed', 'ok');
+  } catch (e) {
+    say(msg(), e.message || String(e), 'bad');
+  }
 }
 
 function detailHTML(r) {
@@ -461,6 +542,7 @@ function detailHTML(r) {
       <div><label for="d-${r.id}-strength">how hard</label>${vocabSelect('importance', r.strength, `d-${r.id}-strength`, !isOwner())}</div>
       <div><label for="d-${r.id}-status">status</label>${vocabSelect('status', r.status, `d-${r.id}-status`, !canWrite())}</div>
       ${fields}
+      ${fileBox(r)}
     </div>
     <div class="detail-foot">
       <span class="msg" id="d-msg-${r.id}"></span>
@@ -1399,6 +1481,15 @@ function wireChrome() {
   $('#rows').addEventListener('click', (e) => {
     const tr = e.target.closest('tr[data-id]');
     if (!tr) {
+      const pick = e.target.closest('button[data-pick-file]');
+      if (pick) {
+        $(`input[data-file-input="${pick.dataset.pickFile}"]`)?.click();
+        return;
+      }
+      const open = e.target.closest('button[data-open-file]');
+      if (open) return openFile(open.dataset.openFile);
+      const drop = e.target.closest('button[data-drop-file]');
+      if (drop) return dropFile(drop.dataset.dropFile);
       const close = e.target.closest('button[data-close]');
       if (close) { S.open = null; paintSheet(); }
       return;
@@ -1426,6 +1517,8 @@ function wireChrome() {
     queue(rowId, field, e.target.value);
   });
   $('#rows').addEventListener('change', (e) => {
+    const fin = e.target.closest('input[data-file-input]');
+    if (fin) return takeFile(fin);
     const tr = e.target.closest('tr.detail');
     if (!tr || !canWrite()) return;
     const rowId = tr.previousElementSibling?.dataset.id;

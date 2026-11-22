@@ -131,6 +131,25 @@ ok((await pg.textContent('#gaps')) !== '' && !(await pg.textContent('#gaps')).in
 await pg.fill('#rows tr.detail textarea[data-field="asis"]', 'a cardboard box');
 await pg.waitForTimeout(1400);
 
+// ── one attachment per row, and two megabytes is the limit
+const rid = await pg.locator('#rows tr.detail').evaluate((tr) => tr.previousElementSibling.dataset.id);
+await pg.setInputFiles(`input[data-file-input="${rid}"]`, {
+  name: 'merenje.txt', mimeType: 'text/plain', buffer: Buffer.from('nagib 22 · 42 m2'),
+});
+ok(await until(async () => (await pg.textContent(`#d-msg-${rid}`)).includes('attached'), 15000),
+  'a proof can be attached to a row');
+ok((await pg.textContent(`button[data-open-file="${rid}"]`)).includes('merenje.txt'),
+  'and the sheet names the file');
+await pg.setInputFiles(`input[data-file-input="${rid}"]`, {
+  name: 'too-big.bin', mimeType: 'application/octet-stream', buffer: Buffer.alloc(3 * 1024 * 1024),
+});
+await pg.waitForTimeout(900);
+ok((await pg.textContent(`#d-msg-${rid}`)).includes('2 MB'),
+  'a file over two megabytes is refused before it leaves the browser');
+await pg.click(`button[data-drop-file="${rid}"]`);
+ok(await until(async () => (await pg.locator(`button[data-open-file="${rid}"]`).count()) === 0, 15000),
+  'and an attachment can be taken off again');
+
 // ── all columns
 ok(!(await pg.locator('#sheet thead th.c-extra').first().isVisible()), 'extra columns are off by default');
 await pg.click('#btn-columns');

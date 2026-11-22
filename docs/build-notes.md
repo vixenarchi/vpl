@@ -673,3 +673,41 @@ otherwise the copy lands in a rail nobody can see. And **a subtree copy needs an
 id map**, not a recursive read of the same table: build `parent_id → children`
 once, walk from the root, insert parent first. The first version of `vn`'s
 writer looked up the node by its parent key and produced the chapter twice.
+
+## The one attachment, and where the limit lives
+
+A requirement sometimes needs its proof beside it: a photo of the old roof, a
+scan of the clause, a pdf of the measurement. One file per row, and the whole
+design is in three decisions.
+
+**Two megabytes, enforced twice.** The bucket has `file_size_limit = 2097152`,
+and the screen refuses a bigger file before uploading it. The screen-side check
+exists so the refusal is immediate and in words a person can act on; the bucket
+side exists because a limit that only lives in the screen is a suggestion. Both
+say the same sentence, which is the only way a limit stays honest.
+
+**The bucket is private and the path names the document.** `<project>/<row>/<stamp>-<name>`
+means a storage policy can ask `vr_can_read(project)` and `vr_can_edit(project)`
+— the same functions the table policies use, written once in the migration. An
+outsider asking for a file is told `Object not found`, which is true and says
+nothing. Signed urls are minted per view and last an hour, because a private
+bucket cannot be linked to and an hour is longer than anyone stares at a scan.
+
+**The copy takes its proof with it.** `copy to mine` signs the source file,
+downloads it, and uploads it into the copy's own folder, then patches the new
+row. Best-effort on purpose: if the download fails the copy still lands. A copy
+without its proof is still a copy; a copy that refuses to exist because a file
+was slow is a worse document.
+
+Three things learned: `storage.objects` policies are RLS like any other and can
+call `public` functions, so the access rules do not have to be duplicated in
+JavaScript; a signed url needs SELECT permission on the object (so the reader's
+role has to be right at *sign* time, not at download time); and the first path
+segment must be parsed with a function that returns null instead of raising,
+because a policy that throws turns a stray object into a 500 on a page that has
+nothing to do with it.
+
+The one promise not kept: deleting an account deletes its rows but leaves its
+bytes, because only the storage API can remove objects and account deletion is
+SQL. It is written down in `docs/start-here.md` so it is a known gap and not a
+surprise.

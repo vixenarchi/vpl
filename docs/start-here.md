@@ -77,6 +77,24 @@ functions/` folders. **Anything else at the app root does not ship** and prints
 `note: not shipped from the app root: …`. A missing module then looks like a bug
 in the app, not like a deploy mistake.
 
+### The bucket
+
+`vr` keeps one attachment per row in a private Supabase Storage bucket called
+**`vr-files`**. It is created by the migration, not by the dashboard
+(`insert into storage.buckets … file_size_limit = 2097152`), because a bucket
+nobody can recreate is a bucket that exists on one machine.
+
+The rules that make it safe are in `20261127000000_vr_files.sql`:
+`vr_can_read(project)` / `vr_can_edit(project)` are the same questions the
+tables ask, and `vr_path_project(name)` reads the document id out of
+`<project>/<row>/<stamp>-<name>` without ever raising on a stray object. A file
+is reached through a signed url asked for at the moment somebody opens it.
+
+If you delete an account, its rows go but its files stay in the bucket: the
+storage API is the only way to remove the bytes, and `vpl_delete_my_account()`
+is SQL. A bucket sweep is a dashboard job; it is the one promise the suite does
+not keep on its own.
+
 ## Tests
 
 Playwright lives in `apps/vn/test/node_modules`; run everything from
@@ -89,10 +107,10 @@ VPL_SEARCH_KEY=… VI_URL=http://127.0.0.1:8100 node vi-ai.mjs   # balloons, 14 
 VI_URL=http://127.0.0.1:8100 node vi-share.mjs       # sharing, 12 checks
 node take-check.mjs                                 # copy markdown into my notes, 12
 node vi-take.mjs                                    # copy a funnel home, 16
-VR_URL=http://127.0.0.1:8101 node vr-check.mjs      # sheet, 49 checks
+VR_URL=http://127.0.0.1:8101 node vr-check.mjs      # sheet, 53 checks
 VR_URL=http://127.0.0.1:8101 node vr-paste.mjs      # spreadsheet, 11 checks
 VR_URL=http://127.0.0.1:8101 node vr-ai.mjs         # model proposals, 21 checks
-VR_URL=http://127.0.0.1:8101 node vr-share.mjs      # sharing + the database's refusal, 25 checks
+VR_URL=http://127.0.0.1:8101 node vr-share.mjs      # sharing, the refusal, the copy + its file, 28 checks
 VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "project title"
 ```
 

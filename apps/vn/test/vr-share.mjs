@@ -75,6 +75,18 @@ await pg.click('#term-add-b');
 await pg.waitForTimeout(700);
 await pg.click('#glossary-x');
 
+// ── the proof travels with the document
+await pg.locator('#rows tr[data-id]').first().locator('.req-open').click();
+await pg.waitForTimeout(600);
+const proofId = await pg.locator('#rows tr.detail').evaluate((tr) => tr.previousElementSibling.dataset.id);
+await pg.setInputFiles(`input[data-file-input="${proofId}"]`, {
+  name: 'merenje.txt', mimeType: 'text/plain', buffer: Buffer.from('nagib 22 · 42 m2'),
+});
+ok(await until(async () => (await pg.textContent(`#d-msg-${proofId}`)).includes('attached'), 15000),
+  'the owner attaches a proof to the row');
+await pg.locator('button[data-close]').first().click();
+await pg.waitForTimeout(400);
+
 // ── the link
 await pg.click('#btn-share');
 await pg.waitForTimeout(400);
@@ -178,6 +190,14 @@ ok(copied, 'an editor can take a copy where the decisions are theirs');
 ok((await sp.evaluate(() => document.body.dataset.role)) === 'owner', 'and the copy says: you are the owner');
 ok(await until(async () => (await sp.locator('#rows tr[data-id]').count()) === beforeCopy, 20000),
   'every row came with the copy');
+await sp.locator('#rows tr[data-id]').first().locator('.req-open').click();
+await sp.waitForTimeout(800);
+ok(await until(async () => (await sp.locator('button[data-open-file]').count()) > 0, 20000),
+  'the attached proof came with the copy too');
+const proofName = await sp.locator('button[data-open-file]').first().textContent();
+ok(proofName.includes('merenje.txt'), '...with its name intact: ' + proofName.trim());
+await sp.locator('button[data-close]').first().click();
+await sp.waitForTimeout(300);
 await sp.locator('#rows tr[data-id] .c-strength .chip-value').first().click();
 await sp.waitForTimeout(1200);
 const ownStrength = await sp.locator('#rows tr[data-id] .c-strength .chip-value').first().textContent();

@@ -35,9 +35,10 @@ No servers, no bundler, no build step, no monthly bill.
 
 ## What it deliberately does not do
 
-No teams, no roles beyond view and edit, no realtime collaboration, no
-attachments, no search index, no framework, no bundler, no build step, no
-service worker, no monthly bill.
+No teams, no roles beyond view and edit, no realtime collaboration, no search
+index, no file store (vr keeps one 2 MB attachment per row, and not a byte
+more), no framework, no bundler, no build step, no service worker, no monthly
+bill.
 
 ## Moving things between apps
 
@@ -279,10 +280,10 @@ VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "a project"
                                                  # one real pass through the funnel
 
 PORT=8101 ./serve vr in another shell, then:
-VR_URL=http://127.0.0.1:8101 node vr-check.mjs     # 49 checks (tree, sort, gaps, print, phone)
+VR_URL=http://127.0.0.1:8101 node vr-check.mjs     # 53 checks (tree, sort, files, print, phone)
 VR_URL=http://127.0.0.1:8101 node vr-paste.mjs     # 11 checks (a spreadsheet, commas, names)
 VR_URL=http://127.0.0.1:8101 node vr-ai.mjs        # 21 checks (model faked at the proxy)
-VR_URL=http://127.0.0.1:8101 node vr-share.mjs     # 25 checks (link, editor, the database's refusal)
+VR_URL=http://127.0.0.1:8101 node vr-share.mjs     # 28 checks (link, editor, refusal, the copy)
 ```
 
 or all four at once, server and all: `tools/test-vr.sh`

@@ -46,6 +46,32 @@ Twenty rows to a page, `page 1 / 13 · 247 rows`, arrows beside the counter; eve
 column heading sorts (how-hard and status sort by the document's own order, not
 the alphabet). Print is not paged — paper gets the whole document.
 
+### One attachment, two megabytes
+
+A row can carry one file — a photo of the old roof, a scan of the tender clause,
+a pdf of the measurement. It is attached in the row's detail and it is the proof
+beside the sentence, not a file store:
+
+- **the bucket is private** (`vr-files`), and the path begins with the document
+  id, so the storage policies ask the same question the table policies ask:
+  `vr_can_read(project)` to read, `vr_can_edit(project)` to upload or delete.
+  An outsider is told the object does not exist, which is the truth they are
+  entitled to.
+- **the screen asks for a signed link at the moment somebody opens it** (one
+  hour), because a private bucket cannot be linked to. A reader of a shared
+  document can open the proof; the owner can replace or remove it.
+- **two megabytes** is the bucket's own limit (`file_size_limit`), and the screen
+  refuses bigger files before they leave the browser. A limit that only lives in
+  the screen is a suggestion; this one is enforced twice, on purpose.
+- **`copy to mine` carries the proof**: the copy signs the source file,
+  downloads it and puts it in the copy's own folder, so a copied document is not
+  a document with a missing appendix. If the download fails the copy still
+  lands — a copy without its proof is still a copy, and it says so by having no
+  attachment.
+- A public link (no account) can see that a row has a file but cannot open it:
+  signing needs to know who is asking. That is the price of the bucket being
+  private, and it is the right price.
+
 ## The tree, and where a new row goes
 
 Themes are a tree two levels deep: the document, a theme, a subtheme. It lives in
@@ -237,19 +263,20 @@ Importance, kind, name and order stay with the owner.
 
 ## Tests
 
-Five scripts (one is screenshots), 106 checks, all in `apps/vn/test` (Playwright lives there):
+Five scripts (one is screenshots), 113 checks, all in `apps/vn/test` (Playwright lives there):
 
-- `vr-check.mjs` — 49: naming, strength cycling, sorting, find, gaps, detail
-  autosave, all columns, moving, `Alt+↑`, the tree (a theme, the quick add going
-  into it, the theme column stepping aside), print media, a phone at 390 px,
-  copy, reload, delete.
+- `vr-check.mjs` — 53: naming, strength cycling, sorting, find, gaps, detail
+  autosave, one attachment (and the two-megabyte refusal), all columns, moving,
+  `Alt+↑`, the tree (a theme, the quick add going into it, the theme column
+  stepping aside), print media, a phone at 390 px, copy, reload, delete.
 - `vr-paste.mjs` — 11: a T-com shaped header, tabs, commas, quoted commas, names
   continuing, header not becoming a row.
 - `vr-ai.mjs` — 21: the no-key hint, the proxy call, proposals before writing,
   `use it` / `use all`, drafting from the brief, glossary suggestions.
-- `vr-share.mjs` — 25: the link read-only, the guest's rail, an editor writing a
-  row, the screen refusing a decision, the database refusing it with 23514, and
-  an editor taking a copy where the strength does move.
+- `vr-share.mjs` — 28: the link read-only, the guest's rail, an editor writing a
+  row, the screen refusing a decision, the database refusing it with 23514, an
+  editor taking a copy where the strength does move, and the attached proof
+  travelling with that copy.
 
 All four run against `https://vpl-vr.pages.dev` as well as locally.
 
