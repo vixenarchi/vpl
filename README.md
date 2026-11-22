@@ -283,7 +283,7 @@ PORT=8101 ./serve vr in another shell, then:
 VR_URL=http://127.0.0.1:8101 node vr-check.mjs     # 59 checks (tree, sort, files, print, phone)
 VR_URL=http://127.0.0.1:8101 node vr-paste.mjs     # 11 checks (a spreadsheet, commas, names)
 VR_URL=http://127.0.0.1:8101 node vr-ai.mjs        # 20 checks (model faked at the proxy)
-VR_URL=http://127.0.0.1:8101 node vr-share.mjs     # 28 checks (link, editor, refusal, the copy)
+VR_URL=http://127.0.0.1:8101 node vr-share.mjs     # 29 checks (link, editor, refusal, the copy)
 ```
 
 or all four at once, server and all: `tools/test-vr.sh`

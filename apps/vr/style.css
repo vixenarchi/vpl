@@ -194,14 +194,6 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
 .tools-r .ghost[aria-pressed='true'] { border-color: var(--ink); color: var(--ink); background: var(--paper-3); }
 
 /* what is missing */
-.gaps { margin: 0.6rem 0 0; font-size: 0.8rem; color: var(--ink-2); display: flex; gap: 1rem; flex-wrap: wrap; }
-.gaps button {
-  border: none; background: none; padding: 0; font: inherit; cursor: pointer;
-  border-bottom: 1px dotted var(--rule-strong); color: var(--ink-2);
-}
-.gaps button:hover { color: var(--ink); border-bottom-color: var(--ink); }
-.gaps .none { color: var(--ok); }
-
 /* the table */
 .sheet { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
 .sheet th {
@@ -488,7 +480,6 @@ body.guest #projects { display: none; }
   .tools-r input[type='search'] { flex: 1; width: auto; }
   .c-theme, .c-strength { width: auto; }
   .sheet th.c-theme, .sheet td.c-theme { display: none; }
-  .c-ref { width: 4.2rem; }
   .term-add, .share-person-row { grid-template-columns: 1fr; display: grid; }
   .share-person-row select { width: 100%; }
 }
@@ -529,7 +520,7 @@ body.guest #projects { display: none; }
   .brief { background: none; border: none; }
   .brief label { color: #555; }
   .sheet tbody tr, .sheet tbody tr.open { background: #fff !important; }
-  .bar, .projects, .tools, .gaps, .ai-hint, .print-note, .row-tools, .add-row,
+  .bar, .projects, .tools, .ai-hint, .print-note, .row-tools, .add-row,
   .brief-foot, #guest-banner, .dialog, #ai-hint, .brief summary .muted { display: none !important; }
   .body { display: block; }
   .spec { padding: 0; overflow: visible; }

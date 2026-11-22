@@ -110,7 +110,7 @@ node vi-take.mjs                                    # copy a funnel home, 16
 VR_URL=http://127.0.0.1:8101 node vr-check.mjs      # sheet, 59 checks
 VR_URL=http://127.0.0.1:8101 node vr-paste.mjs      # spreadsheet, 11 checks
 VR_URL=http://127.0.0.1:8101 node vr-ai.mjs         # model proposals, 21 checks
-VR_URL=http://127.0.0.1:8101 node vr-share.mjs      # sharing, the refusal, the copy + its file, 28 checks
+VR_URL=http://127.0.0.1:8101 node vr-share.mjs      # sharing, the refusal, the copy + its file, 29 checks
 VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "project title"
 ```
 

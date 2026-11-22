@@ -242,7 +242,7 @@ disagree with its priorities" — take it, change it, argue later.
 
 **Copy** puts the document on the clipboard as markdown, grouped by theme, with
 names, strengths, proofs, numbers, clauses and the glossary. **Print** prints the
-document: the bar, tools and gaps disappear, the brief opens itself for the
+document: the bar and the tools disappear, the brief opens itself for the
 paper, the title stops looking like an input, and a line under the title carries
 the date, the counts and `vr.terg.hr`.
 
@@ -273,7 +273,7 @@ Importance, kind, name and order stay with the owner.
 
 ## Tests
 
-Five scripts (one is screenshots), 118 checks, all in `apps/vn/test` (Playwright lives there):
+Five scripts (one is screenshots), 119 checks, all in `apps/vn/test` (Playwright lives there):
 
 - `vr-check.mjs` — 59: naming (in the database, not on the screen), strength
   cycling, sorting, find, the sheet's five headings and nothing else, detail
@@ -285,7 +285,7 @@ Five scripts (one is screenshots), 118 checks, all in `apps/vn/test` (Playwright
   continuing, header not becoming a row.
 - `vr-ai.mjs` — 20: the no-key hint, the proxy call, proposals before writing,
   `use it` / `use all`, drafting from the brief, glossary suggestions.
-- `vr-share.mjs` — 28: the link read-only, the guest's rail, an editor writing a
+- `vr-share.mjs` — 29: the link read-only, the guest's rail, an editor writing a
   row, the screen refusing a decision, the database refusing it with 23514, an
   editor taking a copy where the strength does move, and the attached proof
   travelling with that copy.

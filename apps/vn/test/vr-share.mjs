@@ -91,7 +91,8 @@ await pg.waitForTimeout(400);
 await pg.click('#btn-share');
 await pg.waitForTimeout(400);
 await pg.click('#share-make');
-await pg.waitForTimeout(1200);
+ok(await until(async () => /\?s=\w{10,}/.test(await pg.inputValue('#share-link')), 15000),
+  'the link field fills in');
 const link = await pg.inputValue('#share-link');
 ok(/^http.*\?s=\w{10,}$/.test(link), 'a public link is minted');
 ok(!(await pg.locator('#share-list li').first().textContent()).includes('write'), 'a link is read, never write');
@@ -123,8 +124,8 @@ await gp.click('#glossary-x');
 await pg.fill('#share-email', 'VPL-Guest@Terg.hr');   // case is not an identity
 await pg.selectOption('#share-role', 'edit');
 await pg.click('#share-add');
-await pg.waitForTimeout(1200);
-ok((await pg.textContent('#share-msg')).includes('shared'), 'the document is shared with an address');
+ok(await until(async () => (await pg.textContent('#share-msg')).includes('shared'), 15000),
+  'the document is shared with an address: ' + (await pg.textContent('#share-msg')).trim());
 
 // the guest signs in and finds it in the rail
 const gs = await br.newContext({ viewport: { width: 1280, height: 900 } });
@@ -150,8 +151,8 @@ ok((await sp.textContent('#proj-meta')).includes('you may write, not decide'), '
 // text is theirs
 await sp.fill('#req-add', 'The guest shall be allowed to add a sentence.');
 await sp.press('#req-add', 'Enter');
-await sp.waitForTimeout(900);
-ok((await sp.locator('#rows tr[data-id]').count()) === 2, 'an editor may add a row');
+ok(await until(async () => (await sp.locator('#rows tr[data-id]').count()) === 2, 15000),
+  'an editor may add a row: ' + (await sp.locator('#rows tr[data-id]').count()) + ' rows');
 
 // decisions are not
 await sp.locator('#rows tr[data-id]').first().locator('.c-strength .chip-value').click();

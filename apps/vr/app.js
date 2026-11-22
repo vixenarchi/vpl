@@ -30,7 +30,6 @@ const S = {
   themes: [],
   vocab: [],         // importance, status, kind — the words this document uses
   themeId: null,     // null = everything
-  gap: '',           // '' | noproof | nonumber
   q: '',
   sort: { field: 'pos', dir: 1 },
   page: 1,
@@ -229,7 +228,7 @@ function paintProjects() {
 async function openProject(p) {
   S.project = p;
   S.open = null;
-  S.themeId = null; S.gap = ''; S.q = ''; $('#q').value = '';
+  S.themeId = null; S.q = ''; $('#q').value = '';
   S.page = 1; S.sort = { field: 'pos', dir: 1 };
   try { localStorage.setItem('vpl.vr.last', p.id); } catch {}
   $('#welcome').hidden = true;
