@@ -49,6 +49,11 @@ Twenty rows to a page, `page 1 / 13 · 247 rows`, arrows beside the counter; eve
 column heading sorts (how-hard and status sort by the document's own order, not
 the alphabet). Print is not paged — paper gets the whole document.
 
+**On a phone the table becomes a list of sentences**: one card per requirement,
+the sentence on its own line, then how hard and status and the row tools on one
+line under it. The theme column steps aside (the theme is the drawer you came
+from), and nothing scrolls sideways — five cards fit a 390 px screen.
+
 ### One attachment, two megabytes
 
 A row can carry one file — a photo of the old roof, a scan of the tender clause,
@@ -85,15 +90,20 @@ on a phone, is the door to the drawer. A row typed into the box at the bottom
 lands in the theme you are standing in, marked by the line above the box — no
 extra click, and no theme picker in the row.
 
-Clicking a row opens it in place, and what opens is small:
+Clicking a row opens it in place, and what opens is **a strip two lines tall**,
+not a form:
 
-- **the sentence** — one testable claim ("The visit form shall accept entries
-  with no network connection."). The add box writes this one field, and this is
-  the field people come back to correct.
-- **theme · kind · how hard · status** — four words, three of them from the
-  document's own vocabulary.
-- **one attachment** — a photo, a scan, a pdf; up to 2 MB. It is the proof, and
-  it is the only thing here that is not a word.
+- line one — **the sentence** in a two-row box, full width, nothing else beside
+  it. It is one testable claim ("The visit form shall accept entries with no
+  network connection."), it is what the add box writes, and it is the field
+  people come back to correct.
+- line two — **theme · kind · how hard · status**, a small label before each,
+  then the attachment and a ✕ at the far right. The whole thing is about a
+  hundred pixels, roughly the height of one row of the table, so opening a row
+  does not push the rest of the sheet off the screen.
+
+**One attachment** — a photo, a scan, a pdf; up to 2 MB. It is the proof, and it
+is the only thing in the detail that is not a word.
 
 The table still holds more — a long version from the Excel, today and wanted,
 where it came from, how we will know, the clause, the number for a
@@ -263,13 +273,14 @@ Importance, kind, name and order stay with the owner.
 
 ## Tests
 
-Five scripts (one is screenshots), 114 checks, all in `apps/vn/test` (Playwright lives there):
+Five scripts (one is screenshots), 118 checks, all in `apps/vn/test` (Playwright lives there):
 
-- `vr-check.mjs` — 55: naming (in the database, not on the screen), strength
+- `vr-check.mjs` — 59: naming (in the database, not on the screen), strength
   cycling, sorting, find, the sheet's five headings and nothing else, detail
   autosave, one attachment (and the two-megabyte refusal), moving, `Alt+↑`, the
   tree (a theme, the quick add going into it, the theme column stepping aside),
-  print media, a phone at 390 px, copy, reload, delete.
+  print media, a phone at 390 px (cards, five of them, no sideways scroll, and a
+  detail under 300 px), copy, reload, delete.
 - `vr-paste.mjs` — 11: a T-com shaped header, tabs, commas, quoted commas, names
   continuing, header not becoming a row.
 - `vr-ai.mjs` — 20: the no-key hint, the proxy call, proposals before writing,

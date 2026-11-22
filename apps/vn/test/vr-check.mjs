@@ -248,6 +248,20 @@ await pp.waitForTimeout(300);
 ok((await pp.evaluate(() => document.body.dataset.rail)) === 'open', 'the rail opens as a drawer');
 ok((await pp.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0,
   'a phone does not scroll sideways');
+
+// a phone gets cards, not a clipped table, and a row still opens compact
+await pp.locator('.proj-row.on .pick').click().catch(() => {});
+await pp.waitForTimeout(2200);
+ok((await pp.evaluate(() => getComputedStyle(document.querySelector('#sheet')).display)) === 'block',
+  'on a phone the sheet is a list of sentences, not a table');
+ok(await pp.locator('#sheet tbody tr[data-id] .c-status').first().isVisible(),
+  'and the status is not pushed off the screen');
+await pp.locator('#rows tr[data-id]').first().locator('.req-open').click();
+await pp.waitForTimeout(700);
+ok((await pp.locator('#rows tr.detail').evaluate((tr) => Math.round(tr.getBoundingClientRect().height))) < 300,
+  'an opened row stays a strip, not a form');
+ok((await pp.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0,
+  'and opening it still does not scroll sideways');
 await phone.close();
 
 // ── delete a row, then the document

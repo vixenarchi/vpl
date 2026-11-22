@@ -748,3 +748,28 @@ The lesson worth keeping: **the data model can be richer than the interface, and
 should be, but only if the interface never apologises for it.** A hidden field is
 fine; a hidden field with a switch, a count, and a gap is a second interface
 pretending to be a setting.
+
+## vr: a detail the height of a row
+
+The detail panel was a small form: a grid of labelled boxes, thirteen rem
+minimum per column, a three-row textarea, a footer. It was not wrong and it was
+not compact — opening a row moved everything below it off the screen, and on a
+phone the same grid became a single column of stacked controls with the sentence
+repeated above and the right edge clipped.
+
+Two changes, both about height:
+
+- **the detail is a strip.** One line for the sentence (full width), one line for
+  theme, kind, how hard, status, the attachment and a ✕. Labels are inline and
+  small instead of stacked above the control. The whole panel is about a hundred
+  pixels — one row of the table.
+- **a phone gets cards, not a table.** Below 640 px the table, its body and its
+  rows become blocks: the sentence spans the card, then `auto auto 1fr` holds the
+  two chips and the row tools on one line under it. The theme column is gone (you
+  are standing in it), and nothing is measured wider than the screen — the test
+  asserts `scrollWidth - clientWidth <= 0` before and after opening a row.
+
+The lesson is the same one as the last pass, one level down: **space is a
+budget, and the interface spends it on the one thing the person is looking at.**
+A form that repeats the sentence you just clicked, with a label above every
+control, spends the budget twice.

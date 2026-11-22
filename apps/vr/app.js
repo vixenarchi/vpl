@@ -388,9 +388,6 @@ function sourceHTML(src) {
   return esc(t);
 }
 
-const DETAIL_FIELDS = [
-  ['statement', 'the requirement, in one testable sentence', 'textarea', 'wide'],
-];
 
 function sizeWord(n) {
   if (!n) return '';
@@ -494,30 +491,24 @@ async function dropFile(id) {
   }
 }
 
+/* A row opens into two short lines, not a form: the sentence, then its words.
+ * Labels are inline and small; nothing here is bigger than the sheet above it. */
 function detailHTML(r) {
-  const fields = DETAIL_FIELDS.map(([name, label, kind, cls]) => {
-    if (kind === 'textarea') {
-      return `<div class="${cls}"><label for="d-${r.id}-${name}">${label}</label>
-        <textarea id="d-${r.id}-${name}" data-field="${name}" rows="${name === 'statement' || name === 'detail' ? 3 : 2}"
-          >${esc(r[name])}</textarea></div>`;
-    }
-    return `<div class="${cls}"><label for="d-${r.id}-${name}">${label}</label>
-      <input id="d-${r.id}-${name}" type="text" data-field="${name}" value="${esc(r[name])}"></div>`;
-  }).join('');
-
+  const word = (key, html) => `<span class="d-w"><span class="d-k">${key}</span>${html}</span>`;
   return `<tr class="detail"><td colspan="5">
-    <div class="detail-grid">
-      ${fields}
-      <div><label for="d-${r.id}-theme">theme</label>${themeSelect(r, !canWrite())}</div>
-      <div><label for="d-${r.id}-kind">kind</label>${vocabSelect('kind', r.kind, `d-${r.id}-kind`, !canWrite())}</div>
-      <div><label for="d-${r.id}-strength">how hard</label>${vocabSelect('importance', r.strength, `d-${r.id}-strength`, !isOwner())}</div>
-      <div><label for="d-${r.id}-status">status</label>${vocabSelect('status', r.status, `d-${r.id}-status`, !canWrite())}</div>
-      ${fileBox(r)}
-    </div>
-    <div class="detail-foot">
-      <span class="msg" id="d-msg-${r.id}"></span>
-      <span class="muted small">saved as you type</span>
-      <button class="ghost" type="button" data-close="${r.id}">close</button>
+    <div class="d-row">
+      <label class="sr-only" for="d-${r.id}-statement">the requirement</label>
+      <textarea id="d-${r.id}-statement" class="d-sentence" data-field="statement" rows="2"
+        placeholder="the requirement, in one testable sentence">${esc(r.statement)}</textarea>
+      <div class="d-words">
+        ${word('theme', themeSelect(r, !canWrite()))}
+        ${word('kind', vocabSelect('kind', r.kind, `d-${r.id}-kind`, !canWrite()))}
+        ${word('how hard', vocabSelect('importance', r.strength, `d-${r.id}-strength`, !isOwner()))}
+        ${word('status', vocabSelect('status', r.status, `d-${r.id}-status`, !canWrite()))}
+        ${fileBox(r)}
+        <span class="msg" id="d-msg-${r.id}"></span>
+        <button class="ghost d-close" type="button" data-close="${r.id}" aria-label="close">✕</button>
+      </div>
     </div>
   </td></tr>`;
 }
