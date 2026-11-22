@@ -34,6 +34,15 @@ This is a **curtain, not a lock**, and the screen says so. The value is plain
 text in `vz_pairs`; anyone holding a link reads it, and a published project
 serves it to the whole internet. The app never pretends otherwise.
 
+## The gate
+
+One account for the suite. An address signs in as typed but always compared in
+lower case; a bare name becomes `<name>@vpl.local`, the same rule as `vn`, `vi`
+and `vr`, so "Vladimir" and "vladimir@terg.hr" are different accounts and
+"Vladimir" twice is one. Two answers are written for people rather than copied
+from the API: *that address already has an account — sign in instead* and
+*that does not look like an address*.
+
 ## Adding
 
 Typing: a key box and a value box at the bottom. `Enter` in the key jumps to

@@ -53,6 +53,43 @@ function applyTheme() {
   try { localStorage.setItem('vpl.theme', next); } catch { /* private mode */ }
 }
 
+/* Phones capitalise the first letter of a field and computers do not. Names and
+ * addresses are compared in lower case; the password never is. A bare name is
+ * an account at @vpl.local, exactly as in vn, vi and vr. */
+function lowerField(el) {
+  el.addEventListener('input', () => {
+    const low = el.value.toLowerCase();
+    if (low === el.value) return;
+    const at = el.selectionStart;
+    el.value = low;
+    try { el.setSelectionRange(at, at); } catch { /* not focusable yet */ }
+  });
+}
+
+function toAuthEmail(v) {
+  const t = v.trim();
+  return t.includes('@')
+    ? t.toLowerCase()
+    : t.toLowerCase().replace(/\s+/g, '') + '@vpl.local';
+}
+
+function displayName(session) {
+  if (!session) return '';
+  const m = session.user.user_metadata || {};
+  const mail = session.user.email || '';
+  return m.full_name || m.name || (mail.endsWith('@vpl.local') ? mail.split('@')[0] : mail);
+}
+
+/* Supabase says "User already registered" and "Unable to validate email
+ * address"; a person deserves the same fact in fewer words. */
+function plainAuthError(err) {
+  const m = String(err?.message || err || '');
+  if (/already registered/i.test(m)) return 'that address already has an account — sign in instead';
+  if (/invalid format|validate email/i.test(m)) return 'that does not look like an address';
+  if (/invalid login credentials/i.test(m)) return 'wrong address or password';
+  return m || 'could not sign in';
+}
+
 function until(fn, ms = 8000) {
   const t0 = performance.now();
   return new Promise((resolve, reject) => {
@@ -71,6 +108,7 @@ function until(fn, ms = 8000) {
 async function boot() {
   $('#btn-theme').onclick = applyTheme;
   $('#gate-theme').onclick = applyTheme;
+  lowerField($('#email'));
   wireGate();
 
   const params = new URLSearchParams(location.search);
@@ -93,7 +131,7 @@ function showGate() {
 function wireGate() {
   $('#gate-form').onsubmit = async (e) => {
     e.preventDefault();
-    const email = $('#email').value.trim();
+    const email = toAuthEmail($('#email').value);
     const pass = $('#pass').value;
     msg($('#gate-msg'), 'signing in…', 'busy');
     try {
@@ -102,21 +140,21 @@ function wireGate() {
       S.session = await db.session();
       await enterApp();
     } catch (err) {
-      msg($('#gate-msg'), err.message || 'could not sign in', 'bad');
+      msg($('#gate-msg'), plainAuthError(err), 'bad');
     }
   };
   $('#btn-register').onclick = async () => {
-    const email = $('#email').value.trim();
+    const email = toAuthEmail($('#email').value);
     const pass = $('#pass').value;
     if (!email || pass.length < 6) {
-      return msg($('#gate-msg'), 'an address, and a password of six characters or more', 'bad');
+      return msg($('#gate-msg'), 'a name or an address, and a password of six characters or more', 'bad');
     }
     try {
       await db.signUp(email, pass);
       S.session = await db.session();
       await enterApp();
     } catch (err) {
-      msg($('#gate-msg'), err.message || 'could not create the account', 'bad');
+      msg($('#gate-msg'), plainAuthError(err), 'bad');
     }
   };
   $('#btn-google').onclick = async () => {
@@ -127,7 +165,7 @@ function wireGate() {
 async function enterApp() {
   $('#gate').hidden = true;
   $('#app').hidden = false;
-  $('#who').textContent = (S.session?.user?.email || '').split('@')[0];
+  $('#who').textContent = displayName(S.session);
   $('#who').title = S.session?.user?.email || '';
   await loadProjects();
   const last = localStorage.getItem('vz.last');
@@ -856,7 +894,7 @@ async function openGuest(code, kind) {
   $('#projects').hidden = true;
   $('#btn-projects').hidden = true;
   document.body.dataset.guest = '1';
-  $('#who').textContent = (S.session?.user?.email || '').split('@')[0];
+  $('#who').textContent = displayName(S.session);
 
   applyRole();
   renderMeta();
