@@ -612,3 +612,35 @@ immediately, which on a slow link types into the previous document. It waits for
 the rail to grow now. A test that passes only because the network is quick is not
 a test — which is why all four vr scripts are run against production as well as
 against `127.0.0.1`.
+
+## vr, second pass: the sheet becomes a place to work
+
+The first version was a table and a set of filters, and it was built against a
+247-row import — which is a stress test, not a Tuesday. A person does not read a
+list of two hundred and forty-seven rows; a person opens a drawer that says
+*One/same interface* and looks at the twenty inside it. So the second pass is
+about navigation, not features:
+
+- the document carries a **tree** (`vr_themes`, two levels, enforced by a
+  trigger) and its own **words** (`vr_vocab` for importance, status and kind). A
+  vocabulary is per document because a Croatian tender says `P1..P4`, a school
+  project says `must / nice to have`, and a house build says `before the roof`.
+  The `check in (...)` constraints had to go — a list that cannot grow is an
+  opinion, not a requirement sheet.
+- the sheet shows **three things**: the requirement (name + title + one
+  sentence), how hard, and status. Theme appears only in *everything*, because
+  inside a theme it would just repeat the drawer. Id, kind, source and proof are
+  one toggle away.
+- **twenty rows a page**, sortable headings, one search box. Print still prints
+  the whole document (`beforeprint` raises the page size and repaints).
+- **`vr_log`**, written by a trigger: who, what, before, after, and a snapshot of
+  the row. No screen yet — the point was that the data would exist when the
+  screen arrives, and that the screen could never be the only source of truth
+  about who changed a decision.
+
+Two small bugs of the classic kind. The theme column was hidden by
+`.sheet:not([data-theme])` while the painter wrote `data-theme=""` — an empty
+attribute still matches `[data-theme]`, so it showed when it should have hidden.
+And the empty-state line keyed off `S.reqs.length` instead of the number of rows
+on screen, so a theme with nothing in it was a blank page with no sentence
+explaining itself. A place with nothing in it still has to say so.

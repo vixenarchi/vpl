@@ -33,7 +33,7 @@ function loadScript(src) {
 }
 
 const P = 'id,user_id,title,brief,assumptions,scope,created_at,updated_at';
-const R = 'id,project_id,user_id,ref,kind,strength,theme,category,title,statement,detail,'
+const R = 'id,project_id,user_id,ref,kind,strength,theme,theme_id,category,title,statement,detail,'
         + 'asis,tobe,horizon,source,verification,metric,target,conditions,clause,status,pos,'
         + 'created_at,updated_at';
 const T = 'id,project_id,term,meaning,created_at';
@@ -108,7 +108,7 @@ export async function updateProject(id, patch) {
  * is allowed because the copy is inserted under your own id — the original's
  * owner keeps their document, and you get one where the names, the strengths
  * and the order are yours to change. */
-export async function copyToMe(src, rows = [], terms = []) {
+export async function copyToMe(src, rows = [], terms = [], themes = [], vocab = []) {
   const db = await client();
   const s = await session();
   const { data: p, error } = await db.from('vr_projects').insert({
@@ -120,10 +120,28 @@ export async function copyToMe(src, rows = [], terms = []) {
   const keep = ['ref', 'kind', 'strength', 'theme', 'category', 'title', 'statement', 'detail',
     'asis', 'tobe', 'horizon', 'source', 'verification', 'metric', 'target', 'conditions',
     'clause', 'status', 'pos'];
+  /* the tree comes with the document: same names, same shape, new ids */
+  const map = new Map();
+  for (const t of (themes || []).slice().sort((a, b) => (a.parent_id ? 1 : 0) - (b.parent_id ? 1 : 0))) {
+    const { data: nt, error: e0 } = await db.from('vr_themes')
+      .insert({ user_id: s.user.id, project_id: p.id, name: t.name, parent_id: map.get(t.parent_id) || null })
+      .select(TH).single();
+    if (e0) throw e0;
+    map.set(t.id, nt.id);
+  }
+  if (vocab && vocab.length) {
+    /* the new document arrives with the default words; the source's words win */
+    await db.from('vr_vocab').delete().eq('project_id', p.id);
+    const { error: e1 } = await db.from('vr_vocab').insert(vocab.map((v) => ({
+      user_id: s.user.id, project_id: p.id, axis: v.axis, value: v.value, color: v.color, pos: v.pos,
+    })));
+    if (e1) throw e1;
+  }
   for (let i = 0; i < rows.length; i += 40) {
     const chunk = rows.slice(i, i + 40).map((r) => {
       const out = { user_id: s.user.id, project_id: p.id };
       for (const k of keep) out[k] = r[k] ?? '';
+      out.theme_id = map.get(r.theme_id) || null;
       return out;
     });
     const { error: e2 } = await db.from('vr_reqs').insert(chunk);
@@ -142,6 +160,64 @@ export async function deleteProject(id) {
   const db = await client();
   const { error } = await db.from('vr_projects').delete().eq('id', id);
   if (error) throw error;
+}
+
+/* ── the tree: a theme, and a subtheme under it ───────────────────── */
+const TH = 'id,project_id,parent_id,name,pos,created_at';
+
+export async function listThemes(projectId) {
+  const db = await client();
+  const { data, error } = await db.from('vr_themes').select(TH)
+    .eq('project_id', projectId).order('pos', { ascending: true }).order('name', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function addTheme(projectId, name, parentId = null) {
+  const db = await client();
+  const s = await session();
+  const { data, error } = await db.from('vr_themes')
+    .insert({ user_id: s.user.id, project_id: projectId, name, parent_id: parentId })
+    .select(TH).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function renameTheme(id, name) {
+  const db = await client();
+  const { data, error } = await db.from('vr_themes').update({ name }).eq('id', id).select(TH).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteTheme(id) {
+  const db = await client();
+  const { error } = await db.from('vr_themes').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/* ── the document's words: importance, status, kind ───────────────── */
+const V = 'id,project_id,axis,value,color,pos';
+
+export async function listVocab(projectId) {
+  const db = await client();
+  const { data, error } = await db.from('vr_vocab').select(V)
+    .eq('project_id', projectId).order('axis', { ascending: true }).order('pos', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function addVocab(projectId, axis, value, color = 'grey') {
+  const db = await client();
+  const s = await session();
+  const { data: have } = await db.from('vr_vocab').select(V)
+    .eq('project_id', projectId).eq('axis', axis).order('pos', { ascending: false }).limit(1);
+  const pos = (have && have[0] ? have[0].pos : 0) + 1;
+  const { data, error } = await db.from('vr_vocab')
+    .insert({ user_id: s.user.id, project_id: projectId, axis, value, color, pos })
+    .select(V).single();
+  if (error) throw error;
+  return data;
 }
 
 /* ── rows ─────────────────────────────────────────────────────────── */

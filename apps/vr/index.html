@@ -72,6 +72,15 @@
       </div>
       <ul id="proj-list" class="proj-list"></ul>
       <p id="proj-none" class="proj-none muted">no documents yet. one document is one sheet.</p>
+
+      <!-- the tree inside the open document: everything, a theme, or a subtheme -->
+      <div id="themes" class="themes" hidden>
+        <div class="proj-head">
+          <span>themes</span>
+          <button id="btn-new-theme" class="icon w-only" type="button" title="a new theme">＋</button>
+        </div>
+        <ul id="theme-tree" class="theme-tree"></ul>
+      </div>
     </nav>
 
     <main id="spec" class="spec" hidden>
@@ -86,6 +95,11 @@
         <button id="btn-own" class="ghost" type="button" title="copy this document into your own documents" hidden>copy to mine</button>
         <button id="btn-share" class="ghost o-only" type="button" title="a link or a person">share</button>
       </div>
+      <p class="crumb-line">
+        <button id="crumb" class="crumb" type="button" title="where you are: open the themes">
+          <span id="crumb-doc">document</span><span class="crumb-sep">/</span><span id="crumb-theme">everything</span>
+        </button>
+      </p>
       <p id="proj-meta" class="proj-meta muted"></p>
       <p id="guest-banner" class="guest-banner" hidden></p>
       <p id="print-meta" class="print-meta"></p>
@@ -107,14 +121,11 @@
       </details>
 
       <div class="tools">
-        <div class="filters" id="filters" role="group" aria-label="how hard">
-          <button class="chip on" data-f="all" type="button">all <b></b></button>
-          <button class="chip must" data-f="must" type="button">■ must <b></b></button>
-          <button class="chip optional" data-f="optional" type="button">◆ optional <b></b></button>
-          <button class="chip wish" data-f="wish" type="button">◇ wish <b></b></button>
+        <div class="tools-l">
+          <input id="q" type="search" placeholder="find: id, words, source" aria-label="find a row">
         </div>
         <div class="tools-r">
-          <input id="q" type="search" placeholder="find a row" aria-label="find a row">
+          <span id="pager" class="pager"></span>
           <button id="btn-columns" class="ghost" type="button" aria-pressed="false">all columns</button>
           <button id="btn-glossary" class="ghost" type="button">glossary</button>
           <button id="btn-paste" class="ghost w-only" type="button">paste rows</button>
@@ -128,30 +139,32 @@
       <table id="sheet" class="sheet">
         <thead>
           <tr>
-            <th class="c-ref">id</th>
-            <th class="c-req">requirement</th>
-            <th class="c-strength">how hard</th>
-            <th class="c-theme">theme</th>
-            <th class="c-extra">kind</th>
-            <th class="c-extra">how we know</th>
+            <th class="c-req sortable" data-sort="pos">requirement</th>
+            <th class="c-strength sortable" data-sort="strength">how hard</th>
+            <th class="c-status sortable" data-sort="status">status</th>
+            <th class="c-theme sortable" data-sort="theme">theme</th>
+            <th class="c-extra sortable" data-sort="ref">id</th>
+            <th class="c-extra sortable" data-sort="kind">kind</th>
             <th class="c-extra">source</th>
-            <th class="c-extra">when</th>
-            <th class="c-extra">status</th>
+            <th class="c-extra">how we know</th>
             <th class="c-tools"><span class="sr-only">row</span></th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
         <tfoot>
           <tr class="add-row w-only">
-            <td class="c-ref">new</td>
             <td colspan="9">
+              <span id="add-theme" class="add-theme muted"></span>
               <input id="req-add" type="text" spellcheck="true"
                      placeholder="one testable sentence — then Enter">
             </td>
           </tr>
         </tfoot>
       </table>
-      <p id="sheet-none" class="muted" hidden>no rows yet. the first one goes in the box above.</p>
+      <div class="pager-line">
+        <span class="grow"></span>
+        <span id="sheet-none" class="muted" hidden>no rows yet. the first one goes in the box above.</span>
+      </div>
       <p class="print-note muted">prints as the document · <kbd>ctrl</kbd>+<kbd>p</kbd> · rows keep their names</p>
     </main>
 

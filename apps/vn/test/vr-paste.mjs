@@ -50,12 +50,12 @@ await pg.click('#paste-do');
 await pg.waitForTimeout(1400);
 ok((await pg.locator('#rows tr[data-id]').count()) === 5, 'five rows: one typed, four pasted');
 
-const refs = await pg.locator('#rows tr[data-id] .c-ref').allTextContents();
+const refs = await pg.locator('#rows tr[data-id] .c-req .ref').allTextContents();
 ok(refs.join(',') === 'VR-001,VR-002,VR-003,VR-004,VR-005', 'names continue instead of restarting: ' + refs.join(' '));
 
 const rows = await pg.locator('#rows tr[data-id]').evaluateAll((trs) => trs.map((tr) => ({
   text: tr.textContent.replace(/\s+/g, ' ').trim(),
-  strength: tr.querySelector('.strength').textContent.replace(/\s+/g, ''),
+  strength: tr.querySelector('.c-strength .chip-value').textContent.replace(/\s+/g, ''),
   theme: tr.querySelector('.c-theme').textContent.trim(),
 })));
 ok(rows[1].text.includes('two winters') && rows[1].strength === '■must', 'the bare sentence becomes a must');

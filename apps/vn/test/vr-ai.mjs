@@ -10,6 +10,14 @@ import { chromium } from 'playwright';
 
 const B = process.env.VR_URL || 'http://127.0.0.1:8101';
 let pass = 0, fail = 0;
+const until = async (fn, ms = 8000, step = 150) => {
+  const t0 = Date.now();
+  for (;;) {
+    try { const v = await fn(); if (v) return v; } catch {}
+    if (Date.now() - t0 > ms) return false;
+    await new Promise((r) => setTimeout(r, step));
+  }
+};
 const ok = (cond, what) => { cond ? pass++ : fail++; console.log(`  ${cond ? 'ok  ' : 'FAIL'} ${what}`); };
 
 const REVIEW = [
@@ -122,7 +130,8 @@ await pg.click('#btn-review');
 await pg.waitForTimeout(1200);
 await pg.click('#review-all');
 await pg.waitForTimeout(1400);
-ok((await pg.locator('#filters .chip[data-f="optional"] b').textContent()) === '1', 'use all moved the second row to optional');
+ok(await until(async () => (await pg.textContent('#proj-meta')).includes('optional'), 6000),
+  'use all moved the second row to optional: ' + (await pg.textContent('#proj-meta')));
 
 // ── draft from the brief
 await pg.click('#brief summary');

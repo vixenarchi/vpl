@@ -15,12 +15,9 @@ import { prompts } from './prompts.js';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
-const STRENGTH = ['must', 'optional', 'wish'];
-const MARK = { must: '■', optional: '◆', wish: '◇' };
-const KIND_LABEL = {
-  functional: 'functional', nonfunctional: 'non-functional',
-  constraint: 'constraint', rule: 'rule',
-};
+/* One shape per value, in the order the document lists them; colour is never the
+ * only signal, and neither is a word on its own. */
+const MARK = ['■', '◆', '◇', '●', '▲', '▼'];
 
 const S = {
   session: null,
@@ -30,14 +27,44 @@ const S = {
   terms: [],
   role: 'owner',     // owner | edit | view
   guest: null,       // a public link: no session, no writes
-  filter: 'all',     // all | must | optional | wish
+  themes: [],
+  vocab: [],         // importance, status, kind — the words this document uses
+  themeId: null,     // null = everything
   gap: '',           // '' | noproof | nonumber
   q: '',
+  sort: { field: 'pos', dir: 1 },
+  page: 1,
+  per: 20,
   all: false,        // all columns
   open: null,        // the row whose detail is open
   proposals: [],
   busy: false,
 };
+
+/* ── the document's words ─────────────────────────────────────────── */
+const vocabOf = (axis) => S.vocab.filter((v) => v.axis === axis).slice().sort((a, b) => a.pos - b.pos);
+const vocabRow = (axis, value) => vocabOf(axis).find((v) => v.value === value) || null;
+const colorOf = (axis, value) => (vocabRow(axis, value) || {}).color || 'grey';
+const orderOf = (axis, value) => {
+  const row = vocabRow(axis, value);
+  return row ? row.pos : 99;
+};
+function markOf(axis, value) {
+  const i = vocabOf(axis).findIndex((v) => v.value === value);
+  return MARK[Math.max(0, i) % MARK.length];
+}
+
+/* ── the document's tree ──────────────────────────────────────────── */
+const themeById = (id) => S.themes.find((t) => t.id === id) || null;
+const roots = () => S.themes.filter((t) => !t.parent_id);
+const kids = (id) => S.themes.filter((t) => t.parent_id === id);
+function themePath(id) {
+  if (id === 'unfiled') return 'unfiled';
+  const t = themeById(id);
+  if (!t) return '';
+  const p = t.parent_id ? themeById(t.parent_id) : null;
+  return p ? p.name + ' / ' + t.name : t.name;
+}
 
 /* ── tiny helpers ─────────────────────────────────────────────────── */
 const canWrite = () => S.role === 'owner' || S.role === 'edit';
@@ -202,7 +229,8 @@ function paintProjects() {
 async function openProject(p) {
   S.project = p;
   S.open = null;
-  S.filter = 'all'; S.gap = ''; S.q = ''; $('#q').value = '';
+  S.themeId = null; S.gap = ''; S.q = ''; $('#q').value = '';
+  S.page = 1; S.sort = { field: 'pos', dir: 1 };
   try { localStorage.setItem('vpl.vr.last', p.id); } catch {}
   $('#welcome').hidden = true;
   $('#spec').hidden = false;
@@ -213,17 +241,20 @@ async function openProject(p) {
   applyRole();
 
   try {
-    const [reqs, terms] = await Promise.all([db.listReqs(p.id), db.listTerms(p.id)]);
+    const [reqs, terms, themes, vocab] = await Promise.all([
+      db.listReqs(p.id), db.listTerms(p.id), db.listThemes(p.id), db.listVocab(p.id),
+    ]);
     S.reqs = reqs;
     S.terms = terms;
+    S.themes = themes;
+    S.vocab = vocab;
   } catch (e) {
     console.error(e);
-    S.reqs = []; S.terms = [];
+    S.reqs = []; S.terms = []; S.themes = []; S.vocab = [];
   }
   paintSheet();
   paintBrief();
   paintAiHint();
-  paintFilters();
 }
 
 /* Which document the name field is currently showing. The rows arrive a moment
@@ -265,54 +296,88 @@ function applyRole() {
 }
 
 /* ── the sheet ────────────────────────────────────────────────────── */
-function visible() {
+function inTheme(r) {
+  if (!S.themeId) return true;
+  if (S.themeId === 'unfiled') return !r.theme_id;
+  if (r.theme_id === S.themeId) return true;
+  const sel = themeById(S.themeId);
+  /* choosing a theme shows its subthemes too; a subtheme shows only itself */
+  return !!(sel && !sel.parent_id && r.theme_id && themeById(r.theme_id)?.parent_id === sel.id);
+}
+
+function listed() {
   const q = S.q.trim().toLowerCase();
-  return S.reqs.slice()
-    .sort((a, b) => (a.pos || 0) - (b.pos || 0))
-    .filter((r) => {
-    if (S.filter !== 'all' && r.strength !== S.filter) return false;
+  return S.reqs.filter((r) => {
+    if (!inTheme(r)) return false;
     if (S.gap === 'noproof' && r.verification) return false;
-    if (S.gap === 'nonumber' && !(r.kind === 'nonfunctional' && !r.metric.trim())) return false;
+    if (S.gap === 'nonumber' && !(r.kind === 'nonfunctional' && !(r.metric || '').trim())) return false;
     if (S.gap === 'nostatement' && (r.statement || r.title)) return false;
     if (!q) return true;
-    return [r.ref, r.title, r.statement, r.theme, r.category, r.source, r.verification, r.clause]
+    return [r.ref, r.title, r.statement, r.theme, r.category, r.source, r.verification,
+      r.clause, r.status, r.strength, themePath(r.theme_id)]
       .some((v) => (v || '').toLowerCase().includes(q));
   });
 }
 
-function paintFilters() {
-  const counts = { all: S.reqs.length, must: 0, optional: 0, wish: 0 };
-  for (const r of S.reqs) counts[r.strength] = (counts[r.strength] || 0) + 1;
-  $$('#filters .chip').forEach((b) => {
-    b.classList.toggle('on', b.dataset.f === S.filter && !S.gap);
-    b.querySelector('b').textContent = counts[b.dataset.f] ?? 0;
+function sorted(rows) {
+  const f = S.sort.field, d = S.sort.dir;
+  return rows.slice().sort((a, b) => {
+    let x, y;
+    if (f === 'strength') { x = orderOf('importance', a.strength); y = orderOf('importance', b.strength); }
+    else if (f === 'status') { x = orderOf('status', a.status); y = orderOf('status', b.status); }
+    else if (f === 'theme') { x = themePath(a.theme_id).toLowerCase(); y = themePath(b.theme_id).toLowerCase(); }
+    else if (f === 'ref') { x = a.ref || ''; y = b.ref || ''; }
+    else if (f === 'kind') { x = a.kind || ''; y = b.kind || ''; }
+    else { x = a.pos || 0; y = b.pos || 0; }
+    if (x === y) return (a.pos || 0) - (b.pos || 0);
+    return (x > y ? 1 : -1) * d;
   });
 }
 
 function paintSheet() {
-  const rows = visible();
-  const body = $('#rows');
-  body.innerHTML = rows.map(rowHTML).join('');
-  $('#sheet-none').hidden = S.reqs.length > 0;
+  const rows = sorted(listed());
+  const pages = Math.max(1, Math.ceil(rows.length / S.per));
+  if (S.page > pages) S.page = pages;
+  if (S.page < 1) S.page = 1;
+  const start = (S.page - 1) * S.per;
+  $('#rows').innerHTML = rows.slice(start, start + S.per).map(rowHTML).join('');
   $('#sheet').dataset.all = S.all ? '1' : '0';
-  paintFilters();
+  $('#sheet').dataset.theme = S.themeId ? '1' : '0';
+  paintSort();
+  paintPager(rows.length, pages);
   paintGaps();
   paintMeta(rows.length);
   paintHead();
+  paintTree();
+  paintAddTheme();
+  /* an empty theme is a place too, and it has to say so */
+  const none = $('#sheet-none');
+  none.hidden = rows.length > 0;
+  if (!S.reqs.length) none.textContent = 'no rows yet. the first one goes in the box above.';
+  else if (S.q || S.gap) none.textContent = 'nothing matches that.';
+  else if (S.themeId) none.textContent = 'nothing here yet — type below, it goes into ' + themePath(S.themeId) + '.';
+  else none.textContent = 'no rows yet.';
+}
+
+function chipHTML(axis, value, extra = '') {
+  const v = vocabRow(axis, value);
+  const label = (v && v.value) || value || '—';
+  return `<button class="chip-value" data-color="${esc(colorOf(axis, value))}" ${extra} type="button">
+    <span class="mark" aria-hidden="true">${markOf(axis, value)}</span>${esc(label)}</button>`;
 }
 
 function rowHTML(r) {
   const title = r.title ? `<span class="req-title">${esc(r.title)}</span>` : '';
   const statement = r.statement || '';
-  const line = statement && statement !== r.title
-    ? `<span class="req-statement">${esc(statement)}</span>` : '';
+  const line = statement && statement !== r.title ? `<span class="req-statement">${esc(statement)}</span>` : '';
   const open = S.open === r.id;
+  const ref = `<span class="ref">${esc(r.ref || '—')}</span>`;
   return `
     <tr data-id="${r.id}" class="${open ? 'open' : ''}">
-      <td class="c-ref">${esc(r.ref || '—')}</td>
-      <td class="c-req"><div class="req-open">${title || esc(statement) || '<span class="muted">no sentence yet</span>'}${title && line ? '<br>' + line : ''}</div></td>
-      <td class="c-strength">${strengthHTML(r)}</td>
-      <td class="c-theme theme-cell" title="${esc(r.theme)}">${esc(r.theme) || '<span class="muted">—</span>'}</td>
+      <td class="c-req"><div class="req-open">${ref}${title || esc(statement) || '<span class="muted">no sentence yet</span>'}${(title && line) ? '<br>' + line : ''}</div></td>
+      <td class="c-strength">${chipHTML('importance', r.strength, `data-s="${esc(r.strength)}" title="click to change"`)}</td>
+      <td class="c-status">${chipHTML('status', r.status, `data-status="${esc(r.status)}" title="click to move it on"`)}</td>
+      <td class="c-theme theme-cell" title="${esc(themePath(r.theme_id) || r.theme)}">${esc(themePath(r.theme_id) || r.theme) || '<span class="muted">—</span>'}</td>
       ${extraCells(r)}
       <td class="c-tools"><div class="row-tools">
         <button type="button" data-move="-1" title="move up" aria-label="move up">↑</button>
@@ -325,17 +390,20 @@ function rowHTML(r) {
 
 function extraCells(r) {
   return `
-    <td class="c-extra extra-cell">${esc(KIND_LABEL[r.kind] || r.kind)}</td>
-    <td class="c-extra extra-cell ${r.verification ? '' : 'empty'}">${esc(r.verification) || 'no proof'}</td>
-    <td class="c-extra extra-cell ${r.source ? '' : 'empty'}">${esc(r.source) || '—'}</td>
-    <td class="c-extra extra-cell ${r.horizon ? '' : 'empty'}">${esc(r.horizon) || '—'}</td>
-    <td class="c-extra extra-cell">${esc(r.status)}</td>`;
+    <td class="c-extra extra-cell ref-cell">${esc(r.ref || '')}</td>
+    <td class="c-extra extra-cell">${esc(r.kind)}</td>
+    <td class="c-extra extra-cell ${r.source ? '' : 'empty'}">${sourceHTML(r.source)}</td>
+    <td class="c-extra extra-cell ${r.verification ? '' : 'empty'}">${esc(r.verification) || 'no proof'}</td>`;
 }
 
-function strengthHTML(r) {
-  const s = STRENGTH.includes(r.strength) ? r.strength : 'must';
-  return `<button class="strength" data-s="${s}" type="button" title="click to change: must → optional → wish">
-    <span class="mark" aria-hidden="true">${MARK[s]}</span>${s}</button>`;
+/* a source that is an address is a link; everything else stays words */
+function sourceHTML(src) {
+  const t = (src || '').trim();
+  if (!t) return '—';
+  if (/^https?:\/\/\S+$/i.test(t)) {
+    return `<a href="${esc(t)}" target="_blank" rel="noopener noreferrer">${esc(t.replace(/^https?:\/\//, '').slice(0, 40))}</a>`;
+  }
+  return esc(t);
 }
 
 const DETAIL_FIELDS = [
@@ -343,10 +411,8 @@ const DETAIL_FIELDS = [
   ['detail', 'the long version', 'textarea', 'wide'],
   ['asis', 'what it is today', 'textarea', ''],
   ['tobe', 'what it should be', 'textarea', ''],
-  ['theme', 'theme (the group it belongs to)', 'text', ''],
-  ['category', 'category, one level down', 'text', ''],
   ['horizon', 'when — free text: short, 2014/15, Q3', 'text', ''],
-  ['source', 'who asked, or what forces it', 'text', ''],
+  ['source', 'source — who asked, or a link', 'text', ''],
   ['verification', 'how we will know — test, review, demo', 'text', ''],
   ['metric', 'for a non-functional: the measured thing', 'text', ''],
   ['target', 'the number it must reach', 'text', ''],
@@ -354,9 +420,29 @@ const DETAIL_FIELDS = [
   ['clause', 'a law or standard, down to the clause', 'text', ''],
 ];
 
+function vocabSelect(axis, current, id, locked) {
+  const rows = vocabOf(axis);
+  const known = rows.some((v) => v.value === current);
+  return `<select id="${id}" data-axis="${axis}" ${locked ? 'disabled' : ''}>
+    ${known ? '' : `<option value="${esc(current)}" selected>${esc(current || '—')}</option>`}
+    ${rows.map((v) => `<option value="${esc(v.value)}" ${v.value === current ? 'selected' : ''}>${esc(v.value)}</option>`).join('')}
+    ${locked ? '' : '<option value="__new">＋ another word…</option>'}
+  </select>`;
+}
+
+function themeSelect(r, locked) {
+  const opts = roots().map((t) => {
+    const own = `<option value="${t.id}" ${r.theme_id === t.id ? 'selected' : ''}>${esc(t.name)}</option>`;
+    const subs = kids(t.id).map((k) => `<option value="${k.id}" ${r.theme_id === k.id ? 'selected' : ''}>${esc(t.name)} / ${esc(k.name)}</option>`).join('');
+    return own + subs;
+  }).join('');
+  return `<select id="d-${r.id}-theme" data-field="theme_id" ${locked ? 'disabled' : ''}>
+    <option value="">— no theme —</option>${opts}
+  </select>`;
+}
+
 function detailHTML(r) {
   const fields = DETAIL_FIELDS.map(([name, label, kind, cls]) => {
-    const ownerOnly = name === 'kind' ? '' : '';
     if (kind === 'textarea') {
       return `<div class="${cls}"><label for="d-${r.id}-${name}">${label}</label>
         <textarea id="d-${r.id}-${name}" data-field="${name}" rows="${name === 'statement' || name === 'detail' ? 3 : 2}"
@@ -366,30 +452,19 @@ function detailHTML(r) {
       <input id="d-${r.id}-${name}" type="text" data-field="${name}" value="${esc(r[name])}"></div>`;
   }).join('');
 
-  const decisions = `
-    <div><label for="d-${r.id}-kind">kind</label>
-      <select id="d-${r.id}-kind" data-field="kind" ${isOwner() ? '' : 'disabled'}>
-        ${Object.entries(KIND_LABEL).map(([v, l]) => `<option value="${v}" ${r.kind === v ? 'selected' : ''}>${l}</option>`).join('')}
-      </select></div>
-    <div><label for="d-${r.id}-status">status</label>
-      <select id="d-${r.id}-status" data-field="status" ${isOwner() ? '' : 'disabled'}>
-        ${['draft', 'agreed', 'built', 'verified', 'dropped'].map((v) => `<option ${r.status === v ? 'selected' : ''}>${v}</option>`).join('')}
-      </select></div>
-    <div><label for="d-${r.id}-strength">how hard</label>
-      <select id="d-${r.id}-strength" data-field="strength" ${isOwner() ? '' : 'disabled'}>
-        ${STRENGTH.map((v) => `<option ${r.strength === v ? 'selected' : ''}>${v}</option>`).join('')}
-      </select></div>`;
-
-  return `<tr class="detail"><td colspan="10">
+  return `<tr class="detail"><td colspan="9">
     <div class="detail-grid">
       <div class="wide"><label for="d-${r.id}-title">title — a few words, for the sheet</label>
         <input id="d-${r.id}-title" type="text" data-field="title" value="${esc(r.title)}" ${isOwner() ? '' : 'disabled'}></div>
+      <div><label for="d-${r.id}-theme">theme</label>${themeSelect(r, !canWrite())}</div>
+      <div><label for="d-${r.id}-kind">kind</label>${vocabSelect('kind', r.kind, `d-${r.id}-kind`, !canWrite())}</div>
+      <div><label for="d-${r.id}-strength">how hard</label>${vocabSelect('importance', r.strength, `d-${r.id}-strength`, !isOwner())}</div>
+      <div><label for="d-${r.id}-status">status</label>${vocabSelect('status', r.status, `d-${r.id}-status`, !canWrite())}</div>
       ${fields}
-      ${decisions}
     </div>
     <div class="detail-foot">
       <span class="msg" id="d-msg-${r.id}"></span>
-      <span class="muted small">${esc(r.ref)} — every change is saved</span>
+      <span class="muted small">${esc(r.ref)} — saved as you type${r.updated_at ? ' · last ' + new Date(r.updated_at).toLocaleString() : ''}</span>
       <button class="ghost" type="button" data-close="${r.id}">close</button>
     </div>
   </td></tr>`;
@@ -399,29 +474,33 @@ function detailHTML(r) {
 function paintMeta(shown) {
   if (!S.project) return;
   const n = S.reqs.length;
-  const must = S.reqs.filter((r) => r.strength === 'must').length;
-  const optional = S.reqs.filter((r) => r.strength === 'optional').length;
-  const wish = S.reqs.filter((r) => r.strength === 'wish').length;
-  const parts = [`${n} row${n === 1 ? '' : 's'}`, `${must} must`];
-  if (optional) parts.push(`${optional} optional`);
-  parts.push(`${wish} wish`);
-  if (shown !== n) parts.push(`${shown} shown`);
-  if (S.role !== 'owner') parts.push(S.role === 'edit' ? 'you may write, not decide' : 'read only');
-  $('#proj-meta').textContent = parts.join(' · ');
+  const bits = [`${n} row${n === 1 ? '' : 's'}`];
+  for (const v of vocabOf('importance')) {
+    const c = S.reqs.filter((r) => r.strength === v.value).length;
+    if (c) bits.push(`${c} ${v.value}`);
+  }
+  if (!vocabOf('importance').length) {
+    const must = S.reqs.filter((r) => r.strength === 'must').length;
+    if (must) bits.push(`${must} must`);
+  }
+  if (shown !== n) bits.push(`${shown} shown`);
+  if (S.role !== 'owner') bits.push(S.role === 'edit' ? 'you may write, not decide' : 'read only');
+  $('#proj-meta').textContent = bits.join(' · ');
 
   const when = new Date().toLocaleDateString();
   $('#print-meta').textContent = S.project
-    ? `${when} · ${S.project.title} · ${parts.join(' · ')} · vr.terg.hr`
+    ? `${when} · ${S.project.title} · ${bits.join(' · ')} · vr.terg.hr`
     : '';
 }
 
 function paintGaps() {
-  const noProof = S.reqs.filter((r) => !r.verification && r.strength === 'must').length;
-  const noNumber = S.reqs.filter((r) => r.kind === 'nonfunctional' && !r.metric.trim()).length;
+  const top = (vocabOf('importance')[0] || {}).value || 'must';
+  const noProof = S.reqs.filter((r) => !r.verification && r.strength === top).length;
+  const noNumber = S.reqs.filter((r) => r.kind === 'nonfunctional' && !(r.metric || '').trim()).length;
   const noSource = S.reqs.filter((r) => !r.source).length;
   const el = $('#gaps');
   const bits = [];
-  if (noProof) bits.push(`<button type="button" data-gap="noproof">${noProof} must without proof</button>`);
+  if (noProof) bits.push(`<button type="button" data-gap="noproof">${noProof} ${esc(top)} without proof</button>`);
   if (noNumber) bits.push(`<button type="button" data-gap="nonumber">${noNumber} non-functional without a number</button>`);
   if (S.all && noSource) bits.push(`<span>${noSource} without a source</span>`);
   if (S.gap) bits.push(`<button type="button" data-gap="">clear</button>`);
@@ -429,8 +508,80 @@ function paintGaps() {
   el.innerHTML = bits.length ? bits.join('') : '';
   if (!bits.length && S.reqs.length) {
     el.hidden = false;
-    el.innerHTML = `<span class="none">every must has a proof, every non-functional has a number.</span>`;
+    el.innerHTML = '<span class="none">every must has a proof, every non-functional has a number.</span>';
   }
+}
+
+/* where you are, two words */
+function paintCrumb() {
+  $('#crumb-doc').textContent = S.project ? S.project.title : 'document';
+  $('#crumb-theme').textContent = S.themeId
+    ? (themePath(S.themeId) || 'everything')
+    : 'everything';
+}
+
+function paintTree() {
+  const box = $('#theme-tree');
+  const wrap = $('#themes');
+  wrap.hidden = !S.project;
+  const total = S.reqs.length;
+  const countIn = (t) => S.reqs.filter((r) => r.theme_id === t.id
+    || (kids(t.id).some((k) => k.id === r.theme_id))).length;
+
+  const li = [];
+  li.push(`<li class="tt-row tt-all ${S.themeId ? '' : 'on'}">
+    <button type="button" class="tt-pick" data-theme="">everything <b>${total}</b></button></li>`);
+  const unfiled = S.reqs.filter((r) => !r.theme_id).length;
+  if (unfiled) {
+    li.push(`<li class="tt-row tt-unfiled ${S.themeId === 'unfiled' ? 'on' : ''}">
+      <button type="button" class="tt-pick" data-theme="unfiled" title="rows that belong to no theme yet">unfiled <b>${unfiled}</b></button></li>`);
+  }
+  for (const t of roots()) {
+    li.push(`<li class="tt-row tt-root ${S.themeId === t.id ? 'on' : ''}">
+      <button type="button" class="tt-pick" data-theme="${t.id}" title="${esc(t.name)}">${esc(t.name)} <b>${countIn(t)}</b></button>
+      <span class="tt-tools"><button type="button" class="w-only" data-sub="${t.id}" title="a subtheme">＋</button>
+        <button type="button" class="o-only" data-del-theme="${t.id}" title="delete this theme">✕</button></span>
+    </li>`);
+    /* subthemes open only under the theme you are standing in: a rail is a
+     * place, not a filing cabinet */
+    const openRoot = S.themeId === t.id || (S.themeId && themeById(S.themeId)?.parent_id === t.id);
+    for (const k of (openRoot ? kids(t.id) : [])) {
+      li.push(`<li class="tt-row tt-kid ${S.themeId === k.id ? 'on' : ''}">
+        <button type="button" class="tt-pick" data-theme="${k.id}" title="${esc(t.name)} / ${esc(k.name)}">${esc(k.name)} <b>${S.reqs.filter((r) => r.theme_id === k.id).length}</b></button>
+        <span class="tt-tools"><button type="button" class="o-only" data-del-theme="${k.id}" title="delete this theme">✕</button></span>
+      </li>`);
+    }
+  }
+  if (!roots().length) {
+    li.push(`<li class="tt-empty muted">no themes yet${canWrite() ? ' — ＋ makes the first' : ''}</li>`);
+  }
+  box.innerHTML = li.join('');
+  paintCrumb();
+}
+
+function paintAddTheme() {
+  const el = $('#add-theme');
+  if (!el) return;
+  if (!S.project) { el.textContent = ''; return; }
+  el.textContent = S.themeId ? 'goes into ' + themePath(S.themeId) : 'goes into no theme — pick one on the left';
+}
+
+function paintPager(total, pages) {
+  const el = $('#pager');
+  if (total <= S.per) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = `
+    <button type="button" data-page="-1" ${S.page <= 1 ? 'disabled' : ''} aria-label="previous page">←</button>
+    <span>page <b>${S.page}</b> / ${pages} · ${total} rows</span>
+    <button type="button" data-page="1" ${S.page >= pages ? 'disabled' : ''} aria-label="next page">→</button>`;
+}
+
+function paintSort() {
+  $$('#sheet thead th.sortable').forEach((th) => {
+    const on = th.dataset.sort === S.sort.field;
+    th.dataset.dir = on ? (S.sort.dir > 0 ? 'asc' : 'desc') : '';
+    th.setAttribute('aria-sort', on ? (S.sort.dir > 0 ? 'ascending' : 'descending') : 'none');
+  });
 }
 
 /* ── editing a row ────────────────────────────────────────────────── */
@@ -441,10 +592,11 @@ function queue(id, field, value) {
   pending.set(key, setTimeout(async () => {
     pending.delete(key);
     try {
-      const row = await db.updateReq(id, { [field]: value });
+      const patch = { [field]: value };
+      const row = await db.updateReq(id, patch);
       const at = S.reqs.findIndex((r) => r.id === id);
       if (at >= 0) S.reqs[at] = row;
-      if (['strength', 'verification', 'metric', 'kind', 'source', 'theme'].includes(field)) {
+      if (['strength', 'status', 'verification', 'metric', 'kind', 'source', 'theme', 'theme_id'].includes(field)) {
         paintSheet();
       } else if (field === 'title' || field === 'statement') {
         // repaint the line above the detail without closing it
@@ -471,8 +623,14 @@ async function addRow(text) {
   const sentence = text.trim();
   if (!sentence) return;
   const pos = S.reqs.reduce((n, r) => Math.max(n, r.pos || 0), 0) + 1;
+  const themeId = S.themeId && S.themeId !== 'unfiled' ? S.themeId : null;
+  const themeName = themeId ? (themeById(themeId)?.name || '') : '';
+  const first = (vocabOf('importance')[0] || {}).value || 'must';
   try {
-    const row = await db.addReq(S.project.id, { statement: sentence, pos });
+    const row = await db.addReq(S.project.id, {
+      statement: sentence, pos, theme_id: themeId, theme: themeName, strength: first,
+      status: (vocabOf('status')[0] || {}).value || 'draft',
+    });
     S.reqs.push(row);
     paintSheet();
     $('#req-add').value = '';
@@ -487,12 +645,48 @@ async function cycleStrength(id) {
   if (!isOwner()) return;
   const r = S.reqs.find((x) => x.id === id);
   if (!r) return;
-  const next = STRENGTH[(STRENGTH.indexOf(r.strength) + 1) % STRENGTH.length];
+  const words = vocabOf('importance').map((v) => v.value);
+  if (!words.length) return;
+  const next = words[(words.indexOf(r.strength) + 1) % words.length];
   try {
     const row = await db.updateReq(id, { strength: next });
     Object.assign(r, row);
     paintSheet();
   } catch (e) { console.error(e); }
+}
+
+/* status is progress, not a decision: an editor moves it, the log remembers */
+async function cycleStatus(id) {
+  if (!canWrite()) return;
+  const r = S.reqs.find((x) => x.id === id);
+  if (!r) return;
+  const words = vocabOf('status').map((v) => v.value);
+  if (!words.length) return;
+  const next = words[(words.indexOf(r.status) + 1) % words.length];
+  try {
+    const row = await db.updateReq(id, { status: next });
+    Object.assign(r, row);
+    paintSheet();
+  } catch (e) {
+    console.error(e);
+    flash(e.message || 'the status did not change', 'bad');
+  }
+}
+
+/* adding a word to the document's vocabulary, from any select */
+async function addWord(axis, back) {
+  const word = (prompt(`a new word for ${axis}`) || '').trim();
+  if (!word) { paintSheet(); return; }
+  const colors = ['red', 'amber', 'slate', 'green', 'blue', 'violet'];
+  try {
+    const v = await db.addVocab(S.project.id, axis, word, colors[vocabOf(axis).length % colors.length]);
+    S.vocab.push(v);
+    if (back) await back(v.value);
+    paintSheet();
+  } catch (e) {
+    flash(e.message || 'that word could not be added', 'bad');
+    paintSheet();
+  }
 }
 
 function renumber() {
@@ -1049,7 +1243,7 @@ function toMarkdown() {
     L.push(`## ${theme}`, '');
     for (const r of rows) {
       L.push(`- **${r.ref}**${r.title ? ' ' + r.title + ' —' : ''} ${r.statement || '(no sentence)'}  `);
-      const meta = [r.strength, KIND_LABEL[r.kind] || r.kind];
+      const meta = [r.strength, r.kind];
       if (r.horizon) meta.push(r.horizon);
       if (r.source) meta.push(`from ${r.source}`);
       L.push(`  _${meta.join(' · ')}_`);
@@ -1172,7 +1366,7 @@ function wireChrome() {
     if (!confirm('Copy this document into your own documents?')) return;
     flash('copying…', 'ok');
     try {
-      const p = await db.copyToMe(S.project, S.reqs, S.terms);
+      const p = await db.copyToMe(S.project, S.reqs, S.terms, S.themes, S.vocab);
       try { localStorage.setItem('vpl.vr.last', p.id); } catch {}
       location.href = location.pathname;
     } catch (e) {
@@ -1210,7 +1404,8 @@ function wireChrome() {
       return;
     }
     const id = tr.dataset.id;
-    if (e.target.closest('.strength')) return cycleStrength(id);
+    if (e.target.closest('.c-strength .chip-value')) return cycleStrength(id);
+    if (e.target.closest('.c-status .chip-value')) return cycleStatus(id);
     if (e.target.closest('.req-open')) { S.open = S.open === id ? null : id; return paintSheet(); }
     const mv = e.target.closest('button[data-move]');
     if (mv) return moveRow(id, Number(mv.dataset.move));
@@ -1233,33 +1428,117 @@ function wireChrome() {
   $('#rows').addEventListener('change', (e) => {
     const tr = e.target.closest('tr.detail');
     if (!tr || !canWrite()) return;
-    const field = e.target.dataset.field;
-    if (!field || !/^(kind|status|strength)$/.test(field)) return;
-    if (!isOwner()) return;
     const rowId = tr.previousElementSibling?.dataset.id;
     if (!rowId) return;
-    queue(rowId, field, e.target.value);
+    const row = S.reqs.find((r) => r.id === rowId);
+
+    const axis = e.target.dataset.axis;
+    if (axis) {
+      if (e.target.value === '__new') {
+        addWord(axis, (word) => queue(rowId, axis === 'importance' ? 'strength' : axis, word));
+        return;
+      }
+      if (axis === 'importance' && !isOwner()) return;
+      queue(rowId, axis === 'importance' ? 'strength' : axis, e.target.value);
+      return;
+    }
+    if (e.target.dataset.field === 'theme_id') {
+      const id = e.target.value || null;
+      const t = themeById(id);
+      /* keep the printed word in step with the tree */
+      if (row) row.theme = t ? t.name : '';
+      queue(rowId, 'theme_id', id);
+      if (t) queue(rowId, 'theme', t.name);
+      return;
+    }
   });
 
-  $('#filters').addEventListener('click', (e) => {
-    const b = e.target.closest('.chip');
-    if (!b) return;
-    S.filter = b.dataset.f;
-    S.gap = '';
-    paintSheet();
-  });
   $('#gaps').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-gap]');
     if (!b) return;
     S.gap = b.dataset.gap;
-    S.filter = 'all';
+    S.page = 1;
     paintSheet();
   });
-  $('#q').addEventListener('input', (e) => { S.q = e.target.value; paintSheet(); });
+  $('#q').addEventListener('input', (e) => { S.q = e.target.value; S.page = 1; paintSheet(); });
   $('#q').addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    $('#q').value = ''; S.q = ''; paintSheet();
+    $('#q').value = ''; S.q = ''; S.page = 1; paintSheet();
   });
+
+  /* a column heading sorts; a second click turns it round */
+  $('#sheet thead').addEventListener('click', (e) => {
+    const th = e.target.closest('th.sortable');
+    if (!th) return;
+    const field = th.dataset.sort;
+    S.sort = S.sort.field === field
+      ? { field, dir: -S.sort.dir }
+      : { field, dir: field === 'pos' || field === 'ref' ? 1 : 1 };
+    S.page = 1;
+    paintSheet();
+  });
+
+  $('#pager').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-page]');
+    if (!b || b.disabled) return;
+    S.page += Number(b.dataset.page);
+    paintSheet();
+  });
+
+  /* the tree: pick a theme, add one under it, or delete one */
+  $('#theme-tree').addEventListener('click', async (e) => {
+    const pick = e.target.closest('button[data-theme]');
+    if (pick) {
+      S.themeId = pick.dataset.theme || null;
+      S.page = 1;
+      document.body.dataset.rail = '';
+      paintSheet();
+      return;
+    }
+    const sub = e.target.closest('button[data-sub]');
+    if (sub && canWrite()) {
+      const name = (prompt('a subtheme inside ' + (themeById(sub.dataset.sub)?.name || 'this theme')) || '').trim();
+      if (!name) return;
+      try {
+        const t = await db.addTheme(S.project.id, name, sub.dataset.sub);
+        S.themes.push(t);
+        paintSheet();
+      } catch (err) { flash(err.message || 'the theme could not be added', 'bad'); }
+      return;
+    }
+    const del = e.target.closest('button[data-del-theme]');
+    if (del && isOwner()) {
+      const t = themeById(del.dataset.delTheme);
+      if (!t) return;
+      if (!confirm(`Delete the theme "${themePath(t.id)}"? Its rows stay, without a theme.`)) return;
+      try {
+        await db.deleteTheme(t.id);
+        S.themes = S.themes.filter((x) => x.id !== t.id && x.parent_id !== t.id);
+        S.reqs.forEach((r) => { if (r.theme_id === t.id) r.theme_id = null; });
+        if (S.themeId === t.id) S.themeId = null;
+        paintSheet();
+      } catch (err) { flash(err.message || 'the theme could not be deleted', 'bad'); }
+    }
+  });
+
+  $('#btn-new-theme').onclick = async () => {
+    if (!canWrite() || !S.project) return;
+    const name = (prompt('a new theme') || '').trim();
+    if (!name) return;
+    try {
+      const t = await db.addTheme(S.project.id, name, null);
+      S.themes.push(t);
+      S.themeId = t.id;
+      paintSheet();
+    } catch (e) { flash(e.message || 'the theme could not be added', 'bad'); }
+  };
+
+  /* the breadcrumb is the door to the tree on a phone */
+  $('#crumb').onclick = () => {
+    const narrow = window.matchMedia('(max-width: 780px)').matches;
+    if (narrow) document.body.dataset.rail = 'open';
+    else document.getElementById('theme-tree')?.scrollIntoView({ block: 'nearest' });
+  };
 
   try {
     S.all = localStorage.getItem('vpl.vr.columns') === '1';
@@ -1277,15 +1556,19 @@ function wireChrome() {
   /* Print is the document, so the brief opens for the paper and closes again
    * for the screen; the strip under the title carries what a page needs. */
   let wasOpen = false;
+  let printPer = 20;
   window.addEventListener('beforeprint', () => {
     wasOpen = $('#brief').open;
     $('#brief').open = true;
-    const when = new Date().toLocaleDateString();
-    const must = S.reqs.filter((r) => r.strength === 'must').length;
-    $('#print-meta').textContent = `${when} · ${S.reqs.length} rows · ${must} must · vr.terg.hr`;
+    /* paper is not paged: the document prints whole, whatever the screen shows */
+    printPer = S.per;
+    S.per = 100000;
+    paintSheet();
   });
   window.addEventListener('afterprint', () => {
     if (!wasOpen) $('#brief').open = false;
+    S.per = printPer;
+    paintSheet();
   });
   $('#brief-save').onclick = saveBrief;
 

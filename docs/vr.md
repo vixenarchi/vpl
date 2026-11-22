@@ -33,10 +33,28 @@ row with a smaller stake.
 
 ## A row
 
-Default columns (what a child sees): **id · requirement · how hard · theme**.
+Default columns (what a person with twenty rows sees): **requirement · how hard ·
+status**, and **theme** only when you are standing in *everything* (inside a
+theme the column would only repeat the drawer you came from). The requirement
+cell carries its stable name in small monospace, then the title, then the one
+testable sentence — one line each.
 
-*all columns* adds: **kind · how we know · source · when · status**. The flag is
-remembered in the browser, not the project: one person's density is not another's.
+*all columns* adds **id · kind · source · how we know**, remembered in the
+browser, not in the document.
+
+Twenty rows to a page, `page 1 / 13 · 247 rows`, arrows beside the counter; every
+column heading sorts (how-hard and status sort by the document's own order, not
+the alphabet). Print is not paged — paper gets the whole document.
+
+## The tree, and where a new row goes
+
+Themes are a tree two levels deep: the document, a theme, a subtheme. It lives in
+the left rail under the documents, opens a theme's children only while you are
+standing in it, and has an **unfiled** row for rows that belong to no theme yet.
+The header shows the path (`T-Com CRM · zahtjevi v15 / One/same interface`) and,
+on a phone, is the door to the drawer. A row typed into the box at the bottom
+lands in the theme you are standing in, marked by the line above the box — no
+extra click, and no theme picker in the row.
 
 Everything else a row may know lives in the row, opened in place by clicking it:
 
@@ -103,6 +121,25 @@ anything tab- or comma-separated (Excel, Numbers, a table copied from a page):
 
 Quoted commas stay in one cell. A line with no sentence ("wish | the visit") is
 not a requirement and is dropped, rather than becoming a row called "the visit".
+
+## The words of a document
+
+Importance, status and kind are not fixed lists in the database any more. Every
+document carries its own vocabulary (`vr_vocab`), seeded with the words most
+documents use — `must / optional / wish`, `draft / agreed / built / verified /
+dropped`, `functional / nonfunctional / constraint / rule` — and any list can
+grow from the screen: pick **＋ another word…** in a select and type it. It is
+remembered for the document, gets a colour and a place in the order, and the
+mark beside it follows that place.
+
+That is how a Croatian tender says `P1…P4`, a school project says
+`must / nice to have`, and a house build says `before the roof / after the roof`
+without anyone opening a settings screen. The colours belong to the values, not
+to the words: `must` is red because it is first, and whatever you put first is
+red.
+
+The log (below) is the other half of this: a change of importance or status is a
+decision, and a decision leaves a line behind.
 
 ## What is missing, said out loud
 
@@ -187,13 +224,25 @@ the date, the counts and `vr.terg.hr`.
 - no cross-app writes: a requirement becomes a `vn` note by copy-paste, like
   everything else in the suite
 
+## The log, with no screen yet
+
+`vr_log` records who changed what, with a snapshot of the row as it stood:
+`changed | strength,status | {before} | {after} | to_jsonb(row)`. It is written
+by a trigger, not by the screen, so it is true whatever the screen does, and it
+is readable by the owner and by anybody the document is shared with. There is no
+history panel yet — the table is the promise that there can be one.
+
+Status is progress, not a decision: an editor may move it, and the log says who.
+Importance, kind, name and order stay with the owner.
+
 ## Tests
 
-Five scripts (one is screenshots), 99 checks, all in `apps/vn/test` (Playwright lives there):
+Five scripts (one is screenshots), 106 checks, all in `apps/vn/test` (Playwright lives there):
 
-- `vr-check.mjs` — 42: naming, strength cycling, filters, find, gaps, detail
-  autosave, all columns, moving, `Alt+↑`, print media, a phone at 390 px, copy,
-  reload, delete.
+- `vr-check.mjs` — 49: naming, strength cycling, sorting, find, gaps, detail
+  autosave, all columns, moving, `Alt+↑`, the tree (a theme, the quick add going
+  into it, the theme column stepping aside), print media, a phone at 390 px,
+  copy, reload, delete.
 - `vr-paste.mjs` — 11: a T-com shaped header, tabs, commas, quoted commas, names
   continuing, header not becoming a row.
 - `vr-ai.mjs` — 21: the no-key hint, the proxy call, proposals before writing,

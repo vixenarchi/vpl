@@ -42,7 +42,8 @@ in `vi`.
 ## The rules that are not style choices
 
 1. **One table per app, prefixed.** `vn_notes`, `vn_shares`, `vi_projects`,
-   `vi_ideas`, `vi_shares`, `vr_projects`, `vr_reqs`, `vr_terms`, `vr_shares`. An
+   `vi_ideas`, `vi_shares`, `vr_projects`, `vr_reqs`, `vr_terms`, `vr_shares`,
+   `vr_themes`, `vr_vocab`, `vr_log`. An
    app never writes into another app's table. `vpl_prefix_check()`
    guards the convention.
 2. **Migrations are numbered and re-runnable.** A schema change is a new file in
@@ -86,7 +87,7 @@ Playwright lives in `apps/vn/test/node_modules`; run everything from
 VI_URL=http://127.0.0.1:8100 node vi-check.mjs       # funnel, 20 checks
 VPL_SEARCH_KEY=… VI_URL=http://127.0.0.1:8100 node vi-ai.mjs   # balloons, 14 checks
 VI_URL=http://127.0.0.1:8100 node vi-share.mjs       # sharing, 12 checks
-VR_URL=http://127.0.0.1:8101 node vr-check.mjs      # sheet, 42 checks
+VR_URL=http://127.0.0.1:8101 node vr-check.mjs      # sheet, 49 checks
 VR_URL=http://127.0.0.1:8101 node vr-paste.mjs      # spreadsheet, 11 checks
 VR_URL=http://127.0.0.1:8101 node vr-ai.mjs         # model proposals, 21 checks
 VR_URL=http://127.0.0.1:8101 node vr-share.mjs      # sharing + the database's refusal, 25 checks

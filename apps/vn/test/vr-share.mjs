@@ -98,9 +98,9 @@ ok(await gp.locator('#btn-share').isHidden(), 'a reader cannot share it on');
 ok(await gp.locator('#projects').isHidden(), 'and has no rail of documents');
 
 // a strength click must do nothing for a reader
-await gp.locator('#rows tr[data-id]').first().locator('.strength').click();
+await gp.locator('#rows tr[data-id]').first().locator('.c-strength .chip-value').click();
 await gp.waitForTimeout(600);
-ok((await gp.locator('#rows tr[data-id]').first().locator('.strength').textContent()).includes('must'),
+ok((await gp.locator('#rows tr[data-id]').first().locator('.c-strength .chip-value').textContent()).includes('must'),
   'a reader cannot change how hard a row is');
 await gp.click('#btn-glossary');
 await gp.waitForTimeout(300);
@@ -142,9 +142,9 @@ await sp.waitForTimeout(900);
 ok((await sp.locator('#rows tr[data-id]').count()) === 2, 'an editor may add a row');
 
 // decisions are not
-await sp.locator('#rows tr[data-id]').first().locator('.strength').click();
+await sp.locator('#rows tr[data-id]').first().locator('.c-strength .chip-value').click();
 await sp.waitForTimeout(700);
-ok((await sp.locator('#rows tr[data-id]').first().locator('.strength').textContent()).includes('must'),
+ok((await sp.locator('#rows tr[data-id]').first().locator('.c-strength .chip-value').textContent()).includes('must'),
   'an editor cannot change the strength on screen');
 
 // ── and the database says the same thing, in its own words
@@ -178,9 +178,9 @@ ok(copied, 'an editor can take a copy where the decisions are theirs');
 ok((await sp.evaluate(() => document.body.dataset.role)) === 'owner', 'and the copy says: you are the owner');
 ok(await until(async () => (await sp.locator('#rows tr[data-id]').count()) === beforeCopy, 20000),
   'every row came with the copy');
-await sp.locator('#rows tr[data-id] .strength').first().click();
+await sp.locator('#rows tr[data-id] .c-strength .chip-value').first().click();
 await sp.waitForTimeout(1200);
-const ownStrength = await sp.locator('#rows tr[data-id] .strength').first().textContent();
+const ownStrength = await sp.locator('#rows tr[data-id] .c-strength .chip-value').first().textContent();
 ok(!ownStrength.includes('must'), 'in the copy the strength moves: ' + ownStrength.trim().slice(0, 20));
 await sp.locator('.proj-row.on .kill').first().click();
 await sp.waitForTimeout(1500);

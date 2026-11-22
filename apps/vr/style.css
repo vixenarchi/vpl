@@ -171,6 +171,8 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
   display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
   padding: 0.5rem 0 0.6rem; border-bottom: 1px solid var(--rule-strong);
 }
+.tools-l { flex: 1 1 14rem; min-width: 9rem; }
+.tools-l input[type='search'] { width: 100%; font-size: 0.84rem; padding: 0.28rem 0.5rem; }
 .filters { display: flex; gap: 0.3rem; flex-wrap: wrap; }
 .chip {
   font-size: 0.76rem; padding: 0.18rem 0.5rem; border-radius: 999px;
@@ -213,11 +215,87 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
 .c-req { width: auto; }
 .c-req .req-statement, .c-req .req-title { display: inline; }
 .c-req .req-statement { display: block; }
-.c-strength { width: 7.2rem; }
-.c-theme { width: 9rem; }
+.c-strength { width: 6.6rem; }
+.c-status { width: 6.2rem; }
+.c-theme { width: 12rem; }
+.c-req .ref {
+  font-family: var(--mono); font-size: 0.72rem; color: var(--ink-3);
+  margin-right: 0.4rem; white-space: nowrap;
+}
 .c-tools { width: 4.4rem; }
 .c-extra { width: 9rem; }
 .sheet[data-all='1'] .c-theme { width: 7rem; }
+/* the theme is the context you are standing in, so its column appears only
+ * when you are standing in all of them */
+.sheet[data-theme='1'] .c-theme { display: none; }
+.sheet th.sortable { cursor: pointer; user-select: none; }
+.sheet th.sortable:hover { color: var(--ink); }
+.sheet th.sortable::after { content: ''; margin-left: 0.25rem; opacity: 0.5; }
+.sheet th[data-dir='asc']::after { content: '↑'; opacity: 1; }
+.sheet th[data-dir='desc']::after { content: '↓'; opacity: 1; }
+
+.pager-line { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0 0.2rem; min-height: 1.9rem; }
+.pager { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.78rem; color: var(--ink-2); }
+.pager b { font-family: var(--mono); }
+.pager button {
+  border: 1px solid var(--rule-strong); background: none; color: var(--ink-2);
+  border-radius: 3px; padding: 0.05rem 0.4rem; font-size: 0.8rem;
+}
+.pager button:disabled { opacity: 0.35; }
+.add-theme { font-size: 0.75rem; margin-right: 0.5rem; }
+
+/* the tree in the rail */
+.themes { margin-top: 1rem; border-top: 1px solid var(--rule); padding-top: 0.6rem; }
+.theme-tree { list-style: none; margin: 0.3rem 0 0; padding: 0; }
+.tt-row { display: flex; align-items: center; gap: 0.15rem; border-radius: 3px; }
+.tt-row:hover { background: var(--paper-3); }
+.tt-row.on { background: var(--paper-3); box-shadow: inset 2px 0 0 var(--ink); }
+.tt-pick {
+  flex: 1; text-align: left; border: none; background: none; font: inherit;
+  font-size: 0.82rem; color: var(--ink-2); padding: 0.28rem 0.4rem; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tt-row.on .tt-pick { color: var(--ink); font-weight: 600; }
+.tt-pick b { font-family: var(--mono); font-weight: 500; font-size: 0.72rem; color: var(--ink-3); margin-left: 0.2rem; }
+.tt-kid .tt-pick { padding-left: 1.2rem; font-size: 0.79rem; }
+.tt-tools { display: flex; opacity: 0; }
+.tt-row:hover .tt-tools, .tt-row.on .tt-tools { opacity: 1; }
+.tt-tools button {
+  border: none; background: none; color: var(--ink-3); font-size: 0.72rem;
+  padding: 0.1rem 0.28rem; cursor: pointer;
+}
+.tt-tools button:hover { color: var(--ink); }
+.tt-empty { font-size: 0.78rem; padding: 0.3rem 0.4rem; }
+.tt-all .tt-pick { text-transform: lowercase; }
+.tt-unfiled .tt-pick { padding-left: 1.2rem; color: var(--ink-3); }
+
+/* the breadcrumb: where you are, and the way back to the tree */
+.crumb-line { margin: 0.1rem 0 0.2rem; }
+.crumb {
+  border: none; background: none; font: inherit; padding: 0; cursor: pointer;
+  font-size: 0.78rem; color: var(--ink-3); font-family: var(--mono);
+}
+.crumb:hover { color: var(--ink); }
+.crumb-sep { margin: 0 0.35rem; opacity: 0.6; }
+.crumb #crumb-theme { color: var(--ink-2); }
+
+/* a word on a value: mark, word and colour, never colour alone */
+.chip-value {
+  display: inline-flex; align-items: baseline; gap: 0.3rem;
+  border: 1px solid transparent; border-radius: 3px; padding: 0.05rem 0.3rem;
+  font-size: 0.74rem; white-space: nowrap; cursor: pointer; color: var(--ink-2);
+  background: color-mix(in srgb, var(--ink-3) 7%, transparent);
+}
+.chip-value .mark { font-size: 0.7rem; }
+.chip-value[data-color='red'] { color: var(--must); background: var(--must-bg); border-color: color-mix(in srgb, var(--must) 22%, transparent); }
+.chip-value[data-color='amber'] { color: var(--optional); background: var(--optional-bg); border-color: color-mix(in srgb, var(--optional) 22%, transparent); }
+.chip-value[data-color='slate'] { color: var(--wish); background: var(--wish-bg); border-color: color-mix(in srgb, var(--wish) 22%, transparent); }
+.chip-value[data-color='green'] { color: var(--ok); background: color-mix(in srgb, var(--ok) 10%, transparent); border-color: color-mix(in srgb, var(--ok) 25%, transparent); }
+.chip-value[data-color='blue'] { color: #2b5f8a; background: color-mix(in srgb, #2b5f8a 10%, transparent); border-color: color-mix(in srgb, #2b5f8a 22%, transparent); }
+.chip-value[data-color='violet'] { color: #6b4b8a; background: color-mix(in srgb, #6b4b8a 10%, transparent); border-color: color-mix(in srgb, #6b4b8a 22%, transparent); }
+[data-role='view'] .chip-value { cursor: default; }
+:root[data-theme='dark'] .chip-value[data-color='blue'] { color: #8fb8d8; }
+:root[data-theme='dark'] .chip-value[data-color='violet'] { color: #bfa4d8; }
 /* the extra columns exist in the markup and are switched on by a flag, so the
  * same row can serve a ten year old and an engineer */
 .c-extra { display: none; }
@@ -235,13 +313,12 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
   border: 1px solid transparent; border-radius: 3px; padding: 0.05rem 0.3rem;
   font-size: 0.74rem; white-space: nowrap; cursor: pointer;
 }
-.strength[data-s='must'] { color: var(--must); background: var(--must-bg); border-color: color-mix(in srgb, var(--must) 22%, transparent); }
-.strength[data-s='optional'] { color: var(--optional); background: var(--optional-bg); border-color: color-mix(in srgb, var(--optional) 22%, transparent); }
-.strength[data-s='wish'] { color: var(--wish); background: var(--wish-bg); border-color: color-mix(in srgb, var(--wish) 22%, transparent); }
-.strength .mark { font-size: 0.7rem; }
 [data-role='view'] .strength { cursor: default; }
 
-.theme-cell { color: var(--ink-2); font-size: 0.79rem; overflow: hidden; text-overflow: ellipsis; }
+.theme-cell {
+  color: var(--ink-2); font-size: 0.78rem; max-width: 12rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .extra-cell { color: var(--ink-2); font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; }
 .extra-cell.empty { color: var(--ink-3); }
 .row-tools { display: flex; gap: 0.1rem; opacity: 0; }
@@ -439,7 +516,12 @@ body.guest #projects { display: none; }
   .sheet th, .sheet td { border-bottom: 1px solid #ccc; font-size: 0.78rem; }
   .sheet tbody tr { break-inside: avoid; }
   tr.detail { display: none !important; }
-  .strength { background: none; border: none; padding: 0; color: #000; }
+  .chip-value { background: none; border: none; padding: 0; color: #000; }
+  .chip-value[data-color] { color: #000; }
+  .sheet[data-theme='1'] .c-theme { display: table-cell; }
+  .pager-line .pager { display: none; }
+  .sheet .c-extra { display: none; }
+  .pager, .crumb-line { display: none; }
   .title { border: none; font-size: 1.4rem; }
 }
 

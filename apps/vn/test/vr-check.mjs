@@ -27,7 +27,7 @@ const ctx = await br.newContext({
 const pg = await ctx.newPage();
 const errors = [];
 pg.on('pageerror', (e) => errors.push(e.message));
-pg.on('dialog', (d) => d.accept());
+pg.on('dialog', (d) => d.accept(d.type() === 'prompt' ? 'the roof' : undefined));
 
 await pg.goto(B, { waitUntil: 'networkidle' });
 ok(await pg.locator('#gate').isVisible(), 'the gate is up before a session');
@@ -83,41 +83,40 @@ for (const s of [
   n++;
 }
 ok((await pg.locator('#rows tr[data-id]').count()) === 3, 'three rows are in the sheet');
-const refs = await pg.locator('#rows tr[data-id] .c-ref').allTextContents();
+const refs = await pg.locator('#rows tr[data-id] .c-req .ref').allTextContents();
 ok(refs.join(',') === 'VR-001,VR-002,VR-003', 'rows are named in order: ' + refs.join(' '));
 ok((await pg.textContent('#proj-meta')).includes('3 rows'), 'the count above the sheet agrees');
 
 // ── strength: one click cycles, the mark and the word change together
-await pg.locator('#rows tr[data-id]').nth(1).locator('.strength').click();
-await until(async () => (await pg.locator('#rows tr[data-id]').nth(1).locator('.strength').textContent()).includes('optional'), 8000);
-let s2 = await pg.locator('#rows tr[data-id]').nth(1).locator('.strength').textContent();
+await pg.locator('#rows tr[data-id]').nth(1).locator('.c-strength .chip-value').click();
+await until(async () => (await pg.locator('#rows tr[data-id]').nth(1).locator('.c-strength .chip-value').textContent()).includes('optional'), 8000);
+let s2 = await pg.locator('#rows tr[data-id]').nth(1).locator('.c-strength .chip-value').textContent();
 ok(s2.includes('optional') && s2.includes('◆'), 'second row became optional, mark and word together');
-await pg.locator('#rows tr[data-id]').nth(2).locator('.strength').click();
-await until(async () => (await pg.locator('#rows tr[data-id]').nth(2).locator('.strength').textContent()).includes('optional'), 8000);
-await pg.locator('#rows tr[data-id]').nth(2).locator('.strength').click();
-await until(async () => (await pg.locator('#rows tr[data-id]').nth(2).locator('.strength').textContent()).includes('wish'), 8000);
-const s3 = await pg.locator('#rows tr[data-id]').nth(2).locator('.strength').textContent();
+await pg.locator('#rows tr[data-id]').nth(2).locator('.c-strength .chip-value').click();
+await until(async () => (await pg.locator('#rows tr[data-id]').nth(2).locator('.c-strength .chip-value').textContent()).includes('optional'), 8000);
+await pg.locator('#rows tr[data-id]').nth(2).locator('.c-strength .chip-value').click();
+await until(async () => (await pg.locator('#rows tr[data-id]').nth(2).locator('.c-strength .chip-value').textContent()).includes('wish'), 8000);
+const s3 = await pg.locator('#rows tr[data-id]').nth(2).locator('.c-strength .chip-value').textContent();
 ok(s3.includes('wish') && s3.includes('◇'), 'third row cycled to wish');
 
-// ── filters
-const chip = (f) => pg.locator(`#filters .chip[data-f="${f}"]`);
-ok(await until(async () => (await chip('must').locator('b').textContent()) === '1', 6000), 'the must chip counts one');
-await chip('optional').click();
-ok(await until(async () => (await pg.locator('#rows tr[data-id]').count()) === 1, 6000),
-  'filtering to optional shows one row');
-await chip('wish').click();
-ok(await until(async () => (await pg.locator('#rows tr[data-id] .c-ref').textContent()) === 'VR-003', 6000),
-  'filtering to wish shows the third');
-await chip('all').click();
-await until(async () => (await pg.locator('#rows tr[data-id]').count()) === 3, 6000);
-ok((await pg.locator('#rows tr[data-id]').count()) === 3, 'all brings the three back');
+// ── sorting: a heading sorts, a second click turns it round
+await pg.locator('#sheet thead th[data-sort="strength"]').click();
+await pg.waitForTimeout(400);
+let order = await pg.locator('#rows tr[data-id] .c-req .ref').allTextContents();
+ok(order[0] === 'VR-001', 'sorting by how hard follows the document`s order, not the alphabet: ' + order.join(' '));
+await pg.locator('#sheet thead th[data-sort="strength"]').click();
+await pg.waitForTimeout(500);
+order = await pg.locator('#rows tr[data-id] .c-req .ref').allTextContents();
+ok(order[0] === 'VR-003', 'and the second click turns it round: ' + order.join(' '));
+await pg.locator('#sheet thead th[data-sort="pos"]').click();
+await pg.waitForTimeout(300);
 
 // ── find
 await pg.fill('#q', 'VR-002');
 ok(await until(async () => (await pg.locator('#rows tr[data-id]').count()) === 1, 6000),
   'the find box narrows the sheet');
 await pg.fill('#q', '');
-await pg.waitForTimeout(300);
+ok(await until(async () => (await pg.locator('#rows tr[data-id]').count()) === 3, 6000), 'and clearing it brings them back');
 
 // ── the gaps
 ok((await pg.textContent('#gaps')).includes('1 must without proof'), 'one must has no proof, and the sheet says so');
@@ -137,7 +136,7 @@ ok(!(await pg.locator('#sheet thead th.c-extra').first().isVisible()), 'extra co
 await pg.click('#btn-columns');
 await pg.waitForTimeout(300);
 ok(await pg.locator('#sheet thead th.c-extra').first().isVisible(), 'all columns brings them on');
-ok((await pg.locator('#rows tr[data-id] td.c-extra').count()) >= 15, 'and every row fills them');
+ok((await pg.locator('#rows tr[data-id] td.c-extra').count()) >= 12, 'and every row fills them');
 await pg.click('#btn-columns');
 await pg.waitForTimeout(200);
 
@@ -145,7 +144,7 @@ await pg.waitForTimeout(200);
 await pg.locator('#rows tr[data-id]').nth(2).hover();
 await pg.locator('#rows tr[data-id]').nth(2).locator('button[data-move="-1"]').click();
 await pg.waitForTimeout(900);
-const moved = await pg.locator('#rows tr[data-id] .c-ref').allTextContents();
+const moved = await pg.locator('#rows tr[data-id] .c-req .ref').allTextContents();
 ok(moved[1] === 'VR-003' && moved[2] === 'VR-002', 'a row moves up by one: ' + moved.join(' '));
 
 // ── the glossary
@@ -180,12 +179,31 @@ ok((await pg.inputValue('#brief-text')).includes('medium dog'), 'the brief survi
 // ── the keyboard moves a row
 await pg.locator('#rows tr[data-id]').nth(1).locator('.req-open').click();
 await pg.waitForTimeout(400);
-await pg.locator('#rows tr.detail input[data-field="theme"]').focus();
+await pg.locator('#rows tr.detail input[data-field="title"]').focus();
 await pg.keyboard.press('Alt+ArrowUp');
 await pg.waitForTimeout(900);
-const kb = await pg.locator('#rows tr[data-id] .c-ref').allTextContents();
+const kb = await pg.locator('#rows tr[data-id] .c-req .ref').allTextContents();
 ok(kb[0] === 'VR-003', 'alt+↑ moves the focused row up: ' + kb.join(' '));
 await pg.keyboard.press('Escape').catch(() => {});
+
+// ── the tree: a theme, and the quick add going into it
+await pg.click('#btn-new-theme');
+ok(await until(async () => (await pg.locator('#theme-tree .tt-root').count()) === 1, 10000),
+  'a theme can be made from the rail');
+await pg.locator('#theme-tree .tt-root .tt-pick').first().click();
+await pg.waitForTimeout(800);
+ok((await pg.locator('#sheet').getAttribute('data-theme')) === '1', 'standing inside a theme');
+ok(await pg.locator('#sheet thead th.c-theme').isHidden(), 'and the theme column steps aside');
+ok((await pg.textContent('#crumb')).includes('the roof'), 'the breadcrumb says where you are');
+await pg.fill('#req-add', 'The house shall keep the rain off the wood.');
+await pg.press('#req-add', 'Enter');
+ok(await until(async () => (await pg.locator('#rows tr[data-id]').count()) === 1, 10000),
+  'a row typed inside the theme is only that theme');
+ok((await pg.textContent('#add-theme')).includes('the roof'), 'and the box said where it would go');
+await pg.locator('#theme-tree .tt-all .tt-pick').click();
+await pg.waitForTimeout(800);
+ok((await pg.locator('#sheet').getAttribute('data-theme')) === '0', 'everything is one click away');
+ok(await pg.locator('#sheet thead th.c-theme').isVisible(), 'and the theme column comes back');
 
 // ── print is the document, not the app
 await pg.emulateMedia({ media: 'print' });
@@ -220,7 +238,7 @@ await phone.close();
 await pg.locator('#rows tr[data-id]').nth(2).hover();
 await pg.locator('#rows tr[data-id]').nth(2).locator('button[data-del]').click();
 await pg.waitForTimeout(900);
-ok((await pg.locator('#rows tr[data-id]').count()) === 2, 'a row can be deleted');
+ok((await pg.locator('#rows tr[data-id]').count()) === 3, 'a row can be deleted');
 
 await pg.locator('.proj-row.on .kill').click();
 await pg.waitForTimeout(1200);

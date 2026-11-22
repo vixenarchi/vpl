@@ -259,7 +259,7 @@ VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "a project"
                                                  # one real pass through the funnel
 
 PORT=8101 ./serve vr in another shell, then:
-VR_URL=http://127.0.0.1:8101 node vr-check.mjs     # 42 checks (rows, strength, gaps, print, phone)
+VR_URL=http://127.0.0.1:8101 node vr-check.mjs     # 49 checks (tree, sort, gaps, print, phone)
 VR_URL=http://127.0.0.1:8101 node vr-paste.mjs     # 11 checks (a spreadsheet, commas, names)
 VR_URL=http://127.0.0.1:8101 node vr-ai.mjs        # 21 checks (model faked at the proxy)
 VR_URL=http://127.0.0.1:8101 node vr-share.mjs     # 25 checks (link, editor, the database's refusal)
