@@ -177,6 +177,60 @@ lists, which is a text diff and needs no feature.
 4. **Only if it earns it** — the reverse pull, done by the agent, shown as a
    report and a drawing.
 
+## Built: the agent, and where it runs
+
+The agent exists, in `agent/`, and it was built and run in the `eva` workshop —
+the Ubuntu container that already hosts a `pi`, so the work was "make it an
+agent" rather than "make a machine".
+
+What the workshop was given first, because libraries had started to complain:
+**node 26.13.1** (the current LTS, at `/opt/node26`, first on `PATH` via
+`/etc/profile.d`, with `node`/`npm`/`npx`/`pi` repointed) and **`pi` 1.6.0** on
+top of it, plus **terraform 1.17.2**. Old node was 22.19.
+
+`agent/` is one file of loop (`worker.mjs`), four prompts, a box-list checker, a
+Dockerfile and a test that needs no model:
+
+- a **job** is a directory with `task.md` (front matter `template:`, `title:`)
+  and optional `inputs/`; the worker writes `out/report.md`, `out/files/`,
+  `out/state.json`, `out/checks.json`. A job with `state.json` is never run
+  twice.
+- **nothing is a stream**: no port is opened, no socket, no webhook. A job
+  appearing in a directory is the whole interface, and the answer is files.
+- **the model is an endpoint, not a dependency**: `models.json` is generated at
+  start from `VPL_MODEL_BASE`/`VPL_MODEL`/`VPL_MODEL_KEY`, with the key written
+  as `$VPL_MODEL_KEY`, so a token never touches the disk. Empty base means pi's
+  own provider, which is how the first runs were done.
+- **a job is not a request**: a free tier answered `429` after five calls and
+  the first terraform job died at the finish line with the files already
+  written. The worker now waits and takes the job again (`VPL_RETRIES`).
+- **asking for a shape is not checking it**: `lib/boxes.mjs` reads any
+  `boxes.yaml`/`context.yaml`/`deployment.yaml` the agent wrote and appends
+  **Mechanical checks** to the report — `name` where `id` belongs, a `kind`
+  outside the closed list, an arrow to a box that does not exist, an orphan, a
+  box without a host. The first `report` run drew five boxes and **no arrows**,
+  and the report said so in five sentences. That is the `vc` verdict strip
+  again, at the one place where a drawing can lie.
+- **the deliverable is not a build directory**: `terraform init` leaves 100 MB
+  of provider binaries; the worker prunes `.terraform/`, `node_modules/`,
+  `.git/` and any file over 5 MB before it lists what the agent made.
+
+Three real runs on the workshop, all with the agent doing the work itself:
+
+- `context` — **22 s**, a valid `context.yaml` (six boxes, five arrows) and a
+  report that names what it could not check, because `inputs/` was empty.
+- `terraform` — **150 s**, five files, and `terraform validate` says
+  *"Success! The configuration is valid."*; the report marks the provider
+  version `[unverified]` instead of pretending.
+- `report` (an inventory read) — **18 s**, an honest list of gaps, and the
+  mechanical check catching the missing edges.
+
+One thing the runs proved by failing: **free-pi refuses unattended work**
+(`403 ads_required` — ads pay for it, and a headless container shows none). A
+docker agent therefore cannot run on the free-pi backend; it runs on a **vp
+key**, which is exactly the case vp stage 2 was built for. The chain is now
+testable end to end with a real call once a model key exists on an account.
+
 ## Tests, when it exists
 
 `va-check.mjs` in the style of the others: the deck saves and autosaves; a box

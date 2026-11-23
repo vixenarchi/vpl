@@ -1,0 +1,6 @@
+jobs
+var
+*.env
+node_modules
+test
+.git

@@ -235,6 +235,11 @@ Almost every model API answers the browser without `Access-Control-Allow-Origin`
 and the browser then throws the answer away — the same key that works in `curl`
 fails on a page. So the call leaves from an origin of ours:
 
+- **`agent/`** — va's other half: a job directory in, `out/report.md` and
+  `out/files/` back, `pi` with a shell, a box-list checker, and a Dockerfile.
+  No port, no webhook: a browser can never command it. Built and run in the
+  `eva` workshop (`docs/va.md`).
+
 - **`apps/api/functions/chat.js`** — the suite's shared proxy at
   `https://api.terg.hr/chat`. One allowlist of hosts, one allowlist of origins
   (`vn.terg.hr`, `vi.terg.hr`, `vr.terg.hr`, … and local development). The key travels in the

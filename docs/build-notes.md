@@ -955,3 +955,52 @@ forward off-list, and that the provider key never appears in the caller's
 answer. One thing remains unproven by us: a real paid call through the door,
 because that needs a real provider key on an account. The moment somebody saves
 one at `⚙`, the whole chain is live.
+
+## va-agent: an agent you can hand a folder to
+
+The last app is `va`, and `va`'s other half is an agent with a shell. Before
+writing the desk, we built the agent, because an agent with no desk is still
+useful and a desk with no agent is a drawing tool.
+
+It lives in `agent/` and it runs in the `eva` workshop — the Ubuntu container
+that already had `pi` installed. Two upgrades first, since libraries had started
+complaining: node **22.19 → 26.13.1** (current LTS, installed at `/opt/node26`,
+put first on `PATH` for login shells and repointed for `node`, `npm`, `npx` and
+`pi`) and therefore `pi` **1.6.0**; plus `terraform` 1.17.2 so the agent can
+validate what it writes.
+
+The design is one sentence: **a job is a directory**. `task.md` with
+`template:` in its front matter and optional `inputs/`; out comes
+`out/report.md`, `out/files/`, `out/state.json` and `out/checks.json`. No port,
+no socket, no webhook — that is not laziness, it is the refusal to give a web
+page the ability to command a shell.
+
+Things the three real runs taught us, in the order they hurt:
+
+- **free-pi cannot run unattended.** The first terraform job wrote five correct
+  files, ran `terraform init`, and died with `403 ads_required`: the free backend
+  is paid for by ads and a headless container shows none. A docker agent
+  therefore needs a **vp key** — which is what vp stage 2 was for.
+- **a job is not a request.** Gemini's free tier allows five calls a minute; an
+  agent makes twenty. The worker now waits and takes the job again, twice, and
+  says so in its output.
+- **the model writes into `out/files/` whatever it ran**, including a 100 MB
+  `.terraform/`. The worker prunes provider directories, `.git`, `node_modules`
+  and anything over 5 MB before it lists the deliverable.
+- **asking for a shape is not checking it.** The prompts ask for a box list
+  (`id`, `label`, `kind` from a closed list, `host`, `note`, `attrs`); the first
+  inventory run answered with `name:` and `kind: deployment`, and the second drew
+  five boxes and no arrows. So `lib/boxes.mjs` reads the file and the report ends
+  with **Mechanical checks** in plain sentences. A drawing that drifts from its
+  list is now visible at the moment it is made.
+- **the agent tells the truth about itself.** Given an empty `inputs/`, the
+  context run wrote "nothing here is confirmed against code or config" and listed
+  six things it did not check, unprompted. That is the whole reason the prompts
+  start with evidence before prose.
+
+The model is an endpoint, not a dependency: `models.json` is generated at start,
+the key is written as `$VPL_MODEL_KEY`, and with `VPL_MODEL_BASE` empty the
+agent uses `pi`'s own provider — which is how these runs were done, with the
+workshop's Gemini key. Twelve checks run with no model and no network
+(`tools/test-agent.sh`); the docker image is for giving the same thing to other
+people, and it needs outbound HTTPS only.
