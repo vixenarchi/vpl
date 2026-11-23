@@ -64,8 +64,10 @@ vc_outputs.target_id    -> vc_targets (nullable)
 ```
 
 - **A batch is a queue, not a loop of fifty clicks.** `run all` marks every
-  target `queued`; the screen works them one at a time and repaints the row as
-  each finishes. Reloading mid-batch is safe: `running` becomes `queued` again.
+  target `queued`; the screen works them **strictly one at a time, in order**,
+  and repaints the row as each finishes. Never in parallel: fifty calls at once
+  is fifty chances to lose a half-written report and an account at the provider.
+  That rule is not a performance decision, it is the whole point of a queue. Reloading mid-batch is safe: `running` becomes `queued` again.
   A stop button leaves the rest queued, not lost.
 - **One target, one call when it fits.** The engine already caps a pile at
   160 000 characters and says what it left out. When a 200-page offer exceeds

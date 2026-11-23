@@ -152,6 +152,10 @@ it deletes the project it made and the copy a guest took of it.
 
 Two things, both on the same pattern and neither a new architecture:
 
+- **`vp`, keys and codes** (`docs/vp.md`). Stage 1 is a key of record per
+  account, so a person pastes a model key once instead of once per browser and
+  address. Stage 2 is a proxy with credits and top-up codes, and it is the first
+  thing in the suite that would hold a server-side secret — hence the delay.
 - **a few more apps.** Each one is a folder, one prefixed table set, one Pages
   project, one subdomain, one `docs/<app>.md`, one `<app>-check.mjs`. The rule
   for accepting a new app is not "is it useful" but **"does it have one
