@@ -110,4 +110,40 @@ APP_URL=http://127.0.0.1:8100 APP_NAME=vi node settings-check.mjs
 APP_URL=http://127.0.0.1:8107 APP_NAME=va node auth-check.mjs
 ```
 
-`tools/test-settings.sh` runs both against every app that has the dialog.
+`tools/test-settings.sh` runs both against every app that has the dialog, and
+`tools/test-chrome.sh` walks the bar, the gear and the dock in all eight
+(`VPL_PROD=1` for the deployments).
+
+## The bug the tests found late: a theme that locked the dialog
+
+`<html>` carries `data-theme` as soon as any theme is applied — including the
+default `paper`, which some apps write at boot. The dialog's click handler asked
+`e.target.closest('[data-theme]')` to find a theme button, and **every click in
+the dialog found the page instead**: the branch fired with `theme: paper`, said
+"theme: paper", and returned before save, forget or close were ever reached.
+The only way out was to change the theme back and press ✕, which is exactly what
+was reported. The handler now asks for `.set-theme`, so it can only ever match a
+theme button, and `chrome-check.mjs` changes a theme and then closes the dialog
+in every app.
+
+## The rest of the chrome, because a settings gear alone is not a suite
+
+There are now three shared pieces of every app, all copies from
+`packages/shell/`, all mounted at boot:
+
+- **`who.js`** — the name in the bar. Rules in order: the name Google gave us;
+  else the local part of the address, tidied (`vladimir.ergovic` → *Vladimir
+  Ergovic*); else a letter. No address ever appears in the bar, only in its
+  tooltip.
+- **the bar** — the same shape everywhere: mark and name on the left, the person
+  on the right, then the settings gear and *out*. `vn` had the person only
+  inside its own settings dialog and no gear at all; both are fixed, and its own
+  settings panel keeps the gear while the model's key gets `✳`.
+- **`dock.js`** — a chat line at the bottom of every app, inside `#app` so the
+  work area shrinks instead of being covered. It reads what is on screen (the
+  work area, with the bar and the dock itself taken out) and sends that with the
+  question. The answer stays in the dock: no field is filled, no document is
+  changed, and there is no *use it* button unless an app passes one.
+
+The sign-in is one card in every app too, from one block of CSS, and one
+sentence on all eight gates: **one account for the whole suite**.

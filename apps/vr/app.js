@@ -10,6 +10,8 @@
 
 import * as db from './lib/db.js';
 import * as ai from './vendor/ai.js';
+import * as who from './vendor/who.js';
+import { mountDock } from './vendor/dock.js';
 import * as settings from './vendor/settings.js';
 import * as engine from './vendor/engine.js';
 import { prompts } from './prompts.js';
@@ -97,11 +99,10 @@ function toggleTheme() {
   saveTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
 }
 
+/* The name in the corner is the suite's, not this app's (vendor/who.js):
+ * the name Google gave us, else the address tidied, else a letter. */
 function displayName(session) {
-  if (!session) return '';
-  const m = session.user.user_metadata || {};
-  const mail = session.user.email || '';
-  return m.full_name || m.name || (mail.endsWith('@vpl.local') ? mail.split('@')[0] : mail);
+  return who.whoLabel(session);
 }
 
 /* Phones capitalise the first letter of a field and computers do not. Names and
@@ -1643,3 +1644,9 @@ async function removeProject(id) {
 }
 
 boot();
+
+/* ── the settings dialog, and the dock ─────────────────────────────
+ * Same dialog as every other app, same dock. The dock reads what is on
+ * screen and answers about it; nothing it writes lands anywhere until a
+ * person says so. */
+const DOCK = mountDock({ app: 'vr', openSettings: () => SET && SET.open() });

@@ -326,20 +326,21 @@ export function mountSettings({ dialog, proxy = 'https://api.terg.hr/chat', onSa
 
   /* Clicks land on whatever is under the finger — the label inside a button,
    * the mark inside a tab — so every branch asks for the nearest element that
-   * carries the attribute. An app whose CSS gives buttons no padding made this
-   * visible: the theme did nothing at all. */
+   * carries the attribute. And the theme branch asks for `.set-theme`, not for
+   * `[data-theme]`: <html> itself carries data-theme once a theme is applied,
+   * so `closest('[data-theme]')` matched the page for every click in the dialog
+   * and swallowed save, forget and close. */
   dialog.addEventListener('click', (e) => {
-    const hit = (attr) => e.target.closest('[' + attr + ']');
-    const tabHit = hit('data-tab');
+    const tabHit = e.target.closest('[data-tab]');
     if (tabHit) return setTab(tabHit.dataset.tab);
-    const themeHit = hit('data-theme');
+    const themeHit = e.target.closest('.set-theme');
     if (themeHit) {
       applyTheme(themeHit.dataset.theme);
       paintThemes();
       say('theme: ' + themeHit.dataset.theme, 'ok');
       return;
     }
-    const aHit = hit('data-a');
+    const aHit = e.target.closest('[data-a]');
     const a = aHit ? aHit.dataset.a : '';
     if (!a) return;
     if (a === 'close') return dialog.close();

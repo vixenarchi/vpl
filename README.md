@@ -288,7 +288,13 @@ packages/shell/engine.js  the generator: inputs → messages → one call → an
                           a file → text. vd, vc and va carry a copy.
 packages/shell/settings.js the one settings dialog: model, search, key, theme —
                           four tabs and a test call, identical in every app
+packages/shell/who.js     the name in the bar — Google's name, else the address
+                          tidied, else a letter; the same rule in all eight
+packages/shell/dock.js    the chat line at the bottom of every app: it reads what
+                          is on screen and answers; nothing lands in a document
+                          without a person pressing a button
 tools/stage.sh            "copy the shared look into this app"
+tools/test-chrome.sh      bar, name, gear and dock, walked in all eight apps
 deploy                    publish one app: ./deploy vn | vi | vr | vz | vd | vc | api
 serve  serve.py           local server that refuses to cache
 supabase/migrations/      the schema, and every change since

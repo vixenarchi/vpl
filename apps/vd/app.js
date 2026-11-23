@@ -11,6 +11,8 @@
 
 import * as db from './lib/db.js';
 import * as ai from './vendor/ai.js';
+import * as who from './vendor/who.js';
+import { mountDock } from './vendor/dock.js';
 import * as engine from './vendor/engine.js';
 import * as settings from './vendor/settings.js';
 import { TEMPLATES, DEFAULT_TEMPLATE, templateById } from './templates.js';
@@ -81,11 +83,10 @@ function toAuthEmail(v) {
     : t.toLowerCase().replace(/\s+/g, '') + '@vpl.local';
 }
 
+/* The name in the corner is the suite's, not this app's (vendor/who.js):
+ * the name Google gave us, else the address tidied, else a letter. */
 function displayName(session) {
-  if (!session) return '';
-  const m = session.user.user_metadata || {};
-  const mail = session.user.email || '';
-  return m.full_name || m.name || (mail.endsWith('@vpl.local') ? mail.split('@')[0] : mail);
+  return who.whoLabel(session);
 }
 
 function plainAuthError(err) {
@@ -826,3 +827,9 @@ boot().catch((err) => {
   $('#gate').hidden = false;
   msg('#gate-msg', 'could not start: ' + err.message, 'bad');
 });
+
+/* ── the settings dialog, and the dock ─────────────────────────────
+ * Same dialog as every other app, same dock. The dock reads what is on
+ * screen and answers about it; nothing it writes lands anywhere until a
+ * person says so. */
+const DOCK = mountDock({ app: 'vd', openSettings: () => SET && SET.open() });

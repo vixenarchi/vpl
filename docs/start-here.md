@@ -173,6 +173,9 @@ node settings-check.mjs                             # one dialog: tabs, save, te
 node auth-check.mjs                                 # two tabs, one storage, a real logout, 11
 ./tools/test-settings.sh                            # both, in every app that has them
 ./tools/test-settings.sh VPL_PROD=1                 # the same against the deployments
+node chrome-check.mjs                               # bar, name, gear, dock, 24
+./tools/test-chrome.sh                              # all eight apps
+VPL_PROD=1 ./tools/test-chrome.sh                   # the same against the deployments
 VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "project title"
 ```
 

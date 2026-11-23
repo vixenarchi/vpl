@@ -46,7 +46,7 @@
       </svg>
       continue with Google
     </button>
-    <p class="gate-fine">one account for the whole suite — it works in vn, vi and vr too.</p>
+    <p class="gate-fine">one account for the whole suite</p>
   </form>
 </section>
 
@@ -59,6 +59,7 @@
     <button id="btn-projects" class="icon only-narrow" type="button" title="projects">☰</button>
     <span class="grow"></span>
     <span id="who" class="who"></span>
+    <button id="btn-ai" class="icon" type="button" title="the model and its key">⚙</button>
     <button id="btn-theme" class="icon" type="button" title="light or dark">◐</button>
     <button id="btn-out" class="ghost" type="button" title="sign out">out</button>
   </header>
@@ -220,5 +221,7 @@
 
 <script src="config.local.js"></script>
 <script type="module" src="app.js"></script>
+  <!-- settings: one component, the same in every app (vendor/settings.js) -->
+  <dialog id="ai-dialog" class="dialog"></dialog>
 </body>
 </html>

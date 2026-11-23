@@ -1,3 +1,7 @@
+import * as settings from './vendor/settings.js';
+import * as engine from './vendor/engine.js';
+import * as who from './vendor/who.js';
+import { mountDock } from './vendor/dock.js';
 /* vpl · vz — zed. A project is a dictionary; a row is a key and a value.
  *
  * The screen is one list. Keys are monospace and always visible; values stay
@@ -73,11 +77,10 @@ function toAuthEmail(v) {
     : t.toLowerCase().replace(/\s+/g, '') + '@vpl.local';
 }
 
+/* The name in the corner is the suite's, not this app's (vendor/who.js):
+ * the name Google gave us, else the address tidied, else a letter. */
 function displayName(session) {
-  if (!session) return '';
-  const m = session.user.user_metadata || {};
-  const mail = session.user.email || '';
-  return m.full_name || m.name || (mail.endsWith('@vpl.local') ? mail.split('@')[0] : mail);
+  return who.whoLabel(session);
 }
 
 /* Supabase says "User already registered" and "Unable to validate email
@@ -929,3 +932,23 @@ boot().catch((err) => {
   $('#gate').hidden = false;
   msg($('#gate-msg'), err.message || 'could not start', 'bad');
 });
+
+/* ── the settings dialog, and the dock ─────────────────────────────
+ * Same dialog as every other app, same dock. The dock reads what is on
+ * screen and answers about it; nothing it writes lands anywhere until a
+ * person says so. */
+let SET = null;
+
+function wireSettings() {
+  SET = settings.mountSettings({
+    dialog: $('#ai-dialog'),
+    proxy: engine.PROXY,
+    onSaved: () => { try { paintSpec(); } catch { } try { paintAiHint(); } catch { } },
+  });
+  const gear = $('#btn-ai');
+  if (gear) gear.onclick = () => SET.open();
+}
+
+wireSettings();
+
+const DOCK = mountDock({ app: 'vz', openSettings: () => SET && SET.open() });

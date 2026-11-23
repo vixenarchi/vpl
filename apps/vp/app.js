@@ -1,3 +1,7 @@
+import * as settings from './vendor/settings.js';
+import * as engine from './vendor/engine.js';
+import * as who from './vendor/who.js';
+import { mountDock } from './vendor/dock.js';
 /* vpl · vp — slips, keys and the ledger, in one screen.
  *
  * Three verbs: make (a code), take (a code somebody gave you), revoke (either).
@@ -57,11 +61,10 @@ function toAuthEmail(v) {
   return t.includes('@') ? t.toLowerCase() : t.toLowerCase().replace(/\s+/g, '') + '@vpl.local';
 }
 
+/* The name in the corner is the suite's, not this app's (vendor/who.js):
+ * the name Google gave us, else the address tidied, else a letter. */
 function displayName(session) {
-  if (!session) return '';
-  const m = session.user.user_metadata || {};
-  const mail = session.user.email || '';
-  return m.full_name || m.name || (mail.endsWith('@vpl.local') ? mail.split('@')[0] : mail);
+  return who.whoLabel(session);
 }
 
 function plainAuthError(err) {
@@ -292,7 +295,8 @@ async function paintAll() {
 /* ── boot ─────────────────────────────────────────────────────────── */
 async function boot() {
   $('#btn-theme').onclick = applyTheme;
-  $('#gate-theme').onclick = applyTheme;
+  const gateTheme = document.getElementById('gate-theme');
+  if (gateTheme) gateTheme.onclick = applyTheme;
   $('#btn-out').onclick = async () => { await db.signOut(); location.reload(); };
   lowerField($('#email'));
 
@@ -309,3 +313,23 @@ async function boot() {
 }
 
 boot();
+
+/* ── the settings dialog, and the dock ─────────────────────────────
+ * Same dialog as every other app, same dock. The dock reads what is on
+ * screen and answers about it; nothing it writes lands anywhere until a
+ * person says so. */
+let SET = null;
+
+function wireSettings() {
+  SET = settings.mountSettings({
+    dialog: $('#ai-dialog'),
+    proxy: engine.PROXY,
+    onSaved: () => { try { paintSpec(); } catch { } try { paintAiHint(); } catch { } },
+  });
+  const gear = document.getElementById('btn-ai');
+  if (gear) gear.onclick = () => SET.open();
+}
+
+wireSettings();
+
+const DOCK = mountDock({ app: 'vp', openSettings: () => SET && SET.open() });

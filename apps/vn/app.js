@@ -11,6 +11,10 @@ import * as db from './lib/supabase.js';
 import { render as renderMd, hint } from './lib/markdown.js';
 import { mdToHtml, htmlToMd, wrapInBox } from './lib/editor.js';
 import * as ai from './vendor/ai.js';
+import * as settings from './vendor/settings.js';
+import * as engine from './vendor/engine.js';
+import * as who from './vendor/who.js';
+import { mountDock } from './vendor/dock.js';
 
 /* ── elements ─────────────────────────────────────────────────────── */
 const $ = (id) => document.getElementById(id);
@@ -247,6 +251,7 @@ function sayUrlTrouble() {
 function enterApp() {
   el.gate.hidden = true;
   el.app.hidden = false;
+  db.session().then((s) => who.paintWho(document.getElementById('who'), s)).catch(() => {});
   loadNotes();
   route();
 }
@@ -303,12 +308,10 @@ function toAuthEmail(raw) {
 }
 
 /* what to call the person in the app: their name, else the part they typed */
+/* The name in the corner is the suite's, not this app's (vendor/who.js):
+ * the name Google gave us, else the address tidied, else a letter. */
 function displayName(user) {
-  const meta = user?.user_metadata || {};
-  const named = meta.full_name || meta.name || meta.user_name;
-  if (named) return String(named);
-  const addr = user?.email || '';
-  return addr.endsWith(NAME_DOMAIN) ? addr.slice(0, -NAME_DOMAIN.length) : addr;
+  return who.whoLabel(user);
 }
 
 async function doAuth(kind) {
@@ -2696,3 +2699,23 @@ el.readerCopy.addEventListener('click', async () => {
   el.readerCopy.disabled = true;
   setTimeout(() => { el.readerCopy.textContent = was; el.readerCopy.disabled = false; }, 1600);
 });
+
+/* ── the settings dialog, and the dock ─────────────────────────────
+ * Same dialog as every other app, same dock. The dock reads what is on
+ * screen and answers about it; nothing it writes lands anywhere until a
+ * person says so. */
+let SET = null;
+
+function wireSettings() {
+  SET = settings.mountSettings({
+    dialog: document.getElementById('ai-dialog'),
+    proxy: engine.PROXY,
+    onSaved: () => { try { paintSpec(); } catch { } try { paintAiHint(); } catch { } },
+  });
+  const gear = document.getElementById('btn-ai');
+  if (gear) gear.onclick = () => SET.open();
+}
+
+wireSettings();
+
+const DOCK = mountDock({ app: 'vn', openSettings: () => SET && SET.open() });

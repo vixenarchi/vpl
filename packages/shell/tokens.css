@@ -205,3 +205,91 @@ dialog.settings .set-foot .ghost,
 dialog.settings .set-foot .primary { font-size: 0.74rem; padding: 0.15rem 0.5rem; }
 dialog.settings .set-foot [data-a='test'] { margin-right: auto; }
 dialog.settings .set-foot [data-a='forget'] { color: var(--danger); }
+
+/* ── the gate: one account for the whole suite ────────────────────────
+ * Every app signs in the same way, and every sign-in is a card with an edge.
+ * Apps that draw their own frame (vn, vi) override this; the rest inherit it,
+ * which is why a login no longer floats on a blank page. */
+.gate-form {
+  width: min(21rem, 100%);
+  display: flex; flex-direction: column; gap: 0.4rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgb(31 29 26 / 9%);
+  padding: 1.35rem 1.25rem 1.15rem;
+}
+.gate-fine { font-size: 0.72rem; line-height: 1.4; color: var(--ink-3); margin: 0.55rem 0 0; }
+
+/* ── who is signed in, in every bar ───────────────────────────────────
+ * One chip: the name, the address on hover, and never a long email eating the
+ * bar. The glyph is the initial, so an app with no room still says a person. */
+.who {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  max-width: 12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 0.78rem; color: var(--ink-2);
+}
+.who::before {
+  content: attr(data-initial);
+  display: grid; place-items: center;
+  width: 1.35rem; height: 1.35rem; flex: none;
+  border-radius: 50%; background: var(--paper-3); color: var(--ink-2);
+  font-size: 0.62rem; letter-spacing: 0.02em; text-transform: uppercase;
+}
+
+/* ── the dock: a chat line at the bottom of every app ─────────────────
+ * Top is who and where the settings are; bottom is the model. The dock is a
+ * line until somebody writes in it, then a transcript, and it never covers the
+ * page: the body keeps a strip of padding the height of the closed dock. */
+:root { --dock-h: 2.5rem; }
+/* In the app's own column the dock takes its strip and the work area shrinks;
+ * only the fallback (no #app to hang it on) overlays the page. */
+body.dock-fixed { padding-bottom: calc(var(--dock-h) + 1px); }
+.dock.in-flow { position: relative; flex: 0 0 auto; }
+.dock {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+  background: var(--paper); border-top: 1px solid var(--line);
+  display: flex; flex-direction: column; max-height: 62vh;
+}
+.dock-line { height: var(--dock-h); display: flex; align-items: center; gap: 0.35rem; padding: 0 0.5rem; }
+.dock-badge {
+  border: 1px solid var(--line); background: var(--paper-2); color: var(--ink-2);
+  width: 1.7rem; height: 1.7rem; border-radius: 5px; cursor: pointer; font-size: 0.8rem;
+}
+.dock-form { flex: 1; display: flex; gap: 0.3rem; min-width: 0; }
+.dock-input {
+  flex: 1; min-width: 0; font-size: 0.8rem; line-height: 1.3; padding: 0.2rem 0.45rem;
+  border: 1px solid var(--line); border-radius: 5px; background: var(--paper); color: var(--ink);
+  text-align: left;
+}
+.dock-input:focus { outline: 2px solid var(--mark); outline-offset: 0; }
+.dock-go, .dock-x {
+  font-size: 0.76rem; padding: 0.2rem 0.55rem; border-radius: 5px;
+  border: 1px solid var(--line); background: var(--paper-2); color: var(--ink); cursor: pointer;
+}
+.dock-x { background: none; color: var(--ink-3); }
+.dock-log { display: flex; flex-direction: column; border-top: 1px dashed var(--line); min-height: 0; }
+.dock-thread { overflow: auto; padding: 0.45rem 0.6rem 0.2rem; display: grid; gap: 0.3rem; max-height: 44vh; }
+.dock-row { display: grid; gap: 0.15rem; }
+.dock-row .dock-text {
+  font-size: 0.8rem; line-height: 1.45; white-space: pre-wrap;
+  padding: 0.3rem 0.5rem; border-radius: 6px; background: var(--paper-2); color: var(--ink);
+  border-left: 2px solid var(--line-strong);
+}
+.dock-row.me .dock-text { background: none; border-left: 0; color: var(--ink-2); font-style: italic; }
+.dock-row.it .dock-text { border-left-color: var(--mark); }
+.dock-acts { display: flex; gap: 0.35rem; align-items: baseline; }
+.dock-acts button { font-size: 0.72rem; padding: 0.05rem 0.4rem; }
+.dock-used { font-size: 0.7rem; color: #2f6f4f; }
+.dock-msg { font-size: 0.72rem; line-height: 1.3; margin: 0.1rem 0.6rem 0.35rem; min-height: 1em; color: var(--ink-3); }
+.dock-msg[data-state='bad'] { color: var(--danger); }
+.dock-msg[data-state='busy'] { color: var(--ink-3); }
+@media print { .dock { display: none !important; } body { padding-bottom: 0; } }
+
+/* the sign-in's theme switch, in the same corner in every app */
+.gate .corner-theme {
+  position: absolute; top: 0.75rem; right: 0.75rem;
+  border: 1px solid var(--line); background: var(--paper-2); color: var(--ink-3);
+  width: 1.8rem; height: 1.8rem; border-radius: 50%; cursor: pointer;
+}
+.gate { position: relative; }

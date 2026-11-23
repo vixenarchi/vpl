@@ -85,7 +85,9 @@ if (!flipped) {
   await a.reload({ waitUntil: 'networkidle' });
   await a.waitForTimeout(900);
 }
-ok((await a.textContent('#who')).trim().includes('vpl-guest'), 'and shows the person who is actually signed in');
+/* the label is the same one every app shows (vendor/who.js): a name when there
+ * is one, else the address tidied — vpl-guest@terg.hr reads as "Vpl Guest". */
+ok(/vpl\W*guest/i.test((await a.textContent('#who')).trim()), 'and shows the person who is actually signed in');
 
 /* nothing of the owner's job is on screen under the guest's name */
 const title = await a.inputValue('#proj-title').catch(() => '');

@@ -18,6 +18,8 @@
 
 <!-- ── the gate ───────────────────────────────────────────────────── -->
 <section id="gate" class="gate">
+  <button id="gate-theme" class="icon corner-theme" type="button"
+          title="light or dark" aria-label="light or dark">◐</button>
   <div class="gate-box">
     <h1 class="gate-mark">vp</h1>
     <p class="gate-line">keys, codes and the door.</p>
@@ -35,10 +37,7 @@
       </div>
     </form>
 
-    <p class="gate-foot">
-      the same account works in every app of the suite.
-      <button id="gate-theme" class="link" type="button">light or dark</button>
-    </p>
+    <p class="gate-foot">one account for the whole suite</p>
   </div>
 </section>
 
@@ -50,6 +49,7 @@
     <span class="grow"></span>
     <span id="who" class="who"></span>
     <button id="btn-theme" class="icon" type="button" title="light or dark">◐</button>
+    <button id="btn-ai" class="icon" type="button" title="the model and its key">⚙</button>
     <button id="btn-out" class="icon" type="button" title="sign out">out</button>
   </header>
 
@@ -150,5 +150,7 @@
 
 <script src="config.local.js"></script>
 <script type="module" src="app.js"></script>
+  <!-- settings: one component, the same in every app (vendor/settings.js) -->
+  <dialog id="ai-dialog" class="dialog"></dialog>
 </body>
 </html>

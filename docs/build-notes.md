@@ -1097,3 +1097,28 @@ One test bug is worth remembering: the theme did nothing in vi and worked
 everywhere else, because the click landed on the `<span>` inside the button and
 vi's CSS gives buttons no padding. `e.target.dataset` is not the element a
 person pressed; `closest('[data-theme]')` is.
+
+## the chrome: one bar, one gear, one dock, in eight apps (v1.2)
+
+The suite had eight bars, five settings dialogs and one app (vn) where the person
+signed in appeared only inside a panel. Now the shared shape is a rule, not a
+habit:
+
+- **`packages/shell/who.js`** — one label: Google's name, else the address tidied
+  (`vpl-agent` → *Vpl Agent*), else a letter. Every app's `displayName` is a
+  two-line delegate to it, so the corner reads the same everywhere.
+- **`packages/shell/dock.js`** — a chat line at the bottom of every app. It is a
+  child of `#app`, not a fixed overlay: the work area gives up the strip instead
+  of hiding under it, which is also why vr's bottom buttons stayed clickable.
+  It reads the work area (bar and dock removed so it does not feed on itself) and
+  sends it with the question. The answer stays in the dock.
+- **The gate** — one card from one block of CSS in `tokens.css`, and one sentence
+  on all eight: *one account for the whole suite*. vp had a frame of its own but
+  no theme switch; it has both now.
+
+The bug worth remembering is the settings one. `data-theme` lives on `<html>`, so
+`closest('[data-theme]')` inside the dialog matched **the page**, every click
+took the theme branch, and save / forget / ✕ were unreachable until the theme was
+put back. A selector that can match an ancestor of the dialog is a selector that
+swallows the dialog. `chrome-check.mjs` (24 in each app, 192 total) now changes a
+theme and then closes, so it cannot come back quietly.
