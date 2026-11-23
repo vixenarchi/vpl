@@ -30,6 +30,12 @@ Cloudflare Pages project.
   account and adopted by every browser; a code is a slip with calls and an
   expiry, redeemed into a key that spends the issuer's model through
   `/vp`. See `docs/vp.md`.
+- **va** — architecture, at <https://va.terg.hr>: the pile in, one picture out
+  (context, overview, terraform, or a reading of an environment that already
+  exists), every answer ending in a **box list** that is only text. Its other
+  half is the **agent**: a job is a row and a folder, an agent with its own
+  account works the queue, and the desk keeps or drops what comes back. See
+  `docs/va.md`.
 - **api** — the shared proxy at <https://api.terg.hr>: `/chat` (model calls),
   `/search` (Tavily/Serper evidence) and `/vp` (the door that spends a code's
   issuer key). Model APIs send no CORS headers, so the call leaves from our own
@@ -153,6 +159,8 @@ VR_URL=http://127.0.0.1:8101 node vr-paste.mjs      # spreadsheet, 11 checks
 VR_URL=http://127.0.0.1:8101 node vr-ai.mjs         # model proposals, 21 checks
 VR_URL=http://127.0.0.1:8101 node vr-share.mjs      # sharing, the refusal, the copy + its file, 29 checks
 VZ_URL=http://127.0.0.1:8103 node vz-check.mjs      # dictionary, bin, guest, the service, phone, 59 checks
+node va-check.mjs                                   # architecture desk, 40 checks
+node va-handoff.mjs                                 # a job to an agent and back, 14 checks
 VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "project title"
 ```
 
@@ -160,6 +168,16 @@ VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "project titl
 deleted at the end). `vi-real.mjs` is a real model pass through an existing
 project and keeps every answer in `/tmp/model-*.txt`. `vz-check` does the same:
 it deletes the project it made and the copy a guest took of it.
+
+## Backup and the tag
+
+`./tools/backup.sh` writes two files into `~/backups` (or `VPL_BACKUP_DIR`): a
+**git bundle** — a full clone in one file — and a tarball of the tree. Keys stay
+out on purpose; `config.local.js`, `agent.env` and anything matching `*.env` are
+excluded, because a backup of the code is not a backup of the secrets.
+
+The suite as it stands is tagged **`v1.0-suite`** (eight apps, the engine, the
+agent, the vp door) and pushed to `github.com/vixenarchi/vpl`.
 
 ## What is not built yet
 
