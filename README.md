@@ -36,9 +36,11 @@ No servers, no bundler, no build step, no monthly bill.
 - **An assistant in the top bar.** It answers into the note. The key is yours,
   kept in your browser, and settings can test it before you save it.
 
-Not built yet: a few more apps by the same recipe, and **www.terg.hr** — a page
-with no table behind it that describes the suite and lists the addresses. Each
-app stays independent; only that page knows the whole family.
+Not built yet: a few more apps by the same recipe, and **www.terg.hr** — a
+static site with no table behind it: the three product lines (vpl, eva,
+consulting), the organization, support with a contact form, a blog and news.
+Each app stays independent; only that site knows the whole family. Scope and
+boundaries: `docs/site.md`.
 
 ## What it deliberately does not do
 

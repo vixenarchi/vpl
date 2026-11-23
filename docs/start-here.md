@@ -145,11 +145,13 @@ Two things, both on the same pattern and neither a new architecture:
   sentence the interface can hold"** — vn holds a tree, vi holds a funnel, vr
   holds a sheet, vz holds a dictionary. An app whose sentence is a paragraph
   will be a paragraph of interface.
-- **`www.terg.hr`, the front door.** Not an app: a page with no table behind it
-  that says what the suite is, lists the four (soon more) addresses with one
-  line each, and the one login. It is the only place that knows the whole
-  family — every app stays independent and never links to a sibling from its
-  own screen.
+- **`www.terg.hr`, the front door.** Not an app: a static site with no table,
+  no login and no dashboard, pushed like everything else. Three product lines
+  (vpl, eva, consulting), the organization and its imprint, marketing copy, an
+  FAQ with a contact form that sends an e-mail, a blog of markdown posts and a
+  short news list. It is the only place that knows the whole family — every app
+  stays independent and never links to a sibling from its own screen. The scope,
+  the boundaries and the order of work are in `docs/site.md`.
 
 Until then the addresses are the front door.
 
