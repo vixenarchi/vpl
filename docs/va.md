@@ -161,12 +161,38 @@ lists, which is a text diff and needs no feature.
   accepting it.
 - **No cost estimation, no policy engine, no compliance scoring.** `vc` exists.
 
+## Built: the desk (slice 1)
+
+`apps/va` is live at **`va.terg.hr`** (Pages project `vpl-va`), and it is the
+engine's fourth skin: the same desk as `vd`, with `va`'s templates and words.
+
+- Tables **`va_projects`, `va_artifacts`, `va_runs`, `va_outputs`, `va_shares`**,
+  bucket **`va-files`** (10 MB), the share functions `va_share_role`,
+  `va_read_share`, `va_can_read`, `va_can_edit`, `va_path_project`, and the
+  account purge learned `va_` — which is the bug that bit `vc` and `vp` before,
+  so the whole suite body is written out again rather than patched.
+- Four templates, each a task and a shape: **context** (who uses it, what it
+  talks to), **overview** (the components inside, plus the deployment view of the
+  same list), **terraform** (files as fenced blocks, variables described, no
+  credentials), **report** (read an inventory that already exists).
+- Every template ends in the **box list** — `boxes:`/`arrows:` in a fenced yaml
+  block, `kind` from the closed list, cloud-specific detail in a free `attrs`
+  map. It is text in the answer, so a person can edit it, the agent can write it,
+  and the canvas (slice 2) is a renderer, not a database.
+- **40/40** checks (`tools/test-va.sh`), locally and against
+  `https://vpl-va.pages.dev`: a job, a pasted input, a file whose text is
+  extracted, a template that survives a reload, a mocked answer that carries the
+  box list, notes that reach the model, versions, silent autosave, copy, a
+  read-only link a guest can read but not generate into, copy-to-mine, a phone
+  with no sideways scroll, and a clean console.
+
+One bug the screenshot found and the tests could not: the template line said
+"expects: undefined" because `va`'s pack had no `needs` field. It is there now,
+and it is a reminder that "look at the thing" is still a test.
+
 ## The slices, in the order that keeps it light
 
-1. **The deck** — an engine skin: inputs (text, file, image, note), templates
-   (`context`, `overview`, `plan`), one editable output, the balloon loop, the
-   share link, the copy. No canvas, no agent. This is a day, and it already
-   integrates the suite by clipboard.
+1. ~~**The deck**~~ — done (above).
 2. **The box list and the canvas** — kind `diagram` artifact, YAML as text, the
    SVG canvas, the three views, the validation strip. This is the week's real
    work, and it is where "is the canvas worth it" gets answered by using it.

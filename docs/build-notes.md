@@ -1027,3 +1027,21 @@ validate` green, 44 credits. Gemini stays as pi's own provider; behind the door
 an agent needs an OpenAI-shaped upstream (NVIDIA `nim` here), because Gemini's
 compatible surface wants a `thought_signature` back on every function call and a
 generic client does not keep one.
+
+## va, slice 1: the desk, on the fourth skin
+
+`apps/va` is the engine's fourth copy and the suite's eighth app. The migration
+was generated from `vd`'s core with the prefix changed, which is the honest way
+to do it — `va_` tables, `va-files`, the same five functions under new names — and
+the account purge was written out whole instead of patched, because `vc` and `vp`
+both shipped a purge that had quietly lost a prefix.
+
+What is `va`'s own is the template pack: **context**, **overview**, **terraform**,
+**report**. Each one ends in the box list, because that is the only structure
+this app has and the whole plan depends on it staying text: `boxes:` and
+`arrows:`, a closed `kind`, an `attrs` map for everything cloud-specific.
+
+Forty checks pass locally and against `vpl-va.pages.dev` on the first run. Then a
+screenshot found what the checks could not: the line under the template picker
+read "expects: undefined", because the pack had no `needs` field. Four sentences
+fixed it. Looking at the thing is still a test.

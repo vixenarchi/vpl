@@ -235,6 +235,10 @@ Almost every model API answers the browser without `Access-Control-Allow-Origin`
 and the browser then throws the answer away — the same key that works in `curl`
 fails on a page. So the call leaves from an origin of ours:
 
+- **`apps/va`** — architecture: the pile in (documents, inventories, drawings), a
+  context, an overview, terraform or a reading of a real environment out, each
+  ending in a box list that is plain text.
+
 - **`agent/`** — va's other half: a job directory in, `out/report.md` and
   `out/files/` back, `pi` with a shell, a box-list checker, and a Dockerfile.
   No port, no webhook: a browser can never command it. Built and run in the
