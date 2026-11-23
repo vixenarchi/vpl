@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vc · compliance</title>
+<meta name="description" content="vixen compliance — rules and evidence in, a verdict for every control out.">
+<meta name="theme-color" content="#faf8f4">
+<link rel="icon" href="icons/c.svg" type="image/svg+xml">
+
+<link rel="stylesheet" href="vendor/tokens.css">
+<link rel="stylesheet" href="style.css">
+
+<script>
+  try { var t = localStorage.getItem('vpl.theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</head>
+<body>
+
+<!-- ── gate ──────────────────────────────────────────────────────── -->
+<section id="gate" class="gate" hidden>
+  <button id="gate-theme" class="corner-theme icon" type="button" aria-label="light or dark">◐</button>
+  <form id="gate-form" class="gate-form">
+    <div class="gate-brand">
+      <span class="gate-mark" aria-hidden="true">v</span>
+      <h1>vc</h1>
+      <span class="gate-sub">vixen compliance</span>
+    </div>
+    <label for="email">e-mail or username</label>
+    <input id="email" type="text" autocomplete="username" spellcheck="false"
+           autocapitalize="none" autocorrect="off"
+           placeholder="you@example.com or username">
+    <label for="pass">password</label>
+    <input id="pass" type="password" autocomplete="current-password">
+    <p id="gate-msg" class="gate-msg" aria-live="polite"></p>
+    <div class="confirm-row">
+      <button id="btn-register" class="ghost" type="button">create account</button>
+      <button id="btn-login" class="primary" type="submit">sign in</button>
+    </div>
+    <button id="btn-google" type="button" class="google">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <path fill="#4285F4" d="M23 12.2c0-.8-.1-1.6-.2-2.3H12v4.4h6.2c-.3 1.4-1.1 2.6-2.4 3.4v2.8h3.9c2.3-2.1 3.3-5.2 3.3-8.3z"/>
+        <path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-2.8c-1.1.7-2.5 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3C3.4 21.5 7.4 24 12 24z"/>
+        <path fill="#FBBC05" d="M5.4 14.6c-.2-.7-.4-1.4-.4-2.2s.1-1.5.4-2.2v-3H1.4C.5 8.9 0 10.4 0 12s.5 3.1 1.4 4.4l4-2.6z"/>
+        <path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4C17.9 1.2 15.2 0 12 0 7.4 0 3.4 2.5 1.4 6.2l4 3C6.3 6.4 8.9 4.8 12 4.8z"/>
+      </svg>
+      continue with Google
+    </button>
+    <p class="gate-fine">one account for the whole suite. the key to the model is kept in this browser only.</p>
+  </form>
+</section>
+
+<!-- ── the app ───────────────────────────────────────────────────── -->
+<div id="app" class="app" hidden>
+  <header class="bar">
+    <span class="brand-mark" aria-hidden="true">v</span>
+    <span class="brand-word">vc</span>
+    <span class="brand-sub">compliance</span>
+    <button id="btn-projects" class="icon only-narrow" type="button" title="checks">☰</button>
+    <span class="grow"></span>
+    <span id="who" class="who"></span>
+    <button id="btn-ai" class="icon" type="button" title="the model and its key">⚙</button>
+    <button id="btn-theme" class="icon" type="button" title="light or dark">◐</button>
+    <button id="btn-out" class="ghost" type="button" title="sign out">out</button>
+  </header>
+
+  <div class="body">
+    <nav id="projects" class="projects" aria-label="checks">
+      <div class="proj-head">
+        <span>checks</span>
+        <button id="btn-new-project" class="icon" type="button" title="a new job">＋</button>
+      </div>
+      <ul id="proj-list" class="proj-list"></ul>
+      <p id="proj-none" class="proj-none muted">nothing checked yet. one check is one set of rules held against one set of proofs.</p>
+    </nav>
+
+    <main id="spec" class="spec" hidden>
+      <input id="proj-title" class="title" type="text" placeholder="untitled check"
+             aria-label="check title" autocomplete="off" spellcheck="false">
+      <textarea id="brief" class="brief w-only" rows="1"
+                placeholder="what is being checked, and against what — a sentence is enough"
+                aria-label="what is being checked"></textarea>
+
+      <div class="pick-row o-only">
+        <label for="template">what to make</label>
+        <select id="template"></select>
+        <span id="template-about" class="muted"></span>
+      </div>
+
+      <div class="spec-tools">
+        <p id="proj-meta" class="proj-meta muted"></p>
+        <span class="grow"></span>
+        <button id="btn-own" class="ghost" type="button" hidden>copy to mine</button>
+        <button id="btn-copy" class="ghost" type="button">copy</button>
+        <button id="btn-print" class="ghost" type="button" title="ctrl+p">print</button>
+        <button id="btn-share" class="ghost o-only" type="button">share</button>
+      </div>
+      <p id="guest-banner" class="guest-banner" hidden></p>
+
+      <div class="work">
+        <!-- inputs -->
+        <section class="side inputs">
+          <div class="side-head">
+            <h2>standardi</h2>
+            <span id="std-count" class="count muted"></span>
+            <span class="grow"></span>
+            <button id="btn-add-standard" class="ghost w-only" type="button">＋ standard</button>
+          </div>
+          <p class="side-note muted">the rules — a policy, a checklist, a law's paragraph.</p>
+          <ul id="standards" class="artifacts"></ul>
+          <p id="std-none" class="muted none-line" hidden>no rules yet — without them there is nothing to check against.</p>
+
+          <div class="side-head gap-top">
+            <h2>dokazi</h2>
+            <span id="ev-count" class="count muted"></span>
+            <span class="grow"></span>
+            <button id="btn-add-evidence" class="ghost w-only" type="button">＋ dokaz</button>
+            <button id="btn-add-file" class="ghost w-only" type="button">＋ file</button>
+          </div>
+          <p class="side-note muted">what proves it — minutes, a configuration, a screenshot, a pdf.</p>
+          <ul id="evidence" class="artifacts"></ul>
+          <p id="ev-none" class="muted none-line" hidden>no evidence yet. a report will be honest and useless.</p>
+
+          <p id="art-msg" class="msg" aria-live="polite"></p>
+          <input id="file-input" type="file" multiple hidden
+                 accept=".pdf,.txt,.md,.markdown,.csv,.tsv,.json,.yaml,.yml,.xml,.html,.sql,.log,image/*,text/*">
+        </section>
+
+        <!-- the transformation -->
+        <section class="side output">
+          <div class="side-head">
+            <h2>output</h2>
+            <span id="out-meta" class="count muted"></span>
+            <span class="grow"></span>
+            <select id="out-versions" class="versions" aria-label="earlier versions" hidden></select>
+          </div>
+
+          <div id="findings" class="findings" hidden>
+            <span class="verdict pass"><b id="n-pass">0</b> pass</span>
+            <span class="verdict fail"><b id="n-fail">0</b> fail</span>
+            <span class="verdict unknown"><b id="n-unknown">0</b> unknown</span>
+            <span id="findings-note" class="muted"></span>
+          </div>
+
+          <div id="out-none" class="out-none">
+            <p class="muted">the report appears here, one verdict per line. read it, change it,
+              print it — what is written is yours, not the model's.</p>
+            <button id="btn-first-generate" class="primary w-only" type="button">generate</button>
+          </div>
+
+          <textarea id="out-body" class="doc" spellcheck="true" hidden
+                    aria-label="the generated document"></textarea>
+
+          <form id="gen" class="gen w-only" autocomplete="off">
+            <input id="notes" class="notes" type="text"
+                   placeholder="notes on the last answer — what to change" aria-label="notes on the last answer">
+            <button id="btn-generate" class="primary" type="submit">generate</button>
+          </form>
+          <p id="gen-msg" class="msg gen-msg" aria-live="polite"></p>
+        </section>
+      </div>
+    </main>
+
+    <section id="welcome" class="welcome">
+      <div class="welcome-card">
+        <span class="welcome-mark" aria-hidden="true">v</span>
+        <h2>rules and proofs in, verdicts out</h2>
+        <p>A check is two piles: the rules you are held to, and the proofs you
+          have. The model reads both and gives one verdict per control — pass,
+          fail, or unknown when the proof simply is not here. Unknown is not a
+          failure; it is the question you are about to be asked.</p>
+        <button id="btn-first" class="primary" type="button">start a check</button>
+        <p class="welcome-fine muted">a model can be talked into PASS. That is why every
+          verdict line carries the evidence it stands on.</p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ── one input, open ────────────────────────────────────────────── -->
+<dialog id="art-dialog" class="dialog wide">
+  <button id="art-x" class="dialog-x" type="button" aria-label="close">✕</button>
+  <h2 id="art-head">input</h2>
+  <input id="art-title" class="art-title" type="text" placeholder="what is this — tender, minutes, note"
+         aria-label="input title" spellcheck="false">
+  <p id="art-file" class="art-file" hidden></p>
+  <textarea id="art-text" class="art-text" rows="14" spellcheck="false"
+            placeholder="paste the text here"></textarea>
+  <p id="art-msg" class="msg" aria-live="polite"></p>
+  <div class="dialog-foot">
+    <button id="art-del" class="ghost danger w-only" type="button">remove</button>
+    <span class="grow"></span>
+    <button id="art-x2" class="ghost" type="button">cancel</button>
+    <button id="art-save" class="primary w-only" type="button">keep it</button>
+  </div>
+</dialog>
+
+<!-- ── sharing: a link or a person ────────────────────────────────── -->
+<dialog id="share-dialog" class="dialog">
+  <button id="share-x" class="dialog-x" type="button" aria-label="close">✕</button>
+  <h2>share this job</h2>
+  <p>A guest who is <b>view</b> reads the standards, the evidence and the report.
+    <b>edit</b> may add to all three and generate. The name, the template and the
+    sharing stay with you.</p>
+
+  <p class="dialog-sep">a public link — anyone with it can read</p>
+  <div class="share-link-row">
+    <input id="share-link" type="text" readonly placeholder="no link yet">
+    <button id="share-make" class="ghost" type="button">make link</button>
+  </div>
+  <button id="share-copy" class="ghost" type="button">copy the link</button>
+
+  <p class="dialog-sep">one person</p>
+  <div class="share-person-row">
+    <input id="share-email" type="text" spellcheck="false" autocapitalize="none"
+           placeholder="name@example.com or a username">
+    <select id="share-role">
+      <option value="view">can read</option>
+      <option value="edit">can write</option>
+    </select>
+    <button id="share-add" class="primary" type="button">share</button>
+  </div>
+
+  <ul id="share-list" class="share-list"></ul>
+  <p id="share-msg" class="share-msg" aria-live="polite"></p>
+</dialog>
+
+<!-- ── the model's door and its key ───────────────────────────────── -->
+<dialog id="ai-dialog" class="dialog">
+  <button id="ai-x" class="dialog-x" type="button" aria-label="close">✕</button>
+  <h2>the model</h2>
+  <p>One key per address — this one is kept in this browser and never leaves it
+    except to the provider. Only the transformation is sent: the inputs you
+    chose, the template and your notes.</p>
+  <label for="ai-provider">provider</label>
+  <select id="ai-provider"></select>
+  <label for="ai-url">base address</label>
+  <input id="ai-url" type="text" spellcheck="false" autocapitalize="none">
+  <label for="ai-model">model</label>
+  <input id="ai-model" type="text" list="ai-models" spellcheck="false" autocapitalize="none">
+  <datalist id="ai-models"></datalist>
+  <label for="ai-key">key</label>
+  <input id="ai-key" type="password" spellcheck="false" autocapitalize="none" autocomplete="off">
+  <p class="muted small">nothing is generated until a key is here. the default is
+    <code>gemini-3.1-flash-lite</code> through its OpenAI-shaped door.</p>
+  <p id="ai-msg" class="msg" aria-live="polite"></p>
+  <div class="dialog-foot">
+    <button id="ai-forget" class="ghost" type="button">forget the key</button>
+    <span class="grow"></span>
+    <button id="ai-save" class="primary" type="button">save in this browser</button>
+  </div>
+</dialog>
+
+<pre id="print-doc" class="print-doc"></pre>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="config.local.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

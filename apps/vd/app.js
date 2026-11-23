@@ -1,0 +1,794 @@
+/* vpl · vd — documents. Inputs in, one document out.
+ *
+ * The screen is a desk: the pile you were given on the left, the paper you
+ * will send on the right. The model is behind one button, and what it writes
+ * lands in a textarea, not in the database's idea of truth — the person edits
+ * it, and what is written is theirs.
+ *
+ * The machine is vendor/engine.js, copied from the suite's shell. This file
+ * owns only the desk: which template, which inputs, which output is open.
+ */
+
+import * as db from './lib/db.js';
+import * as ai from './vendor/ai.js';
+import * as engine from './vendor/engine.js';
+import { TEMPLATES, DEFAULT_TEMPLATE, templateById } from './templates.js';
+
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const S = {
+  session: null,
+  projects: [],
+  project: null,
+  artifacts: [],
+  outputs: [],
+  role: null,          // owner | edit | view | null
+  guest: null,         // null | 'share'
+  current: null,       // the output on the desk
+  artDraft: null,      // the input open in the dialog
+  notes: '',
+  busy: false,
+  lastMs: 0,
+};
+
+/* ── window dressing ──────────────────────────────────────────────── */
+function toast(text) {
+  const t = $('#toast');
+  t.textContent = text;
+  t.classList.add('on');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('on'), 2400);
+}
+
+function msg(el, text, state = '') {
+  const node = typeof el === 'string' ? $(el) : el;
+  if (!node) return;
+  node.textContent = text;
+  if (state) node.dataset.state = state; else delete node.dataset.state;
+}
+
+function applyTheme() {
+  const now = document.documentElement.dataset.theme;
+  const next = now === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem('vpl.theme', next); } catch { /* private mode */ }
+}
+
+function debounce(fn, ms = 750) {
+  let t = null;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+/* Names and addresses ignore case; passwords never do. A bare name is an
+ * account at @vpl.local, exactly as in vn, vi, vr and vz. */
+function lowerField(el) {
+  el.addEventListener('input', () => {
+    const low = el.value.toLowerCase();
+    if (low === el.value) return;
+    const at = el.selectionStart;
+    el.value = low;
+    try { el.setSelectionRange(at, at); } catch { /* not focusable yet */ }
+  });
+}
+
+function toAuthEmail(v) {
+  const t = v.trim();
+  return t.includes('@')
+    ? t.toLowerCase()
+    : t.toLowerCase().replace(/\s+/g, '') + '@vpl.local';
+}
+
+function displayName(session) {
+  if (!session) return '';
+  const m = session.user.user_metadata || {};
+  const mail = session.user.email || '';
+  return m.full_name || m.name || (mail.endsWith('@vpl.local') ? mail.split('@')[0] : mail);
+}
+
+function plainAuthError(err) {
+  const m = String(err?.message || err || '');
+  if (/already registered/i.test(m)) return 'that address already has an account — sign in instead';
+  if (/invalid format|validate email/i.test(m)) return 'that does not look like an address';
+  if (/invalid login credentials/i.test(m)) return 'wrong address or password';
+  return m || 'could not sign in';
+}
+
+/* ── boot ─────────────────────────────────────────────────────────── */
+async function boot() {
+  $('#btn-theme').onclick = applyTheme;
+  $('#gate-theme').onclick = applyTheme;
+  lowerField($('#email'));
+  wireGate();
+  wireApp();
+
+  const params = new URLSearchParams(location.search);
+  const code = params.get('s');
+  if (code) return openGuest(code);
+
+  S.session = await db.session().catch(() => null);
+  if (!S.session) { showGate(); return; }
+  await enterApp();
+}
+
+function showGate() {
+  $('#gate').hidden = false;
+  $('#app').hidden = true;
+  $('#email').focus();
+}
+
+function wireGate() {
+  $('#gate-form').onsubmit = async (e) => {
+    e.preventDefault();
+    msg('#gate-msg', 'signing in…', 'busy');
+    try {
+      await db.signIn(toAuthEmail($('#email').value), $('#pass').value);
+      $('#gate-msg').textContent = '';
+      S.session = await db.session();
+      await enterApp();
+    } catch (err) {
+      msg('#gate-msg', plainAuthError(err), 'bad');
+    }
+  };
+  $('#btn-register').onclick = async () => {
+    const email = toAuthEmail($('#email').value);
+    const pass = $('#pass').value;
+    if (!email || pass.length < 6) {
+      return msg('#gate-msg', 'a name or an address, and a password of six characters or more', 'bad');
+    }
+    try {
+      await db.signUp(email, pass);
+      S.session = await db.session();
+      await enterApp();
+    } catch (err) {
+      msg('#gate-msg', plainAuthError(err), 'bad');
+    }
+  };
+  $('#btn-google').onclick = async () => {
+    try { await db.signInWithGoogle(); } catch (err) { msg('#gate-msg', err.message, 'bad'); }
+  };
+}
+
+async function enterApp() {
+  $('#gate').hidden = true;
+  $('#app').hidden = false;
+  $('#who').textContent = displayName(S.session);
+  $('#who').title = S.session?.user?.email || '';
+  wireAi();
+  await loadProjects();
+  const bring = localStorage.getItem('vd.copy');
+  if (bring) {
+    localStorage.removeItem('vd.copy');
+    await copyFromCode(bring);
+    return;
+  }
+  const last = localStorage.getItem('vd.last');
+  const open = S.projects.find((p) => p.id === last) || S.projects[0];
+  if (open) await openJob(open.id);
+  else renderWelcome();
+}
+
+/* ── the rail ─────────────────────────────────────────────────────── */
+async function loadProjects() {
+  S.projects = await db.listProjects();
+  renderRail();
+}
+
+function renderRail() {
+  const list = $('#proj-list');
+  list.innerHTML = '';
+  for (const p of S.projects) {
+    const li = document.createElement('li');
+    li.className = 'proj-row' + (p.id === S.project?.id ? ' on' : '');
+    li.dataset.id = p.id;
+    const tpl = templateById(p.template);
+    const mine = p.user_id === S.session?.user?.id;
+    li.innerHTML = `<button class="pick" type="button">${esc(p.title || 'untitled job')}</button>`
+      + `<span class="tpl" title="${esc(tpl.label)}">${esc(tpl.id)}</span>`
+      + (mine ? '<button class="kill" type="button" title="delete the job">✕</button>' : '');
+    list.append(li);
+  }
+  $('#proj-none').hidden = S.projects.length > 0;
+}
+
+$('#proj-list').addEventListener('click', async (e) => {
+  const kill = e.target.closest('.kill');
+  const row = e.target.closest('.proj-row');
+  if (!row) return;
+  const id = row.dataset.id;
+  if (kill) {
+    const p = S.projects.find((x) => x.id === id);
+    if (!confirm(`delete “${p?.title || 'this job'}” and everything in it?`)) return;
+    await db.deleteProject(id);
+    if (S.project?.id === id) S.project = null;
+    await loadProjects();
+    if (S.projects[0]) await openJob(S.projects[0].id);
+    else renderWelcome();
+    return;
+  }
+  await openJob(id);
+});
+
+$('#btn-new-project').onclick = async () => {
+  const p = await db.createProject('untitled job', DEFAULT_TEMPLATE);
+  await loadProjects();
+  await openJob(p.id);
+  $('#proj-title').focus();
+  $('#proj-title').select();
+  document.body.dataset.rail = '';
+};
+
+$('#btn-first').onclick = () => $('#btn-new-project').click();
+
+$('#btn-projects').onclick = () => {
+  document.body.dataset.rail = document.body.dataset.rail === 'open' ? '' : 'open';
+};
+
+/* ── a job on the desk ────────────────────────────────────────────── */
+function renderWelcome() {
+  $('#spec').hidden = true;
+  $('#welcome').hidden = false;
+}
+
+let _loadSeq = 0;
+
+async function openJob(id) {
+  const seq = ++_loadSeq;
+  S.project = S.projects.find((p) => p.id === id) || null;
+  if (!S.project) return renderWelcome();
+  localStorage.setItem('vd.last', id);
+  S.artifacts = await db.listArtifacts(id);
+  S.outputs = await db.listOutputs(id);
+  S.role = await db.roleOn(S.project);
+  if (seq !== _loadSeq) return;             // only the last answer counts
+  S.current = S.outputs[0]?.id || null;
+  document.body.dataset.role = S.role || 'view';
+  document.body.dataset.guest = '';
+  $('#welcome').hidden = true;
+  $('#spec').hidden = false;
+  $('#btn-own').hidden = S.role === 'owner' || !S.role;
+  $('#guest-banner').hidden = true;
+  renderRail();
+  paintSpec();
+}
+
+function paintSpec() {
+  const p = S.project;
+  if (!p) return renderWelcome();
+  const title = $('#proj-title');
+  if (title.value !== p.title) title.value = p.title;
+  title.readOnly = S.role !== 'owner';
+  const brief = $('#brief');
+  if (brief.value !== (p.brief || '')) brief.value = p.brief || '';
+  growBrief(brief);
+
+  const sel = $('#template');
+  if (!sel.options.length || sel.dataset.for !== 'x') {
+    sel.innerHTML = TEMPLATES.map((t) => `<option value="${t.id}">${esc(t.label)}</option>`).join('');
+    sel.dataset.for = 'x';
+  }
+  sel.value = p.template || DEFAULT_TEMPLATE;
+  const tpl = templateById(p.template);
+  $('#template-about').textContent = `— ${tpl.about}. expects: ${tpl.needs}.`;
+
+  const words = S.artifacts.reduce((n, a) => n + engine.countWords(a.text), 0);
+  $('#proj-meta').textContent = [
+    `${S.artifacts.length} input${S.artifacts.length === 1 ? '' : 's'}`,
+    words ? `${words.toLocaleString()} words to read` : 'nothing to read yet',
+    engine.hasKey() ? engine.modelName() : 'no model key yet',
+  ].join(' · ');
+
+  renderArtifacts();
+  paintOutput();
+  $('#btn-first-generate').hidden = S.role === 'view';
+}
+
+function growBrief(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.max(24, el.scrollHeight) + 'px';
+}
+
+/* title and brief save themselves; a job with no name is a job you lose */
+const saveProject = debounce(async () => {
+  if (!S.project || S.role !== 'owner') return;
+  const title = $('#proj-title').value.trim() || 'untitled job';
+  const brief = $('#brief').value;
+  try {
+    S.project = await db.updateProject(S.project.id, { title, brief });
+    const row = S.projects.find((p) => p.id === S.project.id);
+    if (row) Object.assign(row, S.project);
+    renderRail();
+  } catch (err) { toast(err.message); }
+});
+
+$('#proj-title').addEventListener('input', saveProject);
+$('#brief').addEventListener('input', () => { growBrief($('#brief')); saveProject(); });
+
+$('#template').addEventListener('change', async () => {
+  if (S.role !== 'owner' || !S.project) return;
+  try {
+    S.project = await db.updateProject(S.project.id, { template: $('#template').value });
+    const row = S.projects.find((p) => p.id === S.project.id);
+    if (row) Object.assign(row, S.project);
+    renderRail();
+    paintSpec();
+    toast('the next document follows the new template');
+  } catch (err) { msg('#gen-msg', err.message, 'bad'); }
+});
+
+/* ── the pile of inputs ───────────────────────────────────────────── */
+function renderArtifacts() {
+  const list = $('#artifacts');
+  list.innerHTML = '';
+  for (const a of S.artifacts) {
+    const li = document.createElement('li');
+    li.className = 'art';
+    li.dataset.id = a.id;
+    const n = engine.countWords(a.text);
+    const line = a.file_name
+      ? `${a.file_name} · ${fmtSize(a.file_size)}`
+      : n ? `${n.toLocaleString()} words` : 'no text';
+    li.innerHTML = `<span class="kind">${esc(a.kind)}</span>`
+      + `<span class="what"><button class="name" type="button">${esc(a.title || 'untitled input')}</button>`
+      + `<span class="line">${esc(line)}</span></span>`
+      + `<span class="tools w-only">`
+      + (a.file_path ? '<button class="dl" type="button" title="download the original">↓</button>' : '')
+      + '<button class="del" type="button" title="remove from this job">✕</button></span>';
+    list.append(li);
+  }
+  $('#art-none').hidden = S.artifacts.length > 0;
+  $('#art-count').textContent = S.artifacts.length ? `${S.artifacts.length}` : '';
+}
+
+function fmtSize(n) {
+  if (!n) return '';
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} kB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
+$('#artifacts').addEventListener('click', async (e) => {
+  const li = e.target.closest('.art');
+  if (!li) return;
+  const a = S.artifacts.find((x) => x.id === li.dataset.id);
+  if (!a) return;
+
+  if (e.target.closest('.del')) {
+    if (!confirm(`remove “${a.title || 'this input'}” from this job?`)) return;
+    await db.deleteArtifact(a.id);
+    S.artifacts = S.artifacts.filter((x) => x.id !== a.id);
+    renderArtifacts();
+    paintSpec();
+    return;
+  }
+  if (e.target.closest('.dl')) {
+    try {
+      const url = await db.fileUrl(a.file_path);
+      window.open(url, '_blank', 'noopener');
+    } catch (err) { toast(err.message); }
+    return;
+  }
+  openArtifact(a);
+});
+
+function openArtifact(a) {
+  S.artDraft = a ? { ...a } : { kind: 'text', title: '', text: '' };
+  $('#art-head').textContent = a ? 'input' : 'a new input';
+  $('#art-title').value = S.artDraft.title || '';
+  $('#art-text').value = S.artDraft.text || '';
+  const cold = S.role === 'view';
+  $('#art-title').readOnly = cold;
+  $('#art-text').readOnly = cold;
+  $('#art-del').hidden = !a;
+  const f = $('#art-file');
+  f.hidden = !a?.file_name;
+  if (a?.file_name) f.textContent = `original: ${a.file_name} · ${fmtSize(a.file_size)}`;
+  msg('#art-msg', '');
+  $('#art-dialog').showModal();
+  setTimeout(() => (a ? $('#art-text') : $('#art-title')).focus(), 60);
+}
+
+$('#btn-add-text').onclick = () => openArtifact(null);
+$('#art-x').onclick = () => $('#art-dialog').close();
+$('#art-x2').onclick = () => $('#art-dialog').close();
+
+$('#art-save').onclick = async () => {
+  const d = S.artDraft;
+  if (!d || !S.project) return;
+  const title = $('#art-title').value.trim() || 'untitled input';
+  const text = $('#art-text').value;
+  msg('#art-save', 'saving…', 'busy');
+  try {
+    if (d.id) {
+      const row = await db.updateArtifact(d.id, { title, text });
+      const i = S.artifacts.findIndex((x) => x.id === d.id);
+      if (i >= 0) S.artifacts[i] = row;
+    } else {
+      const row = await db.addArtifact(S.project.id, {
+        kind: d.kind || 'text', title, text,
+        file_path: d.file_path, file_name: d.file_name,
+        file_size: d.file_size, file_mime: d.file_mime,
+      });
+      S.artifacts.push(row);
+    }
+    $('#art-dialog').close();
+    renderArtifacts();
+    paintSpec();
+  } catch (err) { msg('#art-msg', err.message, 'bad'); }
+};
+
+$('#art-del').onclick = async () => {
+  const d = S.artDraft;
+  if (!d?.id) return;
+  if (!confirm(`remove “${d.title || 'this input'}” from this job?`)) return;
+  try {
+    await db.deleteArtifact(d.id);
+    S.artifacts = S.artifacts.filter((x) => x.id !== d.id);
+    $('#art-dialog').close();
+    renderArtifacts();
+    paintSpec();
+  } catch (err) { msg('#art-msg', err.message, 'bad'); }
+};
+
+/* ── files: a pdf becomes text, the original stays in the bucket ──── */
+$('#btn-add-file').onclick = () => $('#file-input').click();
+
+$('#file-input').addEventListener('change', async (e) => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  if (!files.length || !S.project) return;
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    msg('#art-msg', `reading ${file.name} (${i + 1}/${files.length})…`, 'busy');
+    let stored = null;
+    try {
+      stored = await db.uploadFile(S.project.id, file);
+    } catch (err) {
+      msg('#art-msg', `${file.name}: ${err.message}`, 'bad');
+      continue;
+    }
+    const got = await engine.extract(file, (page, pages) => {
+      msg('#art-msg', `${file.name} — page ${page} of ${pages}`, 'busy');
+    });
+    try {
+      const row = await db.addArtifact(S.project.id, {
+        kind: got.kind,
+        title: file.name,
+        text: got.text,
+        file_path: stored.path, file_name: stored.name,
+        file_size: stored.size, file_mime: stored.mime,
+      });
+      S.artifacts.push(row);
+    } catch (err) {
+      msg('#art-msg', `${file.name}: ${err.message}`, 'bad');
+    }
+  }
+  renderArtifacts();
+  paintSpec();
+  msg('#art-msg', `${files.length} added`, 'ok');
+  toast('read it, then generate');
+});
+
+/* ── the output on the desk ───────────────────────────────────────── */
+function currentOutput() {
+  return S.outputs.find((o) => o.id === S.current) || S.outputs[0] || null;
+}
+
+function paintOutput() {
+  const o = currentOutput();
+  const body = $('#out-body');
+  const none = $('#out-none');
+  const versions = $('#out-versions');
+
+  if (!o) {
+    none.hidden = false;
+    body.hidden = true;
+    versions.hidden = true;
+    $('#out-meta').textContent = '';
+    body.value = '';
+    return;
+  }
+  none.hidden = true;
+  body.hidden = false;
+  if (body.value !== o.body) body.value = o.body;
+  body.readOnly = S.role === 'view';
+
+  versions.hidden = S.outputs.length < 2;
+  versions.innerHTML = S.outputs.map((x, i) => {
+    const label = i === 0 ? 'just now' : engine.when(x.created_at);
+    return `<option value="${x.id}">${esc(label)} · ${engine.countWords(x.body)} words</option>`;
+  }).join('');
+  versions.value = o.id;
+  $('#out-meta').textContent = `${engine.countWords(o.body).toLocaleString()} words · ${engine.when(o.created_at)}`;
+}
+
+$('#out-versions').addEventListener('change', () => {
+  S.current = $('#out-versions').value;
+  paintOutput();
+});
+
+/* Autosave the document. Silent by design: the person writes, the row follows
+ * 750 ms later, and nothing jumps. */
+const saveOutput = debounce(async () => {
+  const o = currentOutput();
+  if (!o || S.role === 'view') return;
+  const body = $('#out-body').value;
+  if (body === o.body) return;
+  try {
+    const row = await db.updateOutput(o.id, { body });
+    o.body = row.body;
+    o.updated_at = row.updated_at;
+    $('#out-meta').textContent = `${engine.countWords(o.body).toLocaleString()} words · ${engine.when(o.updated_at)}`;
+  } catch (err) { toast('could not save: ' + err.message); }
+});
+
+$('#out-body').addEventListener('input', saveOutput);
+
+$('#btn-copy').onclick = async () => {
+  const o = currentOutput();
+  const text = o ? o.body : '';
+  if (!text) return toast('nothing to copy yet');
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('the document is on the clipboard');
+  } catch { toast('the browser refused the clipboard'); }
+};
+
+$('#btn-print').onclick = () => {
+  const o = currentOutput();
+  if (!o) return toast('nothing to print yet');
+  $('#print-doc').textContent = `${S.project?.title || ''}\n\n${o.body}`;
+  window.print();
+};
+
+/* ── generate ─────────────────────────────────────────────────────── */
+$('#gen').onsubmit = (e) => { e.preventDefault(); generate(); };
+$('#btn-first-generate').onclick = () => generate();
+$('#notes').addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); generate(); }
+});
+
+function paintBusy(on, t0 = 0) {
+  S.busy = on;
+  $('#btn-generate').disabled = on;
+  $('#btn-generate').textContent = on ? 'thinking…' : 'generate';
+  clearInterval(paintBusy._t);
+  if (!on) return;
+  const tick = () => {
+    const s = Math.round((Date.now() - t0) / 1000);
+    msg('#gen-msg', `thinking — ${s}s. a long tender takes a minute.`, 'busy');
+  };
+  tick();
+  paintBusy._t = setInterval(tick, 1000);
+}
+
+async function generate() {
+  if (S.busy || !S.project) return;
+  if (S.role === 'view') return;
+  const tpl = templateById(S.project.template);
+  if (!S.artifacts.length) {
+    msg('#gen-msg', 'nothing to read yet — add an input first', 'bad');
+    return;
+  }
+  if (!engine.hasKey()) {
+    msg('#gen-msg', 'no model key yet — paste one in the settings', 'bad');
+    openAi();
+    return;
+  }
+
+  const notes = $('#notes').value.trim();
+  const messages = engine.buildMessages({
+    template: tpl, project: S.project, artifacts: S.artifacts, notes,
+  });
+  const promptNote = [
+    `template: ${tpl.id}`,
+    `inputs: ${S.artifacts.map((a) => a.title || a.kind).join(' · ')}`,
+    notes ? `notes: ${notes}` : '',
+  ].filter(Boolean).join('\n').slice(0, 8000);
+
+  const t0 = Date.now();
+  paintBusy(true, t0);
+  let run = null;
+  try {
+    run = await db.startRun(S.project.id, {
+      template: tpl.id, model: engine.modelName(), notes, prompt: promptNote,
+    });
+    const answer = await engine.callModel(messages);
+    if (!answer || !answer.trim()) throw new Error('the model answered with nothing');
+    await db.finishRun(run.id, { status: 'done', took_ms: Date.now() - t0 });
+    const out = await db.addOutput(S.project.id, {
+      run_id: run.id, kind: tpl.kind, title: tpl.out, body: answer,
+    });
+    S.outputs.unshift(out);
+    S.current = out.id;
+    S.notes = '';
+    $('#notes').value = '';
+    paintOutput();
+    msg('#gen-msg', `written in ${Math.round((Date.now() - t0) / 1000)} s — read it, then change what is not true`, 'ok');
+  } catch (err) {
+    if (run) {
+      await db.finishRun(run.id, {
+        status: 'failed', error: String(err.message || err).slice(0, 300),
+        took_ms: Date.now() - t0,
+      }).catch(() => {});
+    }
+    if (err.code === engine.NO_KEY) openAi();
+    msg('#gen-msg', String(err.message || 'the model did not answer').slice(0, 220), 'bad');
+  } finally {
+    paintBusy(false);
+  }
+}
+
+/* ── the model's door and its key ────────────────────────────────── */
+function wireAi() {
+  ai.mountAi({
+    provider: $('#ai-provider'), url: $('#ai-url'),
+    model: $('#ai-model'), models: $('#ai-models'),
+  });
+  $('#btn-ai').onclick = openAi;
+  $('#ai-x').onclick = () => $('#ai-dialog').close();
+  $('#ai-save').onclick = () => {
+    const url = $('#ai-url').value.trim();
+    const model = $('#ai-model').value.trim();
+    const key = $('#ai-key').value.trim() || ai.readAi().key;
+    if (!url || !key) return msg('#ai-msg', 'both an address and a key, please', 'bad');
+    ai.writeAi({ url, key, model });
+    msg('#ai-msg', 'saved in this browser', 'ok');
+    paintSpec();
+  };
+  $('#ai-forget').onclick = () => {
+    ai.forgetKeys();
+    $('#ai-key').value = '';
+    msg('#ai-msg', 'forgotten', 'ok');
+    paintSpec();
+  };
+}
+
+function openAi() {
+  const c = ai.readAi();
+  $('#ai-key').value = c.key || '';
+  msg('#ai-msg', '');
+  $('#ai-dialog').showModal();
+}
+
+/* ── sharing ──────────────────────────────────────────────────────── */
+$('#btn-share').onclick = async () => {
+  if (!S.project) return;
+  msg('#share-msg', '');
+  $('#share-email').value = '';
+  await paintShares();
+  $('#share-dialog').showModal();
+};
+
+async function paintShares() {
+  const rows = await db.listShares(S.project.id);
+  const link = rows.find((r) => r.code);
+  $('#share-link').value = link ? `${location.origin}/?s=${link.code}` : '';
+  const list = $('#share-list');
+  list.innerHTML = '';
+  for (const r of rows.filter((x) => !x.code)) {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="who">${esc(r.email)}</span>`
+      + `<span class="role">${r.role === 'edit' ? 'can write' : 'can read'}</span>`
+      + `<button class="ghost" type="button" data-off="${r.id}">remove</button>`;
+    list.append(li);
+  }
+}
+
+$('#share-dialog').addEventListener('click', async (e) => {
+  const off = e.target.closest('[data-off]');
+  if (!off) return;
+  await db.revokeShare(off.dataset.off);
+  await paintShares();
+});
+
+$('#share-x').onclick = () => $('#share-dialog').close();
+$('#share-make').onclick = async () => {
+  try {
+    const row = await db.makeLink(S.project.id);
+    $('#share-link').value = `${location.origin}/?s=${row.code}`;
+    msg('#share-msg', 'a link that reads; it never writes', 'ok');
+  } catch (err) { msg('#share-msg', err.message, 'bad'); }
+};
+$('#share-copy').onclick = async () => {
+  const v = $('#share-link').value;
+  if (!v) return msg('#share-msg', 'make the link first', 'bad');
+  try { await navigator.clipboard.writeText(v); msg('#share-msg', 'copied', 'ok'); }
+  catch { msg('#share-msg', 'the browser refused the clipboard', 'bad'); }
+};
+$('#share-add').onclick = async () => {
+  const email = $('#share-email').value.trim();
+  const role = $('#share-role').value;
+  if (!email) return msg('#share-msg', 'an address or a username', 'bad');
+  try {
+    await db.shareWith(S.project.id, email, role);
+    $('#share-email').value = '';
+    await paintShares();
+    msg('#share-msg', `${email} sees it as ${role === 'edit' ? 'a writer' : 'a reader'}`, 'ok');
+  } catch (err) { msg('#share-msg', err.message, 'bad'); }
+};
+
+/* ── a guest reads ────────────────────────────────────────────────── */
+async function openGuest(code) {
+  S.guest = 'share';
+  S.session = await db.session().catch(() => null);
+  const data = await db.readShare(code).catch(() => null);
+  $('#gate').hidden = true;
+  $('#app').hidden = false;
+  if (!data) {
+    document.body.dataset.guest = '1';
+    $('#spec').hidden = false;
+    $('#welcome').hidden = true;
+    $('#proj-title').value = 'that link does not open anything';
+    $('#proj-title').readOnly = true;
+    $('#brief').value = 'the link may have been revoked, or the job deleted.';
+    return;
+  }
+  S.project = data.project;
+  S.artifacts = data.artifacts || [];
+  S.outputs = data.outputs || [];
+  S.role = 'view';
+  S.current = S.outputs[0]?.id || null;
+  document.body.dataset.guest = '1';
+  document.body.dataset.role = 'view';
+  $('#who').textContent = S.session ? displayName(S.session) : 'a guest';
+  $('#welcome').hidden = true;
+  $('#spec').hidden = false;
+  $('#btn-share').hidden = true;
+  $('#guest-banner').hidden = false;
+  $('#guest-banner').textContent = 'you are reading a shared job. a copy can become yours — it never writes back.';
+  $('#btn-own').hidden = false;
+  $('#btn-own').textContent = 'copy to mine';
+  paintSpec();
+}
+
+$('#btn-own').onclick = async () => {
+  const code = new URLSearchParams(location.search).get('s');
+  if (!S.session) {
+    /* the gate is one page away: keep the link, sign in, and the copy is made
+     * on the way in, so nobody has to find the link again */
+    try { if (code) localStorage.setItem('vd.copy', code); } catch { /* private mode */ }
+    location.href = location.pathname;
+    return;
+  }
+  try {
+    const p = await db.copyToMe(S.project, S.artifacts, S.outputs);
+    toast('a copy is yours');
+    if (code) history.replaceState({}, '', location.pathname);
+    await loadProjects();
+    await openJob(p.id);
+  } catch (err) { toast(err.message); }
+};
+
+async function copyFromCode(code) {
+  const data = await db.readShare(code).catch(() => null);
+  if (!data) return toast('that link no longer opens anything');
+  const p = await db.copyToMe(data.project, data.artifacts || [], data.outputs || []);
+  toast('the shared job is now a copy in your list');
+  await loadProjects();
+  await openJob(p.id);
+}
+
+/* ── keys a person reaches for ────────────────────────────────────── */
+window.addEventListener('keydown', (e) => {
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '');
+  if (e.key === 'Escape' && document.body.dataset.rail === 'open') document.body.dataset.rail = '';
+  if (!typing && e.key === 'n' && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    $('#btn-new-project').click();
+  }
+});
+
+function wireApp() {
+  $('#btn-out').onclick = async () => {
+    await db.signOut();
+    location.reload();
+  };
+}
+
+boot().catch((err) => {
+  console.error(err);
+  $('#gate').hidden = false;
+  msg('#gate-msg', 'could not start: ' + err.message, 'bad');
+});

@@ -21,6 +21,11 @@ Cloudflare Pages project.
 - **vz** — zed, a dictionary, at <https://vz.terg.hr>: a project is a box of
   keys, a value is any text, and a project can be published as a read-only
   service at `/p/<code>`. See `docs/vz.md`.
+- **vd** — documents, at <https://vd.terg.hr>: a job is a pile of inputs and one
+  document you have to write from them, with the model behind one `generate`
+  button. See `docs/vd.md`.
+- **vc** — compliance, at <https://vc.terg.hr>: standards and evidence in, a
+  verdict per control out, counted above the report. See `docs/vc.md`.
 - **api** — the shared proxy at <https://api.terg.hr>: `/chat` (model calls) and
   `/search` (Tavily/Serper evidence). Model APIs send no CORS headers, so the
   call leaves from our own origin.
@@ -37,6 +42,10 @@ in `vi`.
   proof column, what is deliberately not there
 - `docs/vz.md` — why a dictionary, the key that ignores case, hidden values as a
   curtain, and the one project switch that makes a service
+- `docs/vd.md` — the generator's engine, the desk of inputs, and what is
+  deliberately not modelled
+- `docs/vc.md` — two piles, the verdict strip, and why the same engine is worth
+  a second screen
 - `docs/build-notes.md` — why v2 exists, the gotchas, where Google's redirect URL lives
 - `docs/specification.md` — the 0-architecture this is built against
 - `~/.config/vpl/accounts.md` — **outside the repo, mode 600**: project ref, app
@@ -48,9 +57,11 @@ in `vi`.
 
 1. **One table per app, prefixed.** `vn_notes`, `vn_shares`, `vi_projects`,
    `vi_ideas`, `vi_shares`, `vr_projects`, `vr_reqs`, `vr_terms`, `vr_shares`,
-   `vr_themes`, `vr_vocab`, `vr_log`, `vz_projects`, `vz_pairs`, `vz_shares`. An
-   app never writes into another app's table. `vpl_prefix_check()`
-   guards the convention.
+   `vr_themes`, `vr_vocab`, `vr_log`, `vz_projects`, `vz_pairs`, `vz_shares`,
+   `vd_projects`, `vd_artifacts`, `vd_runs`, `vd_outputs`, `vd_shares`,
+   `vc_projects`, `vc_artifacts`, `vc_runs`, `vc_outputs`, `vc_shares`. An
+   app never writes into another app's table. `vpl_prefix_check()` guards the
+   convention.
 2. **Migrations are numbered and re-runnable.** A schema change is a new file in
    `supabase/migrations/`, pushed with
    `cd /home/vergovic/vixen/supabase && npx supabase db push --remote`. Never edit

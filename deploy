@@ -42,7 +42,7 @@ STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 
 [ -f "$SRC/index.html" ] || { echo "missing apps/$APP/index.html" >&2; exit 1; }
-SHIPPED="index.html app.js style.css prompts.js config.local.js _headers"
+SHIPPED="index.html app.js style.css templates.js prompts.js config.local.js _headers"
 for f in $SHIPPED; do
   [ -f "$SRC/$f" ] && cp "$SRC/$f" "$STAGE/"
 done

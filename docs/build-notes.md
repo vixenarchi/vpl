@@ -807,3 +807,58 @@ pressing Enter, typing the next one made two `refresh()` calls, and the older
 answer could paint over the newer one, losing a row on screen. A sequence
 number fixes it — **only the last answer counts** — and it is the kind of thing
 that never shows up in a single-save test, only in a paste or a fast typist.
+
+## vd and vc: one engine, two screens
+
+The generator started as ten months of Java and ended as a metamodel. Party,
+Artifact, Project was a good beginning; universal "transformation" objects, a
+workflow engine and a hundred tables were the end of it. The demo that still
+worked was the first one: **input → transformation → output**, with a picture of
+the inputs on one side and the result on the other.
+
+So the suite now has an engine rather than a platform:
+
+    artifacts ──template + prompt──▶ one call ──▶ one answer you can edit
+
+`packages/shell/engine.js` is that sentence in code: it builds the messages,
+calls the model through our own CORS door, turns a file into text, and caps how
+much of a 200-page tender is sent. It knows nothing about tables. Each app
+injects a prefix and a template pack, which is why `vd` and `vc` are copies of
+the same machine with different desks.
+
+**The anti-design is written down.** An artifact is `kind`, `title`, `text` and
+optionally a file. No artifact graph, no typed relationships, no workflow, no
+universal object. A template that needs structure asks for markdown; the
+database stores one text column. The ten-month version is what happens when a
+data model is allowed to be more interesting than the job.
+
+**The output is a draft, not a record.** It lands in a textarea, it saves itself
+750 ms later, and the previous answer stays as a version row. The model proposes;
+the person keeps. That is the same balloon rule as `vi` and `vr`, with a
+different shape: here the balloon is simply the document.
+
+**`vc` earns its own app because of what a person reads.** A report is not prose;
+it is verdicts. Every finding line starts with `PASS`, `FAIL` or `UNKNOWN`, and
+the strip above the report counts them while you type. Number and word together;
+colour never alone. `UNKNOWN means the evidence was not in the inputs — never a
+guess` is in the template, because an auditor's only real failure is a confident
+pass with nothing behind it.
+
+Two bugs the build found, both worth remembering:
+
+- **a copied migration must be read, not trusted.** `vc` was made by replacing
+  `vd_` with `vc_`, and its storage policies were correctly named `vc_files_*`
+  while still guarding `vd-files`. Uploads went to a bucket that did not exist
+  and the browser only said `400`. The fix is a new timestamped migration that
+  creates `vc-files` and moves its policies; the lesson is that a copied file is
+  a fine starting point and a bad place to stop reading.
+- **a shared job legitimately appears in the guest's rail.** RLS lets a person
+  read a project shared with them, so `listProjects()` returns it. The test that
+  deleted "the copy" and then asserted the rail was empty was wrong about the
+  product, not the other way round. What was missing in the UI was subtler: the
+  rail offered a delete button on a job that was not yours. Now it does not.
+
+The local `./serve` already answers `/api/chat`, so a mock in a test has to
+intercept both `/api/chat` and `https://api.terg.hr/chat` — otherwise the test
+spends its key or fails with the proxy's own words. `**/chat` is the shorter
+route pattern.

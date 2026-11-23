@@ -43,6 +43,14 @@ const ORIGINS = [
   'https://vpl-ae9.pages.dev',
   '.vpl-ae9.pages.dev',
   'https://vpl-vr.pages.dev',
+  'https://vd.terg.hr',
+  'https://vc.terg.hr',
+  'https://vz.terg.hr',
+  'https://vpl-vd.pages.dev',
+  'https://vpl-vc.pages.dev',
+  '.vpl-vd.pages.dev',
+  '.vpl-vc.pages.dev',
+  '.vpl-vz.pages.dev',
   '.vpl-vr.pages.dev',
 ];
 
