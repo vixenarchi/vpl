@@ -240,6 +240,11 @@ fails on a page. So the call leaves from an origin of ours:
   ending in a box list that is plain text — and the same list drawn, with three
   views and a drag that writes `x, y` back into the text.
 
+- **`apps/www`** — the front door: what Terg is, the eight applications with
+  their addresses, the six rules the suite keeps, and one address to write to.
+  Static, no analytics, no cookies, `default-src 'self'`. Deploys with
+  `./deploy www`.
+
 - **`agent/`** — va's other half: a job directory in, `out/report.md` and
   `out/files/` back, `pi` with a shell, a box-list checker, and a Dockerfile.
   No port, no webhook: a browser can never command it. Built and run in the
@@ -280,6 +285,8 @@ apps/vd/                  documents: a desk of inputs and one output
 apps/vc/                  compliance: rules and proofs, a verdict strip
 apps/va/                  architecture: the pile in, the box list out (as text and
                           as a drawing), and an agent with its own account
+apps/www/                 the front door at www.terg.hr: static, no database,
+                          no cookies, the suite's palette and eight addresses
 apps/api/                 the shared proxy (one function, one page)
 packages/shell/tokens.css palette, type scale, page foundation — copied into
                           each app's vendor/ by tools/stage.sh

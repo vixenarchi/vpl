@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terg — software small enough to understand</title>
+<meta name="description" content="Terg builds small, independent applications that share one account and one look: notes, ideas, requirements, a dictionary, documents, compliance, keys and codes, and architecture. No dashboards, no seats, no invoices.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="vendor/tokens.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="site">
+
+<header class="top">
+  <a class="mark" href="/" aria-label="Terg, front page">
+    <span class="mark-glyph" aria-hidden="true">t</span>
+    <span class="mark-word">terg</span>
+  </a>
+  <nav class="top-nav" aria-label="pages">
+    <a href="#suite">the suite</a>
+    <a href="#how">how it is built</a>
+    <a href="faq.html">questions</a>
+    <a href="imprint.html">imprint</a>
+  </nav>
+  <div class="top-acts">
+    <button id="theme" class="ghost" type="button" title="paper, ink or comic">◐</button>
+    <a class="go" href="https://vn.terg.hr/">open the suite <span aria-hidden="true">↗</span></a>
+  </div>
+</header>
+
+<main>
+
+  <section class="hero">
+    <p class="kicker">vpl · vixen productivity light</p>
+    <h1>Software small enough<br>to understand.</h1>
+    <p class="lede">
+      Eight applications, each doing one thing, each on its own address, all
+      signed in with one account. No dashboards, no seats, no invoices, no
+      analytics. You can read every screen in a minute and stop using it the
+      same day without asking anybody.
+    </p>
+    <p class="hero-acts">
+      <a class="go big" href="https://vn.terg.hr/">start with notes <span aria-hidden="true">↗</span></a>
+      <a class="quiet" href="#suite">see all eight</a>
+    </p>
+  </section>
+
+  <section id="suite" class="block">
+    <h2>The suite</h2>
+    <p class="sub">
+      One account, one look, eight separate applications. Nothing is shared
+      between them but your name and the way they are drawn — a note does not
+      become a requirement unless you copy it there yourself.
+    </p>
+
+    <ul class="apps">
+      <li>
+        <a href="https://vn.terg.hr/"><b>vn</b><span class="what">notes</span></a>
+        <p>A tree of notes with a reader. The one everybody starts with.</p>
+        <span class="addr">vn.terg.hr</span>
+      </li>
+      <li>
+        <a href="https://vi.terg.hr/"><b>vi</b><span class="what">ideas</span></a>
+        <p>A wall of sticky notes, a funnel, and a place to park what you are
+          not doing yet.</p>
+        <span class="addr">vi.terg.hr</span>
+      </li>
+      <li>
+        <a href="https://vr.terg.hr/"><b>vr</b><span class="what">requirements</span></a>
+        <p>One sentence per requirement, how hard it is, and where it stands.</p>
+        <span class="addr">vr.terg.hr</span>
+      </li>
+      <li>
+        <a href="https://vz.terg.hr/"><b>vz</b><span class="what">dictionary</span></a>
+        <p>The words your project uses, defined once, so nobody argues about
+          them twice.</p>
+        <span class="addr">vz.terg.hr</span>
+      </li>
+      <li>
+        <a href="https://vd.terg.hr/"><b>vd</b><span class="what">documents</span></a>
+        <p>A pile in, a document out, and every version of it kept.</p>
+        <span class="addr">vd.terg.hr</span>
+      </li>
+      <li>
+        <a href="https://vc.terg.hr/"><b>vc</b><span class="what">compliance</span></a>
+        <p>A control list checked line by line against evidence — a draft an
+          auditor signs, not a certificate.</p>
+        <span class="addr">vc.terg.hr</span>
+      </li>
+      <li>
+        <a href="https://vp.terg.hr/"><b>vp</b><span class="what">keys &amp; codes</span></a>
+        <p>One credit is one call, whatever its size. Codes and keys shown once,
+          never again.</p>
+        <span class="addr">vp.terg.hr</span>
+      </li>
+      <li>
+        <a href="https://va.terg.hr/"><b>va</b><span class="what">architecture</span></a>
+        <p>The pile in, a box list out — as text, as a drawing, or handed to an
+          agent that already has an account.</p>
+        <span class="addr">va.terg.hr</span>
+      </li>
+    </ul>
+  </section>
+
+  <section id="how" class="block">
+    <h2>How it is built</h2>
+    <p class="sub">Six rules, kept because breaking them is how software gets fat.</p>
+    <ol class="rules">
+      <li><b>One account for the whole suite.</b> Sign in once at any address and
+        you are in all eight. Names ignore case; passwords never do.</li>
+      <li><b>No bundler, no framework.</b> A page is HTML, a stylesheet and a
+        script, served from a CDN. There is nothing to compile and nothing to
+        keep warm.</li>
+      <li><b>Text is the truth.</b> A diagram is a list of boxes in the document;
+        the canvas edits the text. Notes, requirements and controls are markdown,
+        so nothing is locked in a shape only we can read.</li>
+      <li><b>The model proposes; a person decides.</b> Nothing a model writes
+        lands in a field on its own. It arrives in a speech balloon and waits for
+        a button.</li>
+      <li><b>Zero euro to start.</b> The free tiers of a CDN and a database, and
+        your own model key. There is no plan to upgrade to.</li>
+      <li><b>No tracking.</b> No analytics, no consent banner, no third-party
+        scripts. What you write is stored so you can read it back, and deleting
+        your account deletes it.</li>
+    </ol>
+  </section>
+
+  <section class="block split">
+    <div>
+      <h2>Who it is for</h2>
+      <p>People who write things down for a living and are tired of tools that
+        grow a dashboard every quarter: architects, analysts, auditors, small
+        teams with one project and no administrator.</p>
+      <p>If you need roles, seats, single sign-on and an invoice in three
+        currencies, this is not it — and that is on purpose.</p>
+    </div>
+    <div>
+      <h2>What it costs</h2>
+      <p>Nothing to start. The suite runs on free tiers; you bring a model key
+        for the parts that use one, and <b>vp</b> sells credits if you would
+        rather not bring your own.</p>
+      <p class="fine">No analytics on this page, so we cannot tell you how many
+        people read it. That is the trade.</p>
+    </div>
+  </section>
+
+  <section class="block ask">
+    <h2>Write to us</h2>
+    <p>Questions, a bug, or a project that needs someone who has done this
+      before. One address, answered by a person.</p>
+    <p class="mail"><a href="mailto:info@terg.hr">info@terg.hr</a></p>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p class="foot-mark"><span aria-hidden="true">t</span> Terg</p>
+  <nav aria-label="footer">
+    <a href="https://vn.terg.hr/">vn</a>
+    <a href="https://vi.terg.hr/">vi</a>
+    <a href="https://vr.terg.hr/">vr</a>
+    <a href="https://vz.terg.hr/">vz</a>
+    <a href="https://vd.terg.hr/">vd</a>
+    <a href="https://vc.terg.hr/">vc</a>
+    <a href="https://vp.terg.hr/">vp</a>
+    <a href="https://va.terg.hr/">va</a>
+  </nav>
+  <p class="foot-fine">
+    <a href="faq.html">questions</a> · <a href="imprint.html">imprint</a> ·
+    <a href="privacy.html">privacy</a> · <a href="mailto:info@terg.hr">info@terg.hr</a>
+  </p>
+</footer>
+
+<script type="module" src="site.js"></script>
+</body>
+</html>

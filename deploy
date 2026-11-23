@@ -42,19 +42,20 @@ STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 
 [ -f "$SRC/index.html" ] || { echo "missing apps/$APP/index.html" >&2; exit 1; }
-SHIPPED="index.html app.js style.css templates.js prompts.js config.local.js _headers"
-for f in $SHIPPED; do
-  [ -f "$SRC/$f" ] && cp "$SRC/$f" "$STAGE/"
-done
-for d in lib icons vendor functions; do
-  [ -d "$SRC/$d" ] && cp -r "$SRC/$d" "$STAGE/"
-done
-# a file at the app root that is not on that list simply does not ship, and a
-# 404 for a module looks exactly like a bug in the app. Say it out loud.
-for f in "$SRC"/*; do
+# An app is its files. Everything at the app root ships, except the things that
+# are notes for a person rather than bytes for a browser — and a file left out by
+# accident is a 404 that looks exactly like a bug in the app, so say it out loud.
+for f in "$SRC"/* "$SRC"/.[!.]*; do
   [ -f "$f" ] || continue
   b=$(basename "$f")
-  case " $SHIPPED " in *" $b "*) ;; *) echo "note: not shipped from the app root: $b" ;; esac
+  case "$b" in
+    *.md|*.env|config.local.js.example) echo "note: kept out of the deploy: $b"; continue ;;
+    .*) [ "$b" = ".well-known" ] || { echo "note: kept out of the deploy: $b"; continue; } ;;
+  esac
+  cp "$f" "$STAGE/"
+done
+for d in lib icons vendor functions assets img; do
+  [ -d "$SRC/$d" ] && cp -r "$SRC/$d" "$STAGE/"
 done
 
 # the anon key is public on purpose — RLS is the lock, not the key. But a

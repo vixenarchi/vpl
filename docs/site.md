@@ -1,4 +1,8 @@
-# www.terg.hr — the front door (not built yet)
+# www.terg.hr — the front door
+
+> **Built (step 1–3 of the order below).** `apps/www`, Pages project `vpl-www`,
+> hostname `www.terg.hr` attached. What exists, what it promises and what is
+> still the owner's work is in `docs/www.md`.
 
 The suite is four apps and an API, each reachable at its own address and each
 knowing nothing about the others. **This is the one page that knows the whole
