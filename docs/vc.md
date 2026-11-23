@@ -56,6 +56,16 @@ text, versions are kept per run, print prints the whole report.
 - A phone stacks the two piles above the report and the strip wraps to two lines;
   nothing scrolls sideways.
 
+## Next: library, links, batches
+
+Agreed and deliberately not built yet — see `docs/vc-next.md`. In short: a
+library of standards on the account (`vc_standards`, copied into a check so a
+report stays reproducible), PDF upload and a link field (both sources we tried
+send no CORS headers, so a link needs a fetch door with an allowlist; otherwise
+the sentence is "download the PDF and drop it here"), and bulk as a queue of
+independent targets (`vc_targets`) with one report each and verdict counts on
+the row, capped at 50.
+
 ## What is not here
 
 - No control catalogue in the database, no framework IDs, no scoring, no

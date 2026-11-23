@@ -46,6 +46,8 @@ in `vi`.
   deliberately not modelled
 - `docs/vc.md` — two piles, the verdict strip, and why the same engine is worth
   a second screen
+- `docs/vc-next.md` — what comes next in vc, agreed and not built: the library of
+  standards, a link/PDF door, and bulk checks as a queue
 - `docs/build-notes.md` — why v2 exists, the gotchas, where Google's redirect URL lives
 - `docs/specification.md` — the 0-architecture this is built against
 - `~/.config/vpl/accounts.md` — **outside the repo, mode 600**: project ref, app
