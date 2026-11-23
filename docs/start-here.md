@@ -26,9 +26,14 @@ Cloudflare Pages project.
   button. See `docs/vd.md`.
 - **vc** — compliance, at <https://vc.terg.hr>: standards and evidence in, a
   verdict per control out, counted above the report. See `docs/vc.md`.
-- **api** — the shared proxy at <https://api.terg.hr>: `/chat` (model calls) and
-  `/search` (Tavily/Serper evidence). Model APIs send no CORS headers, so the
-  call leaves from our own origin.
+- **vp** — keys and codes, at <https://vp.terg.hr>: one model key saved on the
+  account and adopted by every browser; a code is a slip with calls and an
+  expiry, redeemed into a key that spends the issuer's model through
+  `/vp`. See `docs/vp.md`.
+- **api** — the shared proxy at <https://api.terg.hr>: `/chat` (model calls),
+  `/search` (Tavily/Serper evidence) and `/vp` (the door that spends a code's
+  issuer key). Model APIs send no CORS headers, so the call leaves from our own
+  origin.
 
 There is no bundler, no framework, no build step. `index.html`, `app.js`,
 `style.css`, `lib/*.js`, two CDN libraries (supabase-js, DOMPurify), Google Fonts
@@ -48,6 +53,10 @@ in `vi`.
   a second screen
 - `docs/vc-next.md` — what comes next in vc, agreed and not built: the library of
   standards, a link/PDF door, and bulk checks as a queue
+- `docs/vp.md` — the key of record, codes with calls and an expiry, the door,
+  and the service-role key that comes with it
+- `docs/unify.md` — the bar, settings, gate texts and share dialog, written down
+  as one unification job for later
 - `docs/build-notes.md` — why v2 exists, the gotchas, where Google's redirect URL lives
 - `docs/specification.md` — the 0-architecture this is built against
 - `~/.config/vpl/accounts.md` — **outside the repo, mode 600**: project ref, app
@@ -61,11 +70,11 @@ in `vi`.
    `vi_ideas`, `vi_shares`, `vr_projects`, `vr_reqs`, `vr_terms`, `vr_shares`,
    `vr_themes`, `vr_vocab`, `vr_log`, `vz_projects`, `vz_pairs`, `vz_shares`,
    `vd_projects`, `vd_artifacts`, `vd_runs`, `vd_outputs`, `vd_shares`,
-   `vc_projects`, `vc_artifacts`, `vc_runs`, `vc_outputs`, `vc_shares`, and the
-   one row that is deliberately not per app: **`vpl_ai`**, the key of record, a
-   person's own model key that every app may read and nobody else can. An app
-   never writes into another app's table. `vpl_prefix_check()` guards the
-   convention.
+   `vc_projects`, `vc_artifacts`, `vc_runs`, `vc_outputs`, `vc_shares`,
+   `vp_codes`, `vp_keys`, `vp_charges`, and the one row that is deliberately not
+   per app: **`vpl_ai`**, the key of record, a person's own model key that every
+   app may read and nobody else can. An app never writes into another app's
+   table. `vpl_prefix_check()` guards the convention.
 2. **Migrations are numbered and re-runnable.** A schema change is a new file in
    `supabase/migrations/`, pushed with
    `cd /home/vergovic/vixen/supabase && npx supabase db push --remote`. Never edit
@@ -154,17 +163,13 @@ it deletes the project it made and the copy a guest took of it.
 
 Two things, both on the same pattern and neither a new architecture:
 
-- **`vp`, stage 2** (`docs/vp.md`). Stage 1 shipped: one model key saved on the
-  account (`vpl_ai`) is adopted by every app, on every address, in every new
-  browser. Stage 2 is the proxy with credits and top-up codes — the codes are
-  for other people, so it will come; it is the first thing in the suite that
-  would hold a server-side secret, hence not yet.
-- **a few more apps.** Each one is a folder, one prefixed table set, one Pages
+- **more apps.** Each one is a folder, one prefixed table set, one Pages
   project, one subdomain, one `docs/<app>.md`, one `<app>-check.mjs`. The rule
   for accepting a new app is not "is it useful" but **"does it have one
   sentence the interface can hold"** — vn holds a tree, vi holds a funnel, vr
-  holds a sheet, vz holds a dictionary. An app whose sentence is a paragraph
-  will be a paragraph of interface.
+  holds a sheet, vz holds a dictionary, vd holds a desk, vc holds a verdict
+  strip, vp holds a drawer of slips. An app whose sentence is a paragraph will
+  be a paragraph of interface.
 - **`www.terg.hr`, the front door.** Not an app: a static site with no table,
   no login and no dashboard, pushed like everything else. Three product lines
   (vpl, eva, consulting), the organization and its imprint, marketing copy, an

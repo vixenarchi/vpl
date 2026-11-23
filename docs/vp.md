@@ -1,136 +1,145 @@
 # vp · keys, codes and the door
 
-Not built. This is the design, written before the code, so the week it is built
-does not invent a second design.
+At https://vp.terg.hr (production: Pages project `vpl-vp`).
 
-## The sentence
+Two halves that share one table:
 
-*"One key in your profile; every app spends it; a code you hand out has credits
-and an expiry."*
+1. **a key of record** — one model key saved on the account (`vpl_ai`), adopted
+   by every app, on every address, in every browser.
+2. **codes and the door** — a code is a slip: *N calls, valid until a date*.
+   Redeeming it gives a person a key of their own (`vp_…`). Their apps use that
+   key against `https://api.terg.hr/vp`, which spends **the issuer's** provider
+   key, one credit per call.
 
-Two halves, and they are different sizes:
+The sentence: *one key in your profile; every app spends it; a code you hand out
+has calls and an expiry.*
 
-1. **A key of record, per person.** Today a model key is pasted into every
-   browser, on every address: five apps, two browsers, three accounts. It should
-   be pasted **once**, and follow the account.
-2. **Codes with validity and credits** — the telecom top-up slip: a short code,
-   N credits, valid until a date. Redeem it once and your calls spend it. This
-   is for handing access to somebody else (a client, a colleague, a demo)
-   without handing over a provider key.
-
-## Stage 1 — a key of record: shipped
-
-`20261201000000_vpl_ai.sql` adds the table, its four owner-only policies and the
-trigger that stamps `updated_at`; `packages/shell/ai.js` adds the four calls
-(`accountAi`, `saveAccountAi`, `forgetAccountAi`, `adoptAccountAi`) and the three
-buttons. `apps/vn/test/key-check.mjs` (22 checks) proves adoption across two
-origins and that a guest — and a bare anon key — sees nothing.
-
-That migration also **fixed an old bug while passing through**: the vc migration
-had been copied from vd and purged `vc_` twice, so deleting an account left its
-`vd_` jobs behind. `vpl_delete_my_account()` now deletes both, plus the key.
-
-## Stage 1 — the design, as written before the code
+## The tables
 
 ```
-vpl_ai
-  user_id uuid primary key references auth.users,
-  url text, model text, key text,        -- the person's own key
-  updated_at timestamptz
+vpl_ai      user_id, url, model, api_key, updated_at        one row per person
+vp_codes    owner_id, code_hash, label, credits, valid_until,
+            revoked, redeemed_by, redeemed_at                the slip
+vp_keys     code_id, owner_id, holder_id, key_hash, label,
+            credits_left, valid_until, calls, revoked,
+            last_used_at                                     what a slip becomes
+vp_charges  key_id, app, model, in_tokens, out_tokens, ms,
+            status, created_at                               the ledger
 ```
 
-- RLS: `user_id = auth.uid()`, select/insert/update own. No shares, no
-  service-role reader.
-- Every app's settings dialog gains one sentence: **"use my vpl key"** when
-  signed in (it fetches the row and copies it into this browser's
-  `localStorage['vpl.ai']`), and the old **"paste a key for this browser"**
-  stays as the fallback. The apps do not change otherwise: the call still
-  leaves from the browser, the key still goes only to the provider.
-- What this buys: one paste per account instead of one per address per browser.
-  What it costs: the key now sits in the database, protected by RLS and a
-  password — the same trust as the notes themselves. Nothing else changes.
-- What it does **not** buy: no proxy, no credits, no logging, no codes. It is a
-  drawer, not a service.
+`vpl_ai` is the only table without an app prefix: it is the one thing every app
+may read, and nobody else can read any of it.
 
-## Stage 2 — codes, credits and the proxy (the actual vp)
+**Nothing in the database can reprint a code or a key.** Both are stored as
+`sha256` hex; the plaintext exists once, in the answer to `vp_make_codes` /
+`vp_redeem`, on the screen. Same rule as share links.
 
-This is the part that needs a secret and a ledger.
+## The door
 
 ```
-vp_codes
-  id, owner_id, code_hash, label, credits int, valid_until date,
-  max_calls int, models text[], revoked bool, redeemed_by uuid, redeemed_at,
-  created_at
-
-vp_keys                      -- what a redeemed code becomes: a key to use
-  id, owner_id, code_id, label, key_hash, credits_left, valid_until,
-  models text[], calls int, created_at, last_used_at
-
-vp_charges                   -- one row per proxied call: the ledger
-  id, key_id, app text, model text, in_tokens int, out_tokens int,
-  ms int, status int, created_at
+POST https://api.terg.hr/vp
+Authorization: Bearer vp_…
+{ model, messages, max_tokens?, temperature? }
 ```
 
-- **The code is shown once, stored hashed.** Same rule as share links: the
-  person prints the slip; the database cannot reprint it.
-- **The ledger is a Postgres function, not app logic.** `vp_charge(key, ...)`
-  checks `credits_left > 0` and `valid_until >= today` under `for update`, then
-  decrements and inserts the charge. Two calls at once cannot both pass when
-  one credit is left.
-- **The proxy reads the key by hash and injects the provider key.** The caller
-  sends `vp_...`, the function looks up the row, finds the owner's `vpl_ai` row,
-  and calls the provider. The provider key never reaches the browser of the
-  person who redeemed a code.
-- **Filter, before spending:** model allowlist on the key, a per-call output cap,
-  no streaming, no images, and a per-key daily call cap. A shared key that can
-  do everything is an open relay with a bill.
-- **Logging is metadata only.** App, model, tokens, milliseconds, status. No
-  prompt text, no answer text, no IP. A user's screen answers "where did my
-  credits go", not "what did they ask".
-- **Price per model is a table, not a guess.** Tokens × price per model, rounded
-  up to the credit. A model that is not in the table cannot be spent.
+- Apps build their endpoint by appending `/v1/chat/completions` to the base
+  address they are given, so `/vp/v1/chat/completions` is the same door
+  (`apps/api/functions/vp/[[path]].js`).
+- The provider's answer is passed back as it arrived, with
+  `X-Vpl-Credits` and `X-Vpl-Calls` on the response.
+- The model actually used is **the issuer's**, not the caller's guess; the
+  `model` in the request is only a name the app shows.
+- Only hosts on `ALLOWED` in `apps/api/functions/vp.js` are forwarded to, and
+  only origins on `ORIGINS` may call it — both lists live in the one file, and
+  the file is short enough to read in a sitting.
 
-## What changes in trust (say it out loud)
+Refusals, in sentences a person can act on:
 
-- Stage 2 needs the **service-role key** in the Pages environment of `api`: the
-  proxy must read `vpl_ai` to spend somebody's key. That is the largest secret
-  the suite has ever held. The function that holds it must stay small enough to
-  read in one sitting, and everything else keeps using the anon key.
-- The person's provider key becomes a **server-side secret**. RLS protects it
-  from other users; it does not protect it from us. That is a real change from
-  "the key never leaves your browser", and the settings dialog must say so in
-  the same sentence that offers the convenience.
-- Codes make us a **billing surface** the day credits have a price. They do not
-  have one here: credits are units of a key's allowance, not money. If money
-  ever enters, vp stops being this app.
+- `401 use a vp key here, not a provider key`
+- `403 that key is not one of ours` / `that key was revoked` / `that key is out
+  of calls` / `that key expired on 31 Mar 2027`
+- `403 the person who made this code has no model key saved`
+- `403 the issuer's address … is not one this door forwards to`
 
-## Refusals
+## The rules that keep it a drawer and not a billing system
 
-- No teams, no organisation seats, no invoicing, no tax, no refunds.
-- No per-request billing reconciliation, no provider webhooks, no cost
-  dashboards. The ledger is a list; the number at the top is the remainder.
-- No key rotation, no scopes beyond "which models", no IP allowlists.
-- No UI for the codes beyond: generate N, show them once, print the slip,
-  revoke. A redeemed code is visible as a line in the owner's list.
+- **One credit = one call**, whatever its size. Tokens are logged for
+  information, never priced. A price table would make this an invoice.
+- **Spend before the call, settle after.** `vp_spend` locks the key row
+  (`for update`), refuses when out of calls, decrements and hands back the
+  issuer's key. Two parallel calls cannot both pass when one credit is left.
+- **A failed call gives the credit back.** `vp_settle` writes the charge with
+  the upstream status; status ≥ 400 refunds one credit. The provider's outage is
+  not the holder's fault.
+- **The ledger holds metadata only** — app, model, tokens, milliseconds, status.
+  No prompt, no answer, no address.
+- **Codes are one-time.** A redeemed code says when it was taken and by whom;
+  the slip is spent even if the key is later revoked.
+- **A person needs an account to redeem**, so the calls are theirs and the
+  ledger can show them.
 
-## The screen (one page, three rows)
+## What this costs in trust, said plainly
 
-- **your key** — url, model, key, saved once; "saved" is a sentence, not a
-  toast.
-- **codes** — `make 5 codes · 100 calls · until 31.12.`, a list with the label,
-  the remainder and the expiry; `print` prints the slips.
-- **activity** — the last 50 charges: when, which app, which model, how many
-  credits, ok or not.
+`vp_spend` and `vp_settle` are `service_role` only, and the proxy holds the
+**service-role key** in `vpl-api`'s environment
+(`wrangler pages secret put SUPABASE_SERVICE_KEY --project-name vpl-api`). That
+is the largest secret in the suite: it can read every table. The function that
+holds it is one file, it does one job, and it never echoes the provider key.
 
-## Order
+The provider key itself becomes a server-side secret for the duration of the
+call. That is the price of the convenience, and it is why stage 1 (a key of
+record, no proxy) was built and used first.
 
-Stage 1 is an afternoon and can ship before `va`. Stage 2 is a week and should
-not ship before stage 1 has been used for a while — the first week of use tells
-you whether codes are for other people or only for you, and if it is only for
-you, stage 2 is a very expensive way to avoid one paste.
+## The screen
 
-## When it is built
+One page, five cards, no navigation:
 
-`vp.terg.hr` (static, one screen, one table set), plus `api.terg.hr/vp` as the
-door. Tables `vpl_ai`, `vp_codes`, `vp_keys`, `vp_charges` — the shared `vpl_`
-prefix is deliberate: this is the one thing every app may read.
+- **make codes** — how many, calls each, until when, a label. The slips appear
+  once; `copy all` and `print the slips` are there because a slip is a thing you
+  hand over. If there is no model key on the account, a warning says so before
+  you make codes that would be refused.
+- **codes you made** — label, calls, expiry, and whether it is `waiting`,
+  `taken 3 Nov 2026` or `revoked`; `revoke` stops a slip before it is used.
+- **use a code** — paste it, and the page answers with the address, the model
+  and the key, plus **use it in this browser** (writes `vpl.ai` with the door as
+  the address, so every app on this origin uses it at once).
+- **keys** — everything held or given out: calls left, expiry, calls used,
+  `yours` / `given out` / `spent` / `revoked`.
+- **what was spent** — the last fifty charges: model, tokens, milliseconds,
+  `answered` or `refused 402`.
+
+## Limits
+
+- **50 codes at a time**, at least one call each, expiry can be empty
+  ("no expiry") and cannot be in the past.
+- **Calls are not parallel-managed**: each key's allowance is enforced per call,
+  so two apps using the same key at the same moment simply spend two credits.
+- **No streaming, no images**, `max_tokens` capped at 4096 in the door.
+- **Codes are for people, not machines**: no API for making codes, no webhooks.
+
+## Tests
+
+```
+PORT=8106 OAUTH_PORT=0 ./serve vp
+cd apps/vn/test && VP_URL=http://127.0.0.1:8106 node vp-check.mjs   # 33
+node vp-proxy.mjs                                                   # 18
+```
+
+`vp-check` proves the drawer end to end with two accounts: slips are shown once,
+the database holds only hashes, a guest takes a code and gets the door, the door
+refuses a provider key (401), a foreign key (403), and answers CORS; revoking is
+visible to both sides; a used code and a made-up code each get a sentence.
+`vp-proxy` runs the real function with both ends faked, so the success path —
+the issuer's model, the credit cap, the ledger row, the refund on 503, the
+refusal to forward off-list — is proven without spending anything.
+
+## Not built, and refused on purpose
+
+- credit prices, money, invoices, refunds, reconciliation against provider bills;
+- teams, seats, organisations, national scope;
+- per-request rate limits beyond the allowance itself;
+- key rotation, IP allowlists, usage charts, dashboards;
+- a code that can be read again (the slip is the record).
+
+The reason is the same as everywhere in this suite: the moment credits have a
+price, vp stops being this app.

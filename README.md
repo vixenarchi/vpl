@@ -18,6 +18,10 @@ A suite of small, independent apps that share one look and one signed-in person.
 - **vc** — compliance: rules and proofs in, one verdict per control out, with
   the evidence quoted and the count above the report.
   At https://vc.terg.hr — see `docs/vc.md`
+- **vp** — a key drawer: one model key saved on the account, and codes with
+  calls and an expiry you hand to other people. Their calls go through
+  https://api.terg.hr/vp and spend the issuer's key, one credit a call.
+  At https://vp.terg.hr — see `docs/vp.md`
 - **api** — the suite's one CORS door to a model endpoint, at
   https://api.terg.hr
 
@@ -210,7 +214,7 @@ New changes go beside it as new files; that one is never edited again.
 ./deploy api            # the proxy
 ```
 
-One Pages project per app (`vpl`, `vpl-vi`, `vpl-vr`, `vpl-vz`, `vpl-vd`, `vpl-vc`, `vpl-api`), one custom domain per
+One Pages project per app (`vpl`, `vpl-vi`, `vpl-vr`, `vpl-vz`, `vpl-vd`, `vpl-vc`, `vpl-vp`, `vpl-api`), one custom domain per
 project. Deploying one app never touches another; the free plan's 500 builds a
 month is shared, so `./deploy vn` only ships `vn`.
 
@@ -219,7 +223,7 @@ really signed in (it exits 0 when it is not, so the script reads its output),
 and refuses to publish a `service_role` key. A code change ships with
 `./deploy`; a database change ships as a new migration. Nothing else ships.
 
-One Pages project per app, named in `deploy` (`vpl` for vn, `vpl-vi`, `vpl-vr`, `vpl-vz`, `vpl-vd`, `vpl-vc`, `vpl-api`);
+One Pages project per app, named in `deploy` (`vpl` for vn, `vpl-vi`, `vpl-vr`, `vpl-vz`, `vpl-vd`, `vpl-vc`, `vpl-vp`, `vpl-api`);
 override with `PROJECT=… ./deploy vn`. The custom domain is a CNAME to
 `<project>.pages.dev`, added once in the Cloudflare dashboard and once as the
 project's custom domain. In Supabase, Site URL and the redirect urls must name
@@ -329,10 +333,15 @@ VD_URL=http://127.0.0.1:8104 node vd-check.mjs    # 40 checks (inputs, file to t
 PORT=8105 ./serve vc in another shell, then:
 VC_URL=http://127.0.0.1:8105 node vc-check.mjs    # 34 checks (two piles, verdict strip, edits,
                                                   #   guest link, phone)
+
+PORT=8106 ./serve vp in another shell, then:
+VP_URL=http://127.0.0.1:8106 node vp-check.mjs    # 33 checks (slips, taking one, the ledger,
+                                                  #   the door's refusals, revoking)
+node vp-proxy.mjs                                 # 18 checks (the door's logic, both ends faked)
 ```
 
 or a whole app at once, server and all: `tools/test-vr.sh`, `tools/test-vz.sh`,
-`tools/test-vd.sh`, `tools/test-vc.sh`
+`tools/test-vd.sh`, `tools/test-vc.sh`, `tools/test-vp.sh`
 (`VR_URL=https://vpl-vr.pages.dev tools/test-vr.sh` against production).
 
 `vr-share.mjs` needs a second account (`vpl-guest@terg.hr`); it creates it if it

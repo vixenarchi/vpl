@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="hr" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vp</title>
+<link rel="icon" href="icons/vp.svg" type="image/svg+xml">
+<link rel="stylesheet" href="vendor/tokens.css">
+<link rel="stylesheet" href="style.css">
+<script>
+  try {
+    const t = localStorage.getItem('vpl.theme');
+    if (t) document.documentElement.dataset.theme = t;
+  } catch {}
+</script>
+</head>
+<body>
+
+<!-- ── the gate ───────────────────────────────────────────────────── -->
+<section id="gate" class="gate">
+  <div class="gate-box">
+    <h1 class="gate-mark">vp</h1>
+    <p class="gate-line">keys, codes and the door.</p>
+
+    <form id="gate-form" autocomplete="on">
+      <label for="email">e-mail or name</label>
+      <input id="email" name="email" type="text" autocapitalize="none" spellcheck="false"
+             autocomplete="username" placeholder="ime or ime@primjer.hr">
+      <label for="pass">password</label>
+      <input id="pass" name="password" type="password" autocomplete="current-password">
+      <p id="gate-msg" class="msg" aria-live="polite"></p>
+      <div class="gate-row">
+        <button id="btn-login" class="primary" type="submit">sign in</button>
+        <button id="btn-register" class="ghost" type="button">make an account</button>
+      </div>
+    </form>
+
+    <p class="gate-foot">
+      the same account works in every app of the suite.
+      <button id="gate-theme" class="link" type="button">light or dark</button>
+    </p>
+  </div>
+</section>
+
+<!-- ── the drawer ─────────────────────────────────────────────────── -->
+<div id="app" hidden>
+  <header class="bar">
+    <span class="mark">vp</span>
+    <span class="crumb" id="crumb">keys, codes and the door</span>
+    <span class="grow"></span>
+    <span id="who" class="who"></span>
+    <button id="btn-theme" class="icon" type="button" title="light or dark">◐</button>
+    <button id="btn-out" class="icon" type="button" title="sign out">out</button>
+  </header>
+
+  <main class="desk">
+
+    <!-- a code to give away -->
+    <section class="card">
+      <h2>make codes</h2>
+      <p class="lede">a code is a slip: one call off it per use of any app.
+        you see it once — after that only its shadow is in the database.</p>
+
+      <p id="key-warn" class="warn" hidden>
+        no model key on your account, so a code you make now would be refused at the
+        door. save one in any app's <strong>⚙</strong> settings — “save to my account” — and
+        come back.
+      </p>
+
+      <div class="form-row">
+        <label for="mk-count">codes</label>
+        <input id="mk-count" type="number" min="1" max="50" step="1" value="3">
+        <label for="mk-credits">calls each</label>
+        <input id="mk-credits" type="number" min="1" step="1" value="100">
+        <label for="mk-until">until</label>
+        <input id="mk-until" type="date">
+        <label for="mk-label">label</label>
+        <input id="mk-label" type="text" placeholder="for whom" maxlength="40">
+      </div>
+      <div class="form-foot">
+        <button id="mk-go" class="primary" type="button">make the slips</button>
+        <span id="mk-msg" class="msg" aria-live="polite"></span>
+      </div>
+
+      <div id="slips" class="slips" hidden>
+        <p class="slips-lede">these exist only here. copy them now.</p>
+        <ul id="slip-list"></ul>
+        <div class="form-foot">
+          <button id="slips-copy" class="ghost" type="button">copy all</button>
+          <button id="slips-print" class="ghost" type="button">print the slips</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- the codes already made -->
+    <section class="card">
+      <h2>codes you made</h2>
+      <p id="codes-none" class="none">nothing yet.</p>
+      <ul id="codes" class="rows"></ul>
+    </section>
+
+    <!-- redeeming -->
+    <section class="card">
+      <h2>use a code</h2>
+      <p class="lede">paste the code somebody gave you. it becomes a key you can
+        put into any app of the suite instead of a provider key.</p>
+      <div class="form-row">
+        <input id="rd-code" type="text" spellcheck="false" autocapitalize="none"
+               placeholder="vpc_…" class="wide">
+      </div>
+      <div class="form-foot">
+        <button id="rd-go" class="primary" type="button">take it</button>
+        <span id="rd-msg" class="msg" aria-live="polite"></span>
+      </div>
+
+      <div id="rd-out" class="redeemed" hidden>
+        <p class="slips-lede">the door, the model, and your key:</p>
+        <dl class="kv">
+          <dt>address</dt><dd id="rd-url"></dd>
+          <dt>model</dt><dd id="rd-model"></dd>
+          <dt>key</dt><dd id="rd-key" class="mono"></dd>
+        </dl>
+        <div class="form-foot">
+          <button id="rd-use" class="primary" type="button">use it in this browser</button>
+          <button id="rd-copy" class="ghost" type="button">copy the key</button>
+          <span id="rd-use-msg" class="msg" aria-live="polite"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- keys in hand -->
+    <section class="card">
+      <h2>keys</h2>
+      <p id="keys-none" class="none">no keys yet.</p>
+      <ul id="keys" class="rows"></ul>
+    </section>
+
+    <!-- the ledger -->
+    <section class="card">
+      <h2>what was spent</h2>
+      <p id="spent-none" class="none">no calls yet.</p>
+      <ul id="charges" class="rows small"></ul>
+    </section>
+
+  </main>
+
+  <pre id="print-slips" class="print-only"></pre>
+  <div id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script src="config.local.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

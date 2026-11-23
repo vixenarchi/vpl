@@ -904,3 +904,54 @@ Stage 2 is still not built, and the reason is in `docs/vp.md`: it needs the
 service-role key in the proxy's environment, which is the largest secret this
 suite would hold. The answer to "save me one paste" did not need it. The answer
 to "give my colleague fifty tries until March" will.
+
+---
+
+## vp, stage 2: a slip with calls on it
+
+A code is the oldest idea in telecommunications: a thing you hand over, which
+has an amount and an expiry and can be used once. Nothing about it needs a
+subscription, a plan, a seat or a price — only a ledger.
+
+So: `vp_codes` (the slip), `vp_keys` (what it becomes), `vp_charges` (what was
+spent), and the door. Three tables, one page, no invoices.
+
+**The order is the design.** Spend a credit before calling the provider, settle
+after. Spending first means two parallel calls cannot both pass when one credit
+is left; settling after means a provider outage gives the credit back. Both live
+in Postgres under `for update`, not in the Function, so the rule survives a
+retry, a double tap or two apps at once.
+
+**One credit is one call**, whatever its size. The obvious alternative — price
+per token — needs a price table per model, and a price table is the first page
+of a billing system. Tokens are still logged, because a person wants to know how
+much of a code went on one long report, but they are numbers, not money.
+
+**A code is shown once and stored hashed.** The same promise as a share link: the
+database cannot reprint it, so a stolen database is not a stolen set of codes.
+Same for the key the code becomes.
+
+**The door is one file because of what it holds.** `vp_spend` is the only
+function in the suite that can read somebody else's provider key, so it is
+`service_role` only, `vp_settle` too, and the Function that calls them sits in
+`apps/api/functions/vp.js` where it can be read in one sitting. It refuses any
+provider host that is not on the same allowlist `chat.js` uses.
+
+**A path nobody asked for.** Apps build an endpoint by appending
+`/v1/chat/completions` to the base address a person pasted, so a vp key's base
+address — `https://api.terg.hr/vp` — arrives as `/vp/v1/chat/completions`.
+`functions/vp/[[path]].js` exists for that one sentence, and for nothing else.
+
+**Two warnings that were worth adding.** The page says, before you make codes,
+that an account without a model key will have its codes refused at the door; and
+the door says, in the refusal, whether a key is out of calls, expired, revoked,
+or its issuer has no key — four different sentences, because "403" is not an
+answer a person can act on.
+
+**What is not tested, and why.** The success path is proven with the function's
+real code and both ends faked (`vp-proxy.mjs`, 18 checks): the issuer's model,
+the cap on `max_tokens`, the ledger row, the refund on 503, the refusal to
+forward off-list, and that the provider key never appears in the caller's
+answer. One thing remains unproven by us: a real paid call through the door,
+because that needs a real provider key on an account. The moment somebody saves
+one at `⚙`, the whole chain is live.
