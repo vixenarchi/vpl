@@ -293,3 +293,48 @@ body.dock-fixed { padding-bottom: calc(var(--dock-h) + 1px); }
   width: 1.8rem; height: 1.8rem; border-radius: 50%; cursor: pointer;
 }
 .gate { position: relative; }
+
+/* ── a control has to be hittable ─────────────────────────────────────
+ * Measured, not guessed: ux-sniff found bar buttons at 28px and a dialog's ✕
+ * at 20×24. A mouse forgives 20px; a thumb does not. Every tappable thing in
+ * the suite now keeps a floor, and the floor grows on a phone. Nothing is
+ * centred that was not centred before. */
+button.icon, a.icon, .dialog-x, .corner-theme {
+  min-width: 1.9rem; min-height: 1.9rem;
+  display: inline-grid; place-items: center;
+}
+@media (max-width: 640px) {
+  button.icon, a.icon, .dialog-x, .corner-theme { min-width: 2.4rem; min-height: 2.4rem; }
+  .bar { height: 3.1rem; }
+}
+
+/* Small tools — the delete, the page arrow, the "show values" — are used with a
+ * thumb as often as with a mouse. Same floor as the icons, and the same floor
+ * for the brand link, whose only clickable pixels used to be the letter itself. */
+.kill, .d-close, .pager button, .bar .brand, .views .view, .dock-x, .dock-badge {
+  min-width: 1.9rem; min-height: 1.9rem;
+  display: inline-grid; place-items: center;
+}
+@media (max-width: 640px) {
+  .kill, .d-close, .pager button, .dock-x, .dock-badge { min-width: 2.2rem; min-height: 2.2rem; }
+  .bar .brand { min-height: 2.2rem; }
+}
+
+/* Every button keeps a floor, whatever its own padding says: ux-sniff found
+ * "copy" at 45×28 and a list row at 356×21 on a phone. A row is a control too. */
+button { min-height: 1.9rem; }
+@media (max-width: 640px) { button { min-height: 2.1rem; min-width: 2.1rem; } }
+
+/* Small caps labels were 9.6px — legible on a desk, a rumour on a phone. */
+.count, .tag, .stamp, .pill, .eyebrow, .kind, .kicker { font-size: max(0.66rem, 10.5px); }
+
+/* Tool rows wrap on a phone rather than push their last button off the edge —
+ * ux-sniff caught a "drawing" button 12px past the screen after the size floor
+ * above made every tool bigger. */
+@media (max-width: 640px) {
+  .side-head, .doc-head, .bar-tools, .row-tools, .draw-bar, .tools { flex-wrap: wrap; }
+  /* a phone bar keeps who you are, the gear and out; the theme lives in the
+   * settings tab there, where it has a name instead of a glyph */
+  .bar #btn-theme { display: none; }
+  .bar { gap: 0.1rem; padding: 0 0.35rem; }
+}

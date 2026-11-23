@@ -177,6 +177,8 @@ node auth-check.mjs                                 # two tabs, one storage, a r
 node chrome-check.mjs                               # bar, name, gear, dock, 24
 ./tools/test-chrome.sh                              # all eight apps
 VPL_PROD=1 ./tools/test-chrome.sh                   # the same against the deployments
+node ux-sniff.mjs                                   # tap targets, tiny type, sideways scroll, 0
+VPL_PROD=1 node ux-sniff.mjs                        # the same against the deployments
 VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "project title"
 ```
 

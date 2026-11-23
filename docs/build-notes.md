@@ -1144,3 +1144,12 @@ The first run drew an empty pale rectangle with one stray `hr:5432` at the corne
 Every box was there: they were all stacked at 0,0, because `Number('')` is `0` and
 `x:` with an empty value read as "placed at the origin". A screenshot found it;
 the 21 checks would not have. Same lesson as each slice before this one.
+
+## the floor under the interface
+
+`ux-sniff.mjs` measured what taste usually argues about: 232 problems across eight
+apps, most of them the same three shapes — a 28px bar icon, a 20×24 dialog ✕, and
+labels at 9.6px. The fix is one block in `tokens.css` (a floor under every
+tappable thing, a floor under five-grade type) plus wrapping tool rows on a phone,
+because the bigger controls then pushed the last button off the edge. It ends at
+zero, and the floor is now a test rather than a habit.

@@ -69,13 +69,13 @@
 
       <div class="form-row">
         <label for="mk-count">codes</label>
-        <input id="mk-count" type="number" min="1" max="50" step="1" value="3">
+        <input id="mk-count" aria-label="how many codes" type="number" min="1" max="50" step="1" value="3">
         <label for="mk-credits">calls each</label>
-        <input id="mk-credits" type="number" min="1" step="1" value="100">
+        <input id="mk-credits" aria-label="credits per code" type="number" min="1" step="1" value="100">
         <label for="mk-until">until</label>
-        <input id="mk-until" type="date">
+        <input id="mk-until" aria-label="valid until" type="date">
         <label for="mk-label">label</label>
-        <input id="mk-label" type="text" placeholder="for whom" maxlength="40">
+        <input id="mk-label" aria-label="a label for the batch" type="text" placeholder="for whom" maxlength="40">
       </div>
       <div class="form-foot">
         <button id="mk-go" class="primary" type="button">make the slips</button>
@@ -105,7 +105,7 @@
       <p class="lede">paste the code somebody gave you. it becomes a key you can
         put into any app of the suite instead of a provider key.</p>
       <div class="form-row">
-        <input id="rd-code" type="text" spellcheck="false" autocapitalize="none"
+        <input id="rd-code" aria-label="the code to redeem" type="text" spellcheck="false" autocapitalize="none"
                placeholder="vpc_…" class="wide">
       </div>
       <div class="form-foot">

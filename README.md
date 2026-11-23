@@ -296,6 +296,8 @@ packages/shell/dock.js    the chat line at the bottom of every app: it reads wha
                           without a person pressing a button
 tools/stage.sh            "copy the shared look into this app"
 tools/test-chrome.sh      bar, name, gear and dock, walked in all eight apps
+apps/vn/test/ux-sniff.mjs the measurable half of a design review: tap targets,
+                          type size, unnamed controls, sideways scroll
 deploy                    publish one app: ./deploy vn | vi | vr | vz | vd | vc | api
 serve  serve.py           local server that refuses to cache
 supabase/migrations/      the schema, and every change since

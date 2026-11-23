@@ -262,7 +262,7 @@ button.google {
 .note-status { font-size: 0.75rem; color: var(--ink-3); }
 .note-meta { display: flex; align-items: center; gap: 0.45rem; min-width: 0; }
 .note-vis {
-  font-family: var(--sans); font-size: 0.62rem; font-weight: 700;
+  font-family: var(--sans); font-size: 0.67rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.09em;
   padding: 0.1rem 0.45rem; border-radius: 4px;
   border: 1px solid currentColor; color: var(--ink-3);
@@ -804,7 +804,7 @@ kbd {
 }
 .share-badge {
   margin-left: 0.4rem; padding: 0.02rem 0.35rem;
-  font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.04em;
+  font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.04em;
   border: 1px solid var(--line-strong); border-radius: 999px;
   color: var(--ink-3); vertical-align: 0.12em; white-space: nowrap;
 }
@@ -843,7 +843,7 @@ kbd {
 /* a waiting invitation: no role, no access, plainly marked */
 .share-wait {
   margin-left: 0.4rem; padding: 0.02rem 0.35rem;
-  font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.04em;
+  font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.04em;
   border: 1px dashed var(--line-strong); border-radius: 999px;
   color: var(--ink-3); white-space: nowrap;
 }
@@ -1086,7 +1086,7 @@ kbd {
   /* the assistant keeps its line, without its ornaments, and the bar gives it
    * room by dropping the wordmark and thinning the icons */
   .brand-word { display: none; }
-  .bar > .icon { padding: 0.25rem; min-width: 1.6rem; }
+  .bar > .icon { padding: 0.25rem; min-width: 2.4rem; min-height: 2.4rem; }
   .bar-gap-a { display: none; }
   .agent { flex: 1 1 auto; margin: 0 0.25rem; max-width: none; }
   .agent-mark, .agent-go { display: none; }

@@ -1421,6 +1421,7 @@ function wireChrome() {
     if (p) openProject(p);
   });
 
+  $('#req-add').setAttribute('aria-label', 'a new requirement');
   $('#req-add').addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();

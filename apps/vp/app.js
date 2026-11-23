@@ -205,6 +205,7 @@ async function paintCodes() {
 
 /* ── taking a code ────────────────────────────────────────────────── */
 $('#rd-go').addEventListener('click', async () => {
+  $('#rd-code')?.setAttribute('aria-label', 'the code to redeem');
   const code = $('#rd-code').value.trim();
   if (!code) return msg($('#rd-msg'), 'paste the code first', 'bad');
   msg($('#rd-msg'), 'checking…', 'busy');
