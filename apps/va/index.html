@@ -214,31 +214,8 @@
 </dialog>
 
 <!-- ── the model's door and its key ───────────────────────────────── -->
-<dialog id="ai-dialog" class="dialog">
-  <button id="ai-x" class="dialog-x" type="button" aria-label="close">✕</button>
-  <h2>the model</h2>
-  <p>One key per address — this one is kept in this browser and never leaves it
-    except to the provider. Only the transformation is sent: the inputs you
-    chose, the template and your notes.</p>
-  <label for="ai-provider">provider</label>
-  <select id="ai-provider"></select>
-  <label for="ai-url">base address</label>
-  <input id="ai-url" type="text" spellcheck="false" autocapitalize="none">
-  <label for="ai-model">model</label>
-  <input id="ai-model" type="text" list="ai-models" spellcheck="false" autocapitalize="none">
-  <datalist id="ai-models"></datalist>
-  <label for="ai-key">key</label>
-  <input id="ai-key" type="password" spellcheck="false" autocapitalize="none" autocomplete="off">
-  <p class="muted small">nothing is generated until a key is here. the default is
-    <code>gemini-3.1-flash-lite</code> through its OpenAI-shaped door.</p>
-  <p id="ai-msg" class="msg" aria-live="polite"></p>
-  <div id="ai-account" class="ai-account"></div>
-  <div class="dialog-foot">
-    <button id="ai-forget" class="ghost" type="button">forget the key</button>
-    <span class="grow"></span>
-    <button id="ai-save" class="primary" type="button">save in this browser</button>
-  </div>
-</dialog>
+<!-- settings: one component, the same in every app (vendor/settings.js) -->
+<dialog id="ai-dialog" class="dialog"></dialog>
 
 <pre id="print-doc" class="print-doc"></pre>
 <div id="toast" role="status" aria-live="polite"></div>

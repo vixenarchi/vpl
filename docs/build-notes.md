@@ -1066,3 +1066,34 @@ Two things stayed out on purpose. There is **no lease**: a job claimed by a dead
 worker is a row a person can re-queue, and a lock table would be a second state
 machine pretending to be a first. And there is **no queue depth**, no worker
 list, no dashboard — the strip only shows this job's jobs.
+
+## settings: five dialogs became one, and three auth bugs fell out of it
+
+The request was "one settings panel, the same everywhere". That part is
+mechanical now: `packages/shell/settings.js` builds the whole dialog — four
+tabs, one button row — and an app's HTML holds an empty `<dialog>` and nothing
+else. 165 checks (`tools/test-settings.sh`) walk it in five apps.
+
+The bugs underneath were not mechanical. All three came from the same habit: a
+page trusting a copy of the truth instead of asking for it.
+
+- **The 401.** `Bearer {"access…` reached PostgREST because storage held a
+  truncated fragment of a session and nothing checked the shape before sending
+  it. `Invalid JWT serialization: Missing dot delimiter(s)` reads like a
+  permissions failure and was a string problem. A token now has to look like a
+  JWT, and the live client session wins over storage.
+- **Two tabs, two people.** supabase-js keeps the session in memory, so a tab
+  left open while another tab signed in kept painting the first person's rows
+  under the second person's token. Storage is the only thing every tab shares,
+  so the check is `storedId()` — on `visibilitychange`, on `focus`, on the
+  `storage` event — followed by a reload when the answer is not who is on
+  screen. A tab on the gate reloads *in* when a session appears.
+- **The logout that was a suggestion.** `signOut()` dropped the in-memory
+  session and left `sb-<ref>-auth-token` (plus `.0`/`.1` chunks) in storage, so
+  the next reload signed the person back in. It is `scope: 'local'` now, and
+  every chunk of the key goes with it.
+
+One test bug is worth remembering: the theme did nothing in vi and worked
+everywhere else, because the click landed on the `<span>` inside the button and
+vi's CSS gives buttons no padding. `e.target.dataset` is not the element a
+person pressed; `closest('[data-theme]')` is.

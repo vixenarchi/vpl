@@ -277,13 +277,17 @@ apps/vr/                  requirements: a sheet, its brief, its glossary
 apps/vz/                  zed: a dictionary, and a read-only service at /p/
 apps/vd/                  documents: a desk of inputs and one output
 apps/vc/                  compliance: rules and proofs, a verdict strip
+apps/va/                  architecture: the pile in, the box list out, and an
+                          agent with its own account that works the queue
 apps/api/                 the shared proxy (one function, one page)
 packages/shell/tokens.css palette, type scale, page foundation — copied into
                           each app's vendor/ by tools/stage.sh
 packages/shell/ai.js      providers, models and the endpoint rule, shared by every
                           app that talks to a model — same copying, same idea
 packages/shell/engine.js  the generator: inputs → messages → one call → answer, and
-                          a file → text. vd and vc carry a copy; va will too
+                          a file → text. vd, vc and va carry a copy.
+packages/shell/settings.js the one settings dialog: model, search, key, theme —
+                          four tabs and a test call, identical in every app
 tools/stage.sh            "copy the shared look into this app"
 deploy                    publish one app: ./deploy vn | vi | vr | vz | vd | vc | api
 serve  serve.py           local server that refuses to cache

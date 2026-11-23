@@ -12,6 +12,7 @@
 import * as db from './lib/db.js';
 import * as ai from './vendor/ai.js';
 import * as engine from './vendor/engine.js';
+import * as settings from './vendor/settings.js';
 import { TEMPLATES, DEFAULT_TEMPLATE, templateById } from './templates.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -102,6 +103,7 @@ async function boot() {
   lowerField($('#email'));
   wireGate();
   wireApp();
+  wireAuth();
 
   const params = new URLSearchParams(location.search);
   const code = params.get('s');
@@ -625,48 +627,63 @@ async function generate() {
 /* ── the model's door and its key ────────────────────────────────── */
 let aiAccount = null;
 
-function wireAi() {
-  ai.mountAi({
-    provider: $('#ai-provider'), url: $('#ai-url'),
-    model: $('#ai-model'), models: $('#ai-models'),
+/* ── who is signed in, and whether it is still who was here ─────────
+ * A browser does not promise one person per tab: a second tab can sign in as
+ * somebody else and the session in storage is shared. So this tab asks again
+ * whenever it becomes visible, and reloads when the answer is not the person
+ * whose rows are on screen. Reloading is the honest fix — guessing which row
+ * belongs to whom is how one account's data ends up under another's name. */
+function wireAuth() {
+  ai.setTokenSource(db.currentToken);
+  /* The very first event arrives before a session is read, and reloading on it
+   * would be a loop. Only a page that is already showing somebody can be
+   * showing the wrong somebody. */
+  db.watchAuth((event, id) => {
+    const mine = S.session?.user?.id;
+    if (!mine) return;
+    if (!id || event === 'SIGNED_OUT') { location.reload(); return; }
+    if (id !== mine) location.reload();
+  }).catch(() => {});
+  /* Three ways to notice, because one is not enough: coming back into view, the
+   * storage event another tab's sign-in fires, and the client's own state. The
+   * first two ask storage — the client in this tab still believes it is the
+   * person who loaded the page. */
+  const check = () => {
+    const now = ai.storedId() || null;
+    /* sitting on the gate while another tab signs in is the same question in
+     * reverse: if a session exists and this page has nobody, take it */
+    if (!S.session) {
+      if (now) location.reload();
+      return;
+    }
+    if (now !== S.session.user?.id) location.reload();
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') check();
   });
-  $('#btn-ai').onclick = openAi;
-  $('#ai-x').onclick = () => $('#ai-dialog').close();
-  $('#ai-save').onclick = () => {
-    const url = $('#ai-url').value.trim();
-    const model = $('#ai-model').value.trim();
-    const key = $('#ai-key').value.trim() || ai.readAi().key;
-    if (!url || !key) return msg('#ai-msg', 'both an address and a key, please', 'bad');
-    ai.writeAi({ url, key, model });
-    msg('#ai-msg', 'saved in this browser', 'ok');
-    paintSpec();
-  };
-  $('#ai-forget').onclick = () => {
-    ai.forgetKeys();
-    $('#ai-key').value = '';
-    msg('#ai-msg', 'forgotten', 'ok');
-    paintSpec();
-    if (aiAccount) aiAccount.paint();
-  };
-  aiAccount = ai.mountAccountAi({
-    box: $('#ai-account'),
-    read: () => ({
-      url: $('#ai-url').value.trim(),
-      model: $('#ai-model').value.trim(),
-      key: $('#ai-key').value.trim() || ai.readAi().key,
-    }),
+  window.addEventListener('focus', check);
+  window.addEventListener('storage', (e) => {
+    if (e.key && e.key.includes('-auth-token')) check();
   });
 }
 
+/* ── settings: one component, the same dialog in every app ──────────
+ * The provider list, the tabs, the test call and the theme all live in
+ * vendor/settings.js, so two apps cannot drift into two settings dialogs. */
+let SET = null;
+
+function wireAi() {
+  SET = settings.mountSettings({
+    dialog: $('#ai-dialog'),
+    proxy: engine.PROXY,
+    onSaved: () => paintSpec(),
+  });
+  $('#btn-ai').onclick = () => openAi();
+}
+
 async function openAi() {
-  /* a browser with no key takes the account's, so the field is never empty
-   * just because this is a different machine */
   if (await ai.adoptAccountAi()) paintSpec();
-  const c = ai.readAi();
-  $('#ai-key').value = c.key || '';
-  msg('#ai-msg', '');
-  if (aiAccount) aiAccount.paint();
-  $('#ai-dialog').showModal();
+  SET.open();
 }
 
 /* ── sharing ──────────────────────────────────────────────────────── */

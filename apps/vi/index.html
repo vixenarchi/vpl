@@ -279,40 +279,8 @@
 </div>
 
 <!-- ── model settings ─────────────────────────────────────────────── -->
-<dialog id="ai-dialog" class="dialog">
-  <button id="ai-x" class="dialog-x" type="button" aria-label="close">✕</button>
-  <h2>the model</h2>
-  <p>your own key, kept in this browser. nothing is sent anywhere except the
-    endpoint you name, through this app's own origin.</p>
-  <label for="ai-provider">provider</label>
-  <select id="ai-provider"></select>
-  <label for="ai-url">api url</label>
-  <input id="ai-url" type="text" spellcheck="false" autocapitalize="off"
-         placeholder="https://api.openai.com/v1">
-  <label for="ai-key">api key</label>
-  <input id="ai-key" type="password" spellcheck="false" autocapitalize="off" placeholder="sk-…">
-  <label for="ai-model">model</label>
-  <input id="ai-model" type="text" spellcheck="false" autocapitalize="off"
-         list="ai-models" placeholder="gpt-4o-mini">
-  <datalist id="ai-models"></datalist>
-
-  <p class="dialog-sep">evidence — optional, used by “find facts”</p>
-  <label for="search-provider">search</label>
-  <select id="search-provider">
-    <option value="">none</option>
-    <option value="tavily">Tavily</option>
-    <option value="serper">Serper</option>
-  </select>
-  <label for="search-key">search key</label>
-  <input id="search-key" type="password" spellcheck="false" placeholder="tvly-… or a Serper key">
-
-  <p id="ai-msg" class="share-msg" aria-live="polite"></p>
-  <div id="ai-account" class="ai-account"></div>
-  <div class="confirm-row">
-    <button id="ai-forget" class="ghost" type="button">forget the key</button>
-    <button id="ai-save" class="primary" type="button">save</button>
-  </div>
-</dialog>
+<!-- settings: one component, the same in every app (vendor/settings.js) -->
+<dialog id="ai-dialog" class="dialog"></dialog>
 
 <script src="config.local.js"></script>
 <script type="module" src="app.js"></script>

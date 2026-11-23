@@ -126,3 +126,82 @@ select {
   appearance: auto;
 }
 [data-theme='dark'] select { border-color: var(--line); }
+
+/* ── themes ───────────────────────────────────────────────────────────
+ * A theme is a palette and nothing else: same weights, same meanings. `light`
+ * is the default with no attribute at all; anything else is `data-theme` on
+ * <html>, written by vendor/settings.js. Adding a theme is a block here and one
+ * line in THEMES, and it is then available in every app. */
+[data-theme='vi'] {
+  --paper:        #fbf6ea;
+  --paper-2:      #f3ecdc;
+  --paper-3:      #e7dec8;
+  --ink:          #1b1712;
+  --ink-2:        #4a4238;
+  --ink-3:        #857a66;
+  --line:         #d8cdb5;
+  --line-strong:  #b9ab8d;
+  --mark:         #b4531f;
+  --danger:       #a3352b;
+}
+
+/* ── the settings dialog (vendor/settings.js) ─────────────────────────
+ * One dialog, four tabs, three buttons. Deliberately tight: 0.76rem text, no
+ * gaps between rows, no paragraph breathing room — a settings panel is a form,
+ * not an essay. Typed text stays left-aligned; nothing here is centred. */
+dialog.settings { width: min(30rem, 94vw); padding: 0.6rem 0.75rem 0.55rem; }
+dialog.settings h2 { font-size: 0.82rem; margin: 0; letter-spacing: 0.04em; text-transform: lowercase; }
+dialog.settings .set-head { display: flex; align-items: center; justify-content: space-between; }
+dialog.settings .set-tabs {
+  display: flex; gap: 0; margin: 0.4rem 0 0.35rem; border-bottom: 1px solid var(--line);
+}
+dialog.settings .set-tabs [role='tab'] {
+  background: none; border: 0; border-bottom: 2px solid transparent; padding: 0.2rem 0.55rem;
+  font: inherit; font-size: 0.74rem; color: var(--ink-3); cursor: pointer;
+}
+dialog.settings .set-tabs [role='tab']:hover { color: var(--ink); }
+dialog.settings .set-tabs [role='tab'][aria-selected='true'] {
+  color: var(--ink); border-bottom-color: var(--mark); font-weight: 600;
+}
+dialog.settings .set-panel { display: grid; gap: 0.15rem; padding: 0.15rem 0; }
+dialog.settings .set-row {
+  display: grid; grid-template-columns: 5.2rem 1fr; gap: 0.4rem; align-items: center;
+}
+dialog.settings .set-row label {
+  font-size: 0.68rem; color: var(--ink-3); letter-spacing: 0.03em; text-transform: lowercase;
+}
+dialog.settings .set-row input,
+dialog.settings .set-row select {
+  width: 100%; font-size: 0.76rem; line-height: 1.25; padding: 0.15rem 0.35rem;
+  border: 1px solid var(--line); border-radius: 4px; background: var(--paper);
+  color: var(--ink); text-align: left;
+}
+dialog.settings .set-row input:focus,
+dialog.settings .set-row select:focus { outline: 2px solid var(--mark); outline-offset: 0; }
+dialog.settings .set-note {
+  font-size: 0.68rem; line-height: 1.3; color: var(--ink-3); margin: 0.15rem 0 0;
+}
+dialog.settings .set-acc { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.3rem; }
+dialog.settings .set-themes { display: grid; gap: 0.2rem; }
+dialog.settings .set-theme {
+  display: flex; gap: 0.5rem; align-items: baseline; text-align: left;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 5px;
+  padding: 0.25rem 0.45rem; font: inherit; cursor: pointer; color: var(--ink);
+}
+dialog.settings .set-theme[aria-pressed='true'] { border-color: var(--mark); box-shadow: inset 0 0 0 1px var(--mark); }
+dialog.settings .set-theme-name { font-size: 0.76rem; font-weight: 600; }
+dialog.settings .set-theme-note { font-size: 0.68rem; color: var(--ink-3); }
+dialog.settings .set-msg {
+  font-size: 0.72rem; line-height: 1.3; margin: 0.3rem 0 0; min-height: 1.1em; color: var(--ink-2);
+}
+dialog.settings .set-msg[data-state='ok'] { color: #2f6f4f; }
+dialog.settings .set-msg[data-state='bad'] { color: var(--danger); }
+dialog.settings .set-msg[data-state='busy'] { color: var(--ink-3); }
+dialog.settings .set-foot {
+  display: flex; gap: 0.3rem; justify-content: flex-end; margin-top: 0.35rem;
+  border-top: 1px solid var(--line); padding-top: 0.35rem;
+}
+dialog.settings .set-foot .ghost,
+dialog.settings .set-foot .primary { font-size: 0.74rem; padding: 0.15rem 0.5rem; }
+dialog.settings .set-foot [data-a='test'] { margin-right: auto; }
+dialog.settings .set-foot [data-a='forget'] { color: var(--danger); }

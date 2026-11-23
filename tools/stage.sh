@@ -21,7 +21,7 @@ DST="$ROOT/apps/$APP/vendor"
 mkdir -p "$DST"
 # what the shell owns: the look (tokens.css) and the model list (ai.js). Both
 # are copies, so an app keeps working when the rest of the repo is gone.
-rm -f "$DST"/*.css "$DST"/ai.js 2>/dev/null || true
+rm -f "$DST"/*.css "$DST"/ai.js "$DST"/engine.js "$DST"/settings.js 2>/dev/null || true
 for f in "$SRC"/*; do
   [ -f "$f" ] || continue
   cp "$f" "$DST/"

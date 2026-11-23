@@ -72,9 +72,36 @@ export async function signInWithGoogle() {
   if (error) throw error;
 }
 
+/* Signing out must leave nothing behind that could sign anybody back in: the
+ * client drops its session, and every chunk of it still in storage goes too.
+ * supabase-js writes sb-<ref>-auth-token plus .0/.1 for a large session, and a
+ * leftover chunk is what makes "log out" a suggestion rather than an event. */
 export async function signOut() {
   const db = await client();
-  await db.auth.signOut();
+  try { await db.auth.signOut({ scope: 'local' }); } catch { /* already gone */ }
+  const c = cfg();
+  const ref = String(c.url || '').replace(/^https?:\/\//, '').split('.')[0];
+  try {
+    for (const k of Object.keys(localStorage)) {
+      if (k === `sb-${ref}-auth-token` || k.startsWith(`sb-${ref}-auth-token.`)) localStorage.removeItem(k);
+    }
+  } catch { /* private mode */ }
+}
+
+/** The live token, from the client that owns the session. Storage can lag; this
+ *  cannot, and it is what the account key and the settings test ask for. */
+export async function currentToken() {
+  const db = await client();
+  const { data } = await db.auth.getSession();
+  return data?.session?.access_token || null;
+}
+
+/** One callback per change of person: (event, userId). */
+export async function watchAuth(cb) {
+  const db = await client();
+  db.auth.onAuthStateChange((event, session) => {
+    cb(event, session?.user?.id || null);
+  });
 }
 
 /* ── projects: one row is one funnel ──────────────────────────────── */

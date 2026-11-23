@@ -194,9 +194,53 @@ function storedSession() {
   try { return JSON.parse(raw); } catch { return null; }
 }
 
+/* A token has to look like one before it is sent: three base64url parts. The
+ * old code sent whatever was in storage, so a truncated chunk left by an older
+ * supabase-js came out as `Bearer {"access…` and the database answered "Invalid
+ * JWT serialization: Missing dot delimiter(s)" — a 401 that looked like a
+ * permissions bug and was a parsing bug. */
+function isJwt(t) {
+  if (typeof t !== 'string') return false;
+  const parts = t.split('.');
+  return parts.length === 3 && parts.every((x) => x && /^[A-Za-z0-9_-]+$/.test(x));
+}
+
+/* The app's own supabase-js client knows the session and refreshes it; storage
+ * can lag behind, or hold chunks. So the live session wins, and storage is only
+ * a fallback for a page that has not registered one. */
+let tokenSource = null;
+export function setTokenSource(fn) { tokenSource = fn; }
+
+async function tokenNow() {
+  if (tokenSource) {
+    try {
+      const t = await tokenSource();
+      if (isJwt(t)) return t;
+    } catch { /* the source is the app's business, not ours */ }
+  }
+  return storedToken();
+}
+
 function storedToken() {
   const s = storedSession();
-  return s?.access_token || s?.currentSession?.access_token || null;
+  const t = s?.access_token || s?.currentSession?.access_token || null;
+  return isJwt(t) ? t : null;
+}
+
+/** Who this browser is signed in as, read from storage. Shared by every tab on
+ *  this origin, so it is the only way to notice that another tab signed in as
+ *  somebody else: supabase-js keeps its own session in memory and will happily
+ *  report the person it started with. */
+export function storedId() {
+  const t = storedToken();
+  return t ? tokenUser(t) : null;
+}
+
+/** The signed-in person's id, or null — the one honest answer to "is anybody
+ *  here", asked through the same token the requests will use. */
+export async function sessionId() {
+  const t = await tokenNow();
+  return t ? tokenUser(t) : null;
 }
 
 function tokenUser(token) {
@@ -208,7 +252,7 @@ function tokenUser(token) {
 
 async function rest(path, init = {}) {
   const c = window.__VPL_CONFIG__;
-  const token = storedToken();
+  const token = await tokenNow();
   if (!c?.url || !token) return { token: null, data: [], status: 0 };
   const r = await fetch(c.url + '/rest/v1/' + path, {
     ...init,
@@ -234,7 +278,7 @@ export async function accountAi() {
 }
 
 export async function saveAccountAi({ url, model, key }) {
-  const token = storedToken();
+  const token = await tokenNow();
   if (!token) throw new Error('sign in first');
   const id = tokenUser(token);
   if (!id) throw new Error('this session has no name');
@@ -248,7 +292,7 @@ export async function saveAccountAi({ url, model, key }) {
 }
 
 export async function forgetAccountAi() {
-  const token = storedToken();
+  const token = await tokenNow();
   const id = token && tokenUser(token);
   if (!id) return;
   await rest(AI_TABLE + '?user_id=eq.' + id, { method: 'DELETE' });
@@ -315,7 +359,7 @@ export function mountAccountAi({ box, read }) {
   }
 
   async function init() {
-    signedIn = !!storedToken();
+    signedIn = !!(await sessionId());
     await repaint();
   }
   init();

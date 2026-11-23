@@ -36,6 +36,11 @@ Cloudflare Pages project.
   half is the **agent**: a job is a row and a folder, an agent with its own
   account works the queue, and the desk keeps or drops what comes back. See
   `docs/va.md`.
+- **settings** — one dialog in every app, built by `packages/shell/settings.js`
+  (copied, like the rest of the shell): four tabs (`model`, `search`, `key`,
+  `theme`), one row of buttons (`test`, `forget`, `save`), and the themes —
+  `paper`, `ink`, and vi's `comic`, now available everywhere. See
+  `docs/settings.md`.
 - **api** — the shared proxy at <https://api.terg.hr>: `/chat` (model calls),
   `/search` (Tavily/Serper evidence) and `/vp` (the door that spends a code's
   issuer key). Model APIs send no CORS headers, so the call leaves from our own
@@ -161,6 +166,10 @@ VR_URL=http://127.0.0.1:8101 node vr-share.mjs      # sharing, the refusal, the 
 VZ_URL=http://127.0.0.1:8103 node vz-check.mjs      # dictionary, bin, guest, the service, phone, 59 checks
 node va-check.mjs                                   # architecture desk, 40 checks
 node va-handoff.mjs                                 # a job to an agent and back, 14 checks
+node settings-check.mjs                             # one dialog: tabs, save, test, theme, 22
+node auth-check.mjs                                 # two tabs, one storage, a real logout, 11
+./tools/test-settings.sh                            # both, in every app that has them
+./tools/test-settings.sh VPL_PROD=1                 # the same against the deployments
 VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "project title"
 ```
 

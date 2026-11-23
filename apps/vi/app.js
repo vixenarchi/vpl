@@ -11,6 +11,8 @@
 
 import * as db from './lib/db.js';
 import * as ai from './vendor/ai.js';
+import * as settings from './vendor/settings.js';
+import * as engine from './vendor/engine.js';
 import { prompts } from './prompts.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -86,6 +88,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 
 /* ── gate ─────────────────────────────────────────────────────────── */
 async function boot() {
+  wireAuth();
   lowerField($('#email'));
   const code = new URLSearchParams(location.search).get('s');
   if (code) {
@@ -1059,64 +1062,70 @@ function aiCfg() { return ai.readAi(); }
 
 let aiAccount = null;
 
-function wireAiDialog() {
-  const dlg = $('#ai-dialog');
-  $('#ai-x').onclick = () => dlg.close();
-  // the provider list and the url/model dance come from the suite (vendor/ai.js)
-  const form = ai.mountAi({
-    provider: $('#ai-provider'),
-    url: $('#ai-url'),
-    model: $('#ai-model'),
-    models: $('#ai-models'),
-  });
-  aiAccount = ai.mountAccountAi({
-    box: $('#ai-account'),
-    read: () => ({
-      url: $('#ai-url').value.trim(),
-      model: $('#ai-model').value.trim(),
-      key: $('#ai-key').value.trim() || aiCfg().key,
-    }),
-  });
-  $('#search-provider').innerHTML = ai.SEARCH_PROVIDERS
-    .map((p) => `<option value="${p.id}">${p.label}</option>`).join('');
-
-  $('#ai-save').onclick = () => {
-    const { url, model } = form.read();
-    const key = $('#ai-key').value.trim() || aiCfg().key;
-    if (!url || !key) return say($('#ai-msg'), 'both url and key, please', 'bad');
-    ai.writeAi({ url, key, model: model || 'gpt-4o-mini' });
-    const provider = $('#search-provider').value;
-    const searchKey = $('#search-key').value.trim();
-    ai.writeSearch({ provider: provider && searchKey ? provider : '', key: provider && searchKey ? searchKey : '' });
-    say($('#ai-msg'), 'saved in this browser', 'ok');
-    paintAiHint();
-  };
-  $('#ai-forget').onclick = () => {
-    ai.forgetKeys();
-    $('#ai-key').value = '';
-    $('#search-key').value = '';
-    say($('#ai-msg'), 'keys forgotten', 'ok');
-    paintAiHint();
-  };
-}
-
 /* No key, no balloon: say that out loud instead of letting a click open a
  * dialog nobody asked for. The hint disappears the moment a key exists. */
-function paintAiHint() {
-  const el = $('#ai-hint');
-  if (el) el.hidden = !!aiCfg().key;
+/* ── who is signed in, and whether it is still who was here ─────────
+ * A browser does not promise one person per tab: a second tab can sign in as
+ * somebody else and the session in storage is shared. So this tab asks again
+ * whenever it becomes visible, and reloads when the answer is not the person
+ * whose rows are on screen. Reloading is the honest fix — guessing which row
+ * belongs to whom is how one account's data ends up under another's name. */
+function wireAuth() {
+  ai.setTokenSource(db.currentToken);
+  /* The very first event arrives before a session is read, and reloading on it
+   * would be a loop. Only a page that is already showing somebody can be
+   * showing the wrong somebody. */
+  db.watchAuth((event, id) => {
+    const mine = S.session?.user?.id;
+    if (!mine) return;
+    if (!id || event === 'SIGNED_OUT') { location.reload(); return; }
+    if (id !== mine) location.reload();
+  }).catch(() => {});
+  /* Three ways to notice, because one is not enough: coming back into view, the
+   * storage event another tab's sign-in fires, and the client's own state. The
+   * first two ask storage — the client in this tab still believes it is the
+   * person who loaded the page. */
+  const check = () => {
+    const now = ai.storedId() || null;
+    /* sitting on the gate while another tab signs in is the same question in
+     * reverse: if a session exists and this page has nobody, take it */
+    if (!S.session) {
+      if (now) location.reload();
+      return;
+    }
+    if (now !== S.session.user?.id) location.reload();
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') check();
+  });
+  window.addEventListener('focus', check);
+  window.addEventListener('storage', (e) => {
+    if (e.key && e.key.includes('-auth-token')) check();
+  });
+}
+
+/* ── settings: one component, the same dialog in every app ────────── */
+let SET = null;
+
+function wireAiDialog() {
+  SET = settings.mountSettings({
+    dialog: $('#ai-dialog'),
+    proxy: engine.PROXY,
+    onSaved: () => { try { paintAiHint(); } catch {} },
+  });
+  $('#btn-ai').onclick = () => openAiDialog();
+  const hint = $('#ai-hint-open');
+  if (hint) hint.onclick = () => openAiDialog();
 }
 
 async function openAiDialog() {
-  if (await ai.adoptAccountAi()) paintAiHint();
-  const c = aiCfg();
-  $('#ai-key').value = c.key || '';
-  const sc = searchCfg();
-  $('#search-provider').value = sc.provider || '';
-  $('#search-key').value = sc.key || '';
-  say($('#ai-msg'), '');
-  if (aiAccount) aiAccount.paint();
-  $('#ai-dialog').showModal();
+  if (await ai.adoptAccountAi()) { try { paintAiHint(); } catch {} }
+  SET.open();
+}
+
+function paintAiHint() {
+  const el = $('#ai-hint');
+  if (el) el.hidden = !!aiCfg().key;
 }
 
 /* The suite's rule for endpoints lives in vendor/ai.js now, so vn and vi cannot

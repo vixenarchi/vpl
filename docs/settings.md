@@ -1,0 +1,113 @@
+# settings — one dialog, always the same one
+
+Every app in the suite opens the same settings dialog, built by one file:
+`packages/shell/settings.js`, copied into each app's `vendor/` by
+`tools/stage.sh`. Five apps carried five versions of this panel before, and the
+differences were never intentional — one had a search section, one had the
+account buttons in a different order, one had no test button at all. A person
+who learns one app should not have to re-learn the gear icon.
+
+## What is in it
+
+- **Four tabs, top left:** `model`, `search`, `key`, `theme`.
+- **One row of buttons at the bottom:** `test` on the left, `forget` and `save`
+  on the right.
+- **Type is small on purpose** — 0.76 rem fields, 0.68 rem labels, tight line
+  height, no paragraph spacing. A settings panel is a form, not an essay.
+  Nothing typed is ever centred.
+
+### model
+
+Provider, address, model, key. Choosing a provider writes its address and
+offers its models; typing an address from somewhere else flips the select to
+*somewhere else* rather than lying about where the key is going. The list of
+doors is `PROVIDERS` in `vendor/ai.js`, so it is the same list in every app.
+
+### search
+
+Tavily or Serper, optional. Only apps that use evidence (vi, vr) actually call
+it; the tab is here anyway, because a settings dialog that grows a section only
+in some apps is the problem this file exists to end.
+
+### key — “ours”
+
+The account's key (`vpl_ai`), the thing that follows a person between browsers
+and addresses. Three actions, phrased as sentences: *save to my account*,
+*use the account's key here*, *remove from my account*. Signed out, the tab
+says so instead of showing buttons that cannot work.
+
+### theme
+
+`paper` (the default, no attribute), `ink` (dark) and `comic` (vi's warm
+poster paper, now available everywhere). A theme is a block of CSS variables in
+`vendor/tokens.css` and one line in `THEMES` — nothing else changes, and every
+app gets it. The choice is stored in `localStorage['vpl.theme']` and applied as
+`data-theme` on `<html>`, which is what the apps already read at boot.
+
+Adding a theme is two edits:
+
+```css
+/* packages/shell/tokens.css */
+[data-theme='mint'] { --paper: #f4fbf6; --ink: #14201a; /* … */ }
+```
+
+```js
+// packages/shell/settings.js
+export const THEMES = [ /* … */ { id: 'mint', label: 'mint', note: 'cool paper' } ];
+```
+
+then `tools/stage.sh <app>` for each app and a deploy.
+
+## test, forget, save
+
+- **test** is a real call: one short request through the app's own door
+  (`/api/chat`, falling back to `api.terg.hr/chat`), with the address, model and
+  key that are in the form right now. It reports what the model said, or the
+  provider's own words when it refuses — the OpenAI message for a bad key
+  arrives verbatim: *Incorrect API key provided*. Anything less than a real
+  call is a form that says "looks fine".
+- **forget** clears `vpl.ai` and `vpl.search` in this browser only. It says so,
+  because the account's key is untouched and people reasonably expect otherwise.
+- **save** writes this browser, and nothing else. Saving to the account is a
+  separate sentence in the `key` tab, on purpose: one button that does both is a
+  button nobody can predict.
+
+## Who is signed in, and whether that is still true
+
+Three real bugs lived here, all of them invisible until somebody signed in
+twice, and all of them now covered by `apps/vn/test/auth-check.mjs`:
+
+- **A token that is not a token.** `ai.js` sent whatever was in
+  `sb-<ref>-auth-token`. A truncated chunk from an older supabase-js went out as
+  `Bearer {"access…` and the database answered `Invalid JWT serialization:
+  Missing dot delimiter(s)` — a 401 that looked like a permissions bug and was a
+  parsing bug. Now a token has to look like a JWT (three base64url parts) and the
+  live client session wins over storage.
+- **Two tabs, two people, one storage.** supabase-js keeps its own session in
+  memory, so a tab that was open while another tab signed in kept showing the
+  first person's rows under the new token. The fix is to ask storage, which is
+  the only thing every tab shares, and reload when the answer is not the person
+  on screen — on `visibilitychange`, on `focus`, and on the `storage` event. A
+  tab sitting on the gate reloads *in* when a session appears, instead of
+  pretending nobody is signed in.
+- **A logout that was a suggestion.** `signOut()` dropped the client's session
+  and left `sb-<ref>-auth-token` (and its `.0`/`.1` chunks) in storage, so a
+  reload signed the person straight back in. Now the sign-out is `scope: 'local'`
+  and every chunk of the session key is removed.
+
+The reload is deliberate. The alternative is guessing which row belongs to whom
+after the identity changed under the page — and getting it wrong is how one
+account's data ends up under another account's name.
+
+## Tests
+
+```bash
+# the dialog: tabs, save, forget, theme, the test call (door mocked)
+node settings-check.mjs                                  # http://127.0.0.1:8107
+APP_URL=http://127.0.0.1:8100 APP_NAME=vi node settings-check.mjs
+
+# who is signed in: two tabs, a logout, a fragment in storage
+APP_URL=http://127.0.0.1:8107 APP_NAME=va node auth-check.mjs
+```
+
+`tools/test-settings.sh` runs both against every app that has the dialog.
