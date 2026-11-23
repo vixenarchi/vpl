@@ -49,13 +49,18 @@ node worker.mjs --dry      # print the prompt a job would get, touch nothing
 node worker.mjs --prune out/files   # tidy a deliverable by hand
 ```
 
-The model is any OpenAI-compatible endpoint. A **vp key** is the intended one:
-`VPL_MODEL_BASE=https://api.terg.hr/vp/v1`, `VPL_MODEL=vpl/<model>`,
-`VPL_MODEL_KEY=vp_…` — one credit per call, an expiry, and usage visible in the
-vp ledger. The key is passed through the environment and referenced from
-`models.json` as `$VPL_MODEL_KEY`, so it is never written to disk. With
-`VPL_MODEL_BASE` empty, pi's own provider is used (e.g.
-`VPL_MODEL=google/gemini-3.1-flash-lite` with `GEMINI_API_KEY`).
+The model is **plain pi**, with no wrapper in the way. With `VPL_MODEL_BASE`
+empty the model is one of pi's own providers and the provider's key sits in the
+environment:
+
+- `VPL_MODEL=google/gemini-3.1-flash-lite` with `GEMINI_API_KEY` (the default)
+- `VPL_MODEL=nim/nvidia/nemotron-3.5-lightning-30b-a3b` with `NVIDIA_API_KEY`
+
+A **vp key** is the shared option: `VPL_MODEL_BASE=https://api.terg.hr/vp/v1`,
+`VPL_MODEL=vpl/<model>`, `VPL_MODEL_KEY=vp_…` — one credit per call, an expiry
+and usage in the vp ledger, so an agent can be given a number of calls instead
+of a provider secret. The key is referenced from the generated `models.json` as
+`$VPL_MODEL_KEY`, so it is never written to disk.
 
 A job is not a single request: a free tier answers `429` after a handful of tool
 calls, so the worker waits and takes the job again (`VPL_RETRIES`, default 2)

@@ -188,6 +188,14 @@ What the workshop was given first, because libraries had started to complain:
 `/etc/profile.d`, with `node`/`npm`/`npx`/`pi` repointed) and **`pi` 1.6.0** on
 top of it, plus **terraform 1.17.2**. Old node was 22.19.
 
+The box then got **plain `pi` with the two keys that already exist**: Gemini as
+pi's own `google` provider and NVIDIA as a `nim` provider in
+`~/.pi/agent/models.json` (`https://integrate.api.nvidia.com/v1`), with the keys
+in `~/.pi/agent/providers.env` (mode 600) sourced by login shells. **free-pi was
+removed from the workshop** — it refuses unattended work (see below) — and it
+stays only for the models outside these two, on a machine where somebody is
+watching ads.
+
 `agent/` is one file of loop (`worker.mjs`), four prompts, a box-list checker, a
 Dockerfile and a test that needs no model:
 
@@ -197,10 +205,11 @@ Dockerfile and a test that needs no model:
   twice.
 - **nothing is a stream**: no port is opened, no socket, no webhook. A job
   appearing in a directory is the whole interface, and the answer is files.
-- **the model is an endpoint, not a dependency**: `models.json` is generated at
-  start from `VPL_MODEL_BASE`/`VPL_MODEL`/`VPL_MODEL_KEY`, with the key written
-  as `$VPL_MODEL_KEY`, so a token never touches the disk. Empty base means pi's
-  own provider, which is how the first runs were done.
+- **the model is an endpoint, not a dependency**: the default is **plain pi**
+  (`google/gemini-3.1-flash-lite`); a base turns it into an OpenAI-shaped
+  endpoint, and then `models.json` is generated at start from
+  `VPL_MODEL_BASE`/`VPL_MODEL`/`VPL_MODEL_KEY`, the key written as
+  `$VPL_MODEL_KEY`, so a token never touches the disk.
 - **a job is not a request**: a free tier answered `429` after five calls and
   the first terraform job died at the finish line with the files already
   written. The worker now waits and takes the job again (`VPL_RETRIES`).

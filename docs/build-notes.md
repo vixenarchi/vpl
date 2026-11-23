@@ -979,8 +979,11 @@ Things the three real runs taught us, in the order they hurt:
 
 - **free-pi cannot run unattended.** The first terraform job wrote five correct
   files, ran `terraform init`, and died with `403 ads_required`: the free backend
-  is paid for by ads and a headless container shows none. A docker agent
-  therefore needs a **vp key** — which is what vp stage 2 was for.
+  is paid for by ads and a headless container shows none. So the workshop now
+  runs **plain `pi`** — Gemini as pi's own provider and NVIDIA as `nim`
+  (`integrate.api.nvidia.com/v1`) — and free-pi was uninstalled from the box. It
+  stays for the models outside those two. A docker agent gets a plain provider
+  key or a **vp key**, which is what vp stage 2 was for.
 - **a job is not a request.** Gemini's free tier allows five calls a minute; an
   agent makes twenty. The worker now waits and takes the job again, twice, and
   says so in its output.

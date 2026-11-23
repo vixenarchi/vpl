@@ -30,7 +30,9 @@ const cfg = {
   // which is what a direct provider key wants. A base means an OpenAI-shaped
   // endpoint: our vp door, or anything compatible.
   base: (env.VPL_MODEL_BASE || '').replace(/\/+$/, ''),
-  model: env.VPL_MODEL || 'vpl/deepseek-v4.1-flash',
+  // pi's own providers by default (google/… with GEMINI_API_KEY), because a
+  // plain key is the least machinery. A vp key is the shared-meters option.
+  model: env.VPL_MODEL || 'google/gemini-3.1-flash-lite',
   poll: Number(env.VPL_POLL || 5000),
   timeout: Number(env.VPL_TIMEOUT || 15 * 60 * 1000),
   retries: Number(env.VPL_RETRIES || 2),
