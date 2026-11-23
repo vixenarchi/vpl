@@ -79,6 +79,31 @@ The agent is not inside the app. The app cannot run a command, and this is not a
 limitation — it is the design. A web page that can tell a shell-enabled agent
 what to do is a remote code execution button with a login screen on it.
 
+**The agent is a colleague with an account.** This was verified against the
+existing `eva` workshop on this machine: an Ubuntu container, `pi` 1.5.0 and
+node 22 installed, outbound network fine, no docker inside (the workshop *is*
+the Linux environment; docker is for giving the same thing to other people).
+
+Given that, the transport is not a folder on somebody's laptop — the agent may
+run on GCP free tier. So:
+
+- the agent gets **its own VPL account** (`eva-agent@vpl.local`, a bare name, as
+  every account here), and the document is **shared with it as `edit`** through
+  the suite's existing two-door sharing. No tunnel, no inbound port, no new
+  authentication concept.
+- the bucket policies (`va_can_edit`, path per document) already decide what it
+  may write, and every write is a normal artifact or file row — so the person
+  sees what arrived, and can copy/revert it like anything else.
+- a folder (`va-jobs/`) stays as the **local development mode** for an agent on
+  the same machine; it is a convenience, not the contract.
+
+**What powers the agent**: `pi` reads `models.json`, and a **vp code** is a
+model key. Verified: a provider entry with `baseUrl: https://api.terg.hr/vp/v1`,
+`api: openai-completions`, `apiKey: $VPL_VP_KEY` lists the model and answers.
+So an agent gets *N calls until a date*, visible in `vp`'s ledger — its spending
+is the same ledger as everything else in the suite, and its access can be cut
+without touching a provider key.
+
 **Pull, never push.** The person presses *hand it over*, and `va` writes a job:
 
 ```
@@ -100,9 +125,20 @@ changed list as a diagram, and the files as a tree with **accept** and **drop**
 per item. Nothing lands in a field on its own; that is the suite's balloon rule
 with a directory instead of a speech bubble.
 
-Why a folder and not a webhook: no credential for the agent, no port open on the
-laptop, no way for a page to make it act, and it works while offline. The folder
-is the interface.
+Why not a webhook: a page that can make a shell-enabled agent act is remote code
+execution with a login screen. The job is written where the agent can read it;
+the agent decides when to work, and it writes results back as artifacts. No
+endpoint is opened for commands, in either direction.
+
+The docker image, when it exists, is then trivial: Ubuntu, node, `pi`, the
+prompts in `/agent`, `models.json` pointed at the vp door with `$VPL_VP_KEY` in
+the environment, and a worker loop — **outbound only, no inbound port**. That is
+what makes free-tier hosting enough.
+
+Existing prior art on this machine: `eva` is already this shape (Ubuntu + `pi` +
+FastAPI on 8080 + shell hands + SQLite memory + supervision). The image for
+`va`'s agent should be a stripped `eva`, not a second runtime invented from
+scratch.
 
 **From the other direction**, the same job: *"this is the environment (pasted
 inventory or a folder the agent reads), tell me what is in it"* → `report.md` +
