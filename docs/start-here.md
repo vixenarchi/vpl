@@ -68,8 +68,11 @@ in `vi`.
   and the service-role key that comes with it
 - `docs/va.md` — solutioning and infrastructure: the box list that is the truth,
   the small canvas, and the job folder an agent pulls (never a command endpoint)
-- `docs/unify.md` — the bar, settings, gate texts and share dialog, written down
-  as one unification job for later
+- `docs/settings.md` — the one settings dialog: four tabs, test/forget/save, the
+  themes, and the three auth bugs it uncovered (a JWT fragment, two tabs sharing
+  a session, a logout that left a token behind)
+- `docs/unify.md` — the bar, gate texts and share dialog, written down as one
+  unification job for later (settings moved out of it and is done)
 - `docs/build-notes.md` — why v2 exists, the gotchas, where Google's redirect URL lives
 - `docs/specification.md` — the 0-architecture this is built against
 - `~/.config/vpl/accounts.md` — **outside the repo, mode 600**: project ref, app
