@@ -237,7 +237,8 @@ fails on a page. So the call leaves from an origin of ours:
 
 - **`apps/va`** — architecture: the pile in (documents, inventories, drawings), a
   context, an overview, terraform or a reading of a real environment out, each
-  ending in a box list that is plain text.
+  ending in a box list that is plain text — and the same list drawn, with three
+  views and a drag that writes `x, y` back into the text.
 
 - **`agent/`** — va's other half: a job directory in, `out/report.md` and
   `out/files/` back, `pi` with a shell, a box-list checker, and a Dockerfile.
@@ -277,8 +278,8 @@ apps/vr/                  requirements: a sheet, its brief, its glossary
 apps/vz/                  zed: a dictionary, and a read-only service at /p/
 apps/vd/                  documents: a desk of inputs and one output
 apps/vc/                  compliance: rules and proofs, a verdict strip
-apps/va/                  architecture: the pile in, the box list out, and an
-                          agent with its own account that works the queue
+apps/va/                  architecture: the pile in, the box list out (as text and
+                          as a drawing), and an agent with its own account
 apps/api/                 the shared proxy (one function, one page)
 packages/shell/tokens.css palette, type scale, page foundation — copied into
                           each app's vendor/ by tools/stage.sh

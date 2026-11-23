@@ -1131,3 +1131,16 @@ contract — an app that accepts the answer passes `onUse`, may refuse with a
 sentence, and the dock shows the refusal instead of a cheerful "used". vn inserts
 at the caret through its autosave; vi pins a card; the other six have no button
 at all, which is the honest default.
+
+## va, slice 2: the drawing, and one bug that looked like an empty canvas
+
+The canvas is arithmetic, not physics: a box with `x, y` sits where it says, a box
+without one gets a column by kind, and the same text always draws the same
+picture. The only thing it writes back is a position — `setXY()` adds or replaces
+two lines inside the fenced block and leaves every other character alone, which is
+what "the canvas edits the text" has to mean if it is going to be true.
+
+The first run drew an empty pale rectangle with one stray `hr:5432` at the corner.
+Every box was there: they were all stacked at 0,0, because `Number('')` is `0` and
+`x:` with an empty value read as "placed at the origin". A screenshot found it;
+the 21 checks would not have. Same lesson as each slice before this one.

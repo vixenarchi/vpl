@@ -248,14 +248,50 @@ marks intact. The worker log is the whole story:
 - `va_outputs.kind` is a closed list (`doc|report|code`), so keeping an answer as
   `'answer'` was a 400 that the browser reported as "failed to load resource".
 
+## Built: the drawing (slice 2)
+
+The answer can now be read as shapes. Same text, same list, one more way to look
+at it — and the canvas is a **renderer with one pen**, not a second editor.
+
+- **The grammar is the agent's** (`agent/lib/boxes.mjs`), copied into
+  `apps/va/lib/boxes.js` with two additions the canvas needs: an optional
+  `view:` (a filter) and optional `x:`/`y:` (where a drag writes). If the model
+  writes a list the agent's checker accepts, the canvas draws it; one shape, one
+  meaning, no dialect only the drawing understands.
+- **Layout is arithmetic.** A box with `x, y` sits where it says; a box without
+  one is placed by kind (people left, pipes right), so a list the model just
+  wrote is readable on first sight. No force simulation, no library, and the same
+  text always gives the same picture.
+- **Three views, one list.** `everything / context / inside / deployment` filter
+  by `view:`; a box without one appears everywhere. They are buttons on the
+  drawing, not tabs that swap documents.
+- **The strip reports, it does not block.** An arrow pointing at nothing, a
+  duplicate id, a kind outside the closed list — the drawing still draws what it
+  can and the strip says what is wrong. Validation is a strip, not a gate.
+- **A drag writes two lines.** `setXY()` finds the box's `- id:` inside the fenced
+  block and adds or replaces `x:` and `y:`, leaving every other character alone.
+  The document then saves through the same silent autosave as typing, so
+  "the canvas edits the text" is literally true and a reload proves it.
+- **Nothing is stored twice.** There is no diagram table, no JSON blob, no
+  position database: positions are two lines of yaml in the document somebody
+  already owns.
+- **21/21** checks (`apps/vn/test/va-canvas.mjs`, inside `tools/test-va.sh`),
+  locally and against `https://vpl-va.pages.dev`: a mocked answer with a box
+  list, four boxes and the two arrows that go somewhere, kinds as words, the
+  strip naming the broken arrow, the three views, a drag writing exactly two
+  lines and touching nothing else, the position surviving a reload, a document
+  with no list having no button, and a phone that scales instead of scrolling.
+
+Two bugs of the same family appeared while building it, both found by looking:
+`Number('')` is `0`, so every box without an `x:` landed in the top-left corner
+(the drawing looked empty — the boxes were stacked at 0,0 under the first one);
+and `$('#btn-draw')`-style lookups in `vn` take an id, not a selector, which is
+the kind of thing only a click finds.
+
 ## The slices, in the order that keeps it light
 
 1. ~~**The deck**~~ — done.
-2. **The box list and the canvas** — kind `diagram` artifact, YAML as text, the
-   SVG canvas, the three views, the validation strip. This is the week's real
-   work, and it is where "is the canvas worth it" gets answered by using it.
-   Still to do: the agent already produces the list, so the canvas now renders
-   something real from the first day.
+2. ~~**The box list and the canvas**~~ — done. See *Built: the drawing* below.
 3. ~~**The hand-off**~~ — done.
 4. **Only if it earns it** — the reverse pull, done by the agent, shown as a
    report and a drawing.

@@ -168,6 +168,7 @@ VR_URL=http://127.0.0.1:8101 node vr-ai.mjs         # model proposals, 21 checks
 VR_URL=http://127.0.0.1:8101 node vr-share.mjs      # sharing, the refusal, the copy + its file, 29 checks
 VZ_URL=http://127.0.0.1:8103 node vz-check.mjs      # dictionary, bin, guest, the service, phone, 59 checks
 node va-check.mjs                                   # architecture desk, 40 checks
+node va-canvas.mjs                                  # the box list drawn, 21 checks
 node va-handoff.mjs                                 # a job to an agent and back, 14 checks
 node settings-check.mjs                             # one dialog: tabs, save, test, theme, 22
 node auth-check.mjs                                 # two tabs, one storage, a real logout, 11

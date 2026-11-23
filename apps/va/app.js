@@ -16,6 +16,8 @@ import { mountDock } from './vendor/dock.js';
 import * as engine from './vendor/engine.js';
 import * as settings from './vendor/settings.js';
 import { TEMPLATES, DEFAULT_TEMPLATE, templateById } from './templates.js';
+import { parseDocument, setXY, VIEWS } from './lib/boxes.js';
+import { draw } from './lib/draw.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
@@ -31,6 +33,8 @@ const S = {
   role: null,          // owner | edit | view | null
   guest: null,         // null | 'share'
   current: null,       // the output on the desk
+  drawing: false,      // the answer read as shapes instead of words
+  view: 'all',         // a filter over one box list, not a schema
   artDraft: null,      // the input open in the dialog
   notes: '',
   busy: false,
@@ -535,10 +539,12 @@ function paintOutput() {
     versions.hidden = true;
     $('#out-meta').textContent = '';
     body.value = '';
+    S.drawing = false;
+    paintDrawing();
     return;
   }
   none.hidden = true;
-  body.hidden = false;
+  body.hidden = !!S.drawing;            // read as words, or read as shapes
   if (body.value !== o.body) body.value = o.body;
   body.readOnly = S.role === 'view';
 
@@ -549,6 +555,7 @@ function paintOutput() {
   }).join('');
   versions.value = o.id;
   $('#out-meta').textContent = `${engine.countWords(o.body).toLocaleString()} words · ${engine.when(o.created_at)}`;
+  paintDrawing();
 }
 
 $('#out-versions').addEventListener('change', () => {
@@ -572,6 +579,76 @@ const saveOutput = debounce(async () => {
 });
 
 $('#out-body').addEventListener('input', saveOutput);
+
+/* ── the drawing: the same answer, read as shapes ───────────────────
+ * The text is the truth. This parses the answer's fenced box list, draws it,
+ * and the only thing it may write back is where a box sits — because a drag is
+ * a way of editing `x` and `y`, and those are lines in the yaml like any other.
+ * Nothing here decides what the architecture is; it shows what somebody wrote. */
+function listOfAnswer() {
+  const o = currentOutput();
+  return o ? parseDocument(o.body) : { boxes: [], arrows: [], problems: [], blocks: 0 };
+}
+
+function paintDrawing() {
+  const o = currentOutput();
+  const wrap = $('#draw');
+  const btn = $('#btn-draw');
+  const list = listOfAnswer();
+  const has = list.boxes.length > 0;
+
+  btn.hidden = !has;
+  if (!has) { S.drawing = false; }
+  if (!has || !S.drawing) { wrap.hidden = true; btn.classList.remove('on'); return; }
+
+  wrap.hidden = false;
+  btn.classList.add('on');
+  btn.textContent = 'text';
+  for (const b of document.querySelectorAll('#draw-views .view')) b.classList.toggle('on', b.dataset.view === S.view);
+
+  const counted = draw($('#draw-svg'), list, {
+    view: S.view,
+    onMove: (id, x, y) => moveBox(id, x, y),
+  });
+
+  $('#draw-count').textContent = `${counted.boxes} boxes · ${counted.arrows} arrows`
+    + (S.view === 'all' ? '' : ` · ${S.view}`);
+
+  const strip = $('#draw-strip');
+  const problems = list.problems;
+  strip.hidden = !problems.length;
+  if (problems.length) {
+    strip.textContent = problems.length === 1
+      ? '1 thing to fix: ' + problems[0]
+      : `${problems.length} things to fix: ` + problems.slice(0, 3).join(' · ')
+        + (problems.length > 3 ? ' · …' : '');
+  }
+  if (!o) strip.hidden = true;
+}
+
+/* a drag writes two lines and saves like typing does */
+function moveBox(id, x, y) {
+  const o = currentOutput();
+  if (!o || S.role === 'view') return;
+  const next = setXY($('#out-body').value, id, x, y);
+  if (next === $('#out-body').value) return;
+  $('#out-body').value = next;
+  saveOutput();
+  paintDrawing();
+}
+
+$('#btn-draw').onclick = () => {
+  S.drawing = !S.drawing;
+  $('#btn-draw').textContent = S.drawing ? 'text' : 'drawing';
+  paintOutput();
+};
+
+$('#draw-views').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-view]');
+  if (!b) return;
+  S.view = b.dataset.view;
+  paintDrawing();
+});
 
 $('#btn-copy').onclick = async () => {
   const o = currentOutput();
