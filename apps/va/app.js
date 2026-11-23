@@ -24,6 +24,7 @@ const S = {
   project: null,
   artifacts: [],
   outputs: [],
+  jobs: [],
   role: null,          // owner | edit | view | null
   guest: null,         // null | 'share'
   current: null,       // the output on the desk
@@ -240,6 +241,7 @@ async function openJob(id) {
   localStorage.setItem('va.last', id);
   S.artifacts = await db.listArtifacts(id);
   S.outputs = await db.listOutputs(id);
+  S.jobs = await db.listJobs(id).catch(() => []);
   S.role = await db.roleOn(S.project);
   if (seq !== _loadSeq) return;             // only the last answer counts
   S.current = S.outputs[0]?.id || null;
@@ -251,6 +253,7 @@ async function openJob(id) {
   $('#guest-banner').hidden = true;
   renderRail();
   paintSpec();
+  paintJobs();
 }
 
 function paintSpec() {
@@ -543,6 +546,168 @@ $('#btn-print').onclick = () => {
   $('#print-doc').textContent = `${S.project?.title || ''}\n\n${o.body}`;
   window.print();
 };
+
+
+/* ── the hand-off ─────────────────────────────────────────────────── */
+/* The desk never commands a shell. It writes a folder — task.md plus the pile
+ * as text — and a row that says "queued". An agent that already has an account
+ * and a shell polls the row, works in the folder, and writes its answer back.
+ * Nothing here can execute anything, which is the only reason it is safe to
+ * leave a page like this on the open internet. */
+
+const JOB_WORDS = { queued: 'waiting', running: 'working', done: 'answered', failed: 'gave up' };
+
+function jobWhen(j) {
+  return engine.when(j.done_at || j.started_at || j.created_at);
+}
+
+function slugName(s, i) {
+  const base = String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '').slice(0, 40) || 'input';
+  return String(i + 1).padStart(2, '0') + '-' + base + '.md';
+}
+
+/* The task the agent reads: our template id in the front matter, then the brief,
+ * the note, and a list of what is in inputs/ — no paths it did not get. */
+function taskFor(job, refs) {
+  const p = S.project;
+  const lines = [
+    '---',
+    'template: ' + job.template,
+    'title: ' + (p?.title || 'untitled job'),
+    '---',
+    '',
+    '## What is asked',
+    (p?.brief || '').trim() || '[no brief — say so in the report rather than inventing one]',
+    '',
+  ];
+  if (job.note.trim()) lines.push('## How it should be done', job.note.trim(), '');
+  lines.push('## On the pile', ...refs.map((r) => '- inputs/' + r), '');
+  return lines.join('\n');
+}
+
+async function handOver() {
+  const p = S.project;
+  if (!p || S.role === 'view') return;
+  const texts = S.artifacts.filter((a) => (a.text || '').trim());
+  if (!texts.length) return toast('the pile is empty — paste the brief first');
+  const btn = $('#btn-hand');
+  btn.disabled = true;
+  msg('#hand-msg', 'writing the job…', 'busy');
+  try {
+    const job = await db.addJob(p.id, {
+      template: $('#template').value,
+      note: $('#notes').value.trim(),
+      task: (p.brief || '').trim(),
+    });
+    const dir = p.id + '/jobs/' + job.id;
+    const refs = texts.map((a, i) => ({ a, name: slugName(a.title, i) }));
+    for (const r of refs) {
+      await db.jobPut(dir + '/inputs/' + r.name,
+        '# ' + (r.a.title || 'input') + '\n\n' + r.a.text);
+    }
+    const files = S.artifacts.filter((a) => a.file_path);
+    await db.jobPut(dir + '/task.md', taskFor({ ...job, note: $('#notes').value.trim() }, refs.map((r) => r.name))
+      + (files.length ? '\n## Files that did not travel\n'
+        + files.map((f) => '- ' + f.file_name + ' (in the desk, not in this folder)').join('\n') + '\n' : ''));
+    const saved = await db.updateJob(job.id, { path: dir });
+    S.jobs.unshift(saved);
+    paintJobs();
+    msg('#hand-msg', 'handed over — an agent picks it up when it is running', 'good');
+    startPolling();
+  } catch (err) {
+    msg('#hand-msg', 'could not hand it over: ' + err.message, 'bad');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+$('#btn-hand').onclick = handOver;
+
+function paintJobs() {
+  const list = $('#jobs');
+  const mine = S.jobs || [];
+  list.innerHTML = '';
+  $('#handoff').hidden = S.role === 'view' || !S.project;
+  if (!mine.length) return;
+  for (const j of mine) {
+    const li = document.createElement('li');
+    li.className = 'job ' + j.status;
+    const files = Array.isArray(j.files) ? j.files : [];
+    li.innerHTML = `<div class="job-line">
+        <span class="job-what">${esc(templateById(j.template)?.label || j.template)}</span>
+        <span class="job-state"><i class="mark"></i>${esc(JOB_WORDS[j.status] || j.status)}</span>
+        <span class="job-when muted">${esc(jobWhen(j))}</span>
+      </div>`
+      + (j.error ? `<p class="job-err">${esc(j.error)}</p>` : '')
+      + (j.status === 'done'
+        ? `<div class="job-acts">
+             <button class="ghost" type="button" data-act="keep">keep what came back</button>
+             <button class="link" type="button" data-act="drop">drop</button>
+           </div>`
+        : (j.status === 'failed'
+          ? `<div class="job-acts"><button class="link" type="button" data-act="drop">drop</button></div>`
+          : '<p class="job-wait muted">the desk checks again by itself</p>'));
+    if (j.status === 'done' && files.length) {
+      li.insertAdjacentHTML('beforeend', '<ul class="job-files">'
+        + files.map((f) => `<li><span>${esc(f.name)}</span></li>`).join('') + '</ul>');
+    }
+    li.querySelectorAll('[data-act]').forEach((b) => {
+      b.onclick = () => (b.dataset.act === 'keep' ? keepJob(j) : dropJob(j));
+    });
+    list.append(li);
+  }
+}
+
+async function keepJob(j) {
+  const title = (templateById(j.template)?.label || j.template) + ' — ' + jobWhen(j);
+  try {
+    const body = (j.report || '').trim() || '[the agent said nothing]';
+    const out = await db.addOutput(S.project.id, { kind: 'report', title, body });
+    S.outputs.unshift(out);
+    S.current = out.id;
+    paintOutput();
+    const files = (Array.isArray(j.files) ? j.files : []);
+    for (const [i, f] of files.entries()) {
+      const a = await db.addArtifact(S.project.id, {
+        kind: 'file', title: f.name, text: '', file_path: j.path + '/out/' + f.name,
+        file_name: f.name, file_size: f.size || 0, file_mime: '', pos: 90 + i,
+      });
+      S.artifacts.push(a);
+    }
+    await db.updateJob(j.id, { status: 'done' });
+    renderArtifacts();
+    paintSpec();
+    toast(files.length ? 'kept, with ' + files.length + ' file(s) on the pile' : 'kept as a new answer');
+  } catch (err) { toast('could not keep it: ' + err.message); }
+}
+
+async function dropJob(j) {
+  try {
+    await db.deleteJob(j.id);
+    S.jobs = S.jobs.filter((x) => x.id !== j.id);
+    paintJobs();
+  } catch (err) { toast('could not drop it: ' + err.message); }
+}
+
+/* A job in flight is the only reason to ask again. Nothing polls a settled list. */
+function startPolling() {
+  clearInterval(startPolling._t);
+  const flight = (S.jobs || []).some((j) => j.status === 'queued' || j.status === 'running');
+  if (!flight || !S.project) return;
+  startPolling._t = setInterval(async () => {
+    if (!S.project) return clearInterval(startPolling._t);
+    try {
+      const fresh = await db.listJobs(S.project.id);
+      const changed = JSON.stringify(fresh) !== JSON.stringify(S.jobs);
+      S.jobs = fresh;
+      if (changed) paintJobs();
+      if (!fresh.some((j) => j.status === 'queued' || j.status === 'running')) {
+        clearInterval(startPolling._t);
+      }
+    } catch { /* the desk is not the thing that broke */ }
+  }, 6000);
+}
 
 /* ── generate ─────────────────────────────────────────────────────── */
 $('#gen').onsubmit = (e) => { e.preventDefault(); generate(); };

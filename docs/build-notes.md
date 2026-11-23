@@ -1045,3 +1045,24 @@ Forty checks pass locally and against `vpl-va.pages.dev` on the first run. Then 
 screenshot found what the checks could not: the line under the template picker
 read "expects: undefined", because the pack had no `needs` field. Four sentences
 fixed it. Looking at the thing is still a test.
+
+## va: one real job through the queue, in 61 seconds
+
+The hand-off shipped the only way it could be safe: the desk writes a row and a
+folder, and an agent that already has a shell polls the row. Nothing in the
+browser can make anything run.
+
+The fake run came first, because wiring is wiring: `--fake` writes a canned
+report so the loop can be walked 14 times a minute. It found three bugs before a
+single model call — a `user_id` with no default, a storage path encoded so hard
+that `task.md` stopped being in a bucket, and an answer kept as
+`kind: 'answer'` when the table says `doc|report|code`.
+
+Then one real job through the vp door: 61 seconds, one file, `context.yaml` with
+two boxes and one arrow, kept on the desk. The worker's log says it in four
+lines, and 50 of those 61 seconds were the model.
+
+Two things stayed out on purpose. There is **no lease**: a job claimed by a dead
+worker is a row a person can re-queue, and a lock table would be a second state
+machine pretending to be a first. And there is **no queue depth**, no worker
+list, no dashboard — the strip only shows this job's jobs.

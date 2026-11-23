@@ -16,6 +16,7 @@
 
 import { spawn } from 'node:child_process';
 import { parseBoxList } from './lib/boxes.mjs';
+import { makeApi } from './lib/api.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -43,6 +44,18 @@ const cfg = {
     return i > 0 ? process.argv[i + 1] : null;
   })(),
   quiet: process.argv.includes('--quiet'),
+  // The suite's queue. Without a URL the worker reads folders, which is the
+  // local dev mode and the only mode that needs no account.
+  supa: {
+    url: env.VPL_SUPABASE_URL || '',
+    anon: env.VPL_SUPABASE_ANON || '',
+    email: env.VPL_AGENT_EMAIL || '',
+    password: env.VPL_AGENT_PASS || '',
+  },
+  bucket: process.argv.includes('--bucket'),
+  // A canned answer, so the wiring can be tested without a model or a cent.
+  fake: env.VPL_FAKE === '1' || process.argv.includes('--fake'),
+  keepWork: env.VPL_KEEP === '1',
 };
 
 const say = (...a) => {
@@ -144,7 +157,49 @@ async function buildPrompt(jobDir, taskText) {
   return { template, prompt: parts.filter(Boolean).join('\n') };
 }
 
+const FAKE_REPORT = [
+  'The system is one job on a desk: a person writes a brief, a template shapes it,',
+  'and one answer comes back to be edited. [assumption] nothing else exists.',
+  '',
+  '```yaml',
+  'boxes:',
+  '  - id: person',
+  '    label: Person',
+  '    kind: person',
+  '    host: ""',
+  '    note: [no address] the one user',
+  '  - id: va',
+  '    label: va',
+  '    kind: external',
+  '    host: va.terg.hr',
+  '    note: the desk',
+  'arrows:',
+  '  - from: person',
+  '    to: va',
+  '    label: https',
+  '```',
+  '',
+  '## What I checked',
+  '- the brief in inputs/',
+  '',
+  '## What I did not check',
+  '- anything outside the brief',
+].join('\n');
+
+/* Testing the wiring must not cost a model call. --fake writes the same shape
+ * the prompts ask for and says so in the report; nothing about it pretends. */
+async function runFake(jobDir) {
+  const started = Date.now();
+  await fs.mkdir(path.join(jobDir, 'out', 'files'), { recursive: true });
+  await fs.writeFile(path.join(jobDir, 'out', 'files', 'boxes.yaml'),
+    'boxes:\n  - id: person\n    label: Person\n    kind: person\n    host: ""\n    note: [no address] the one user\n'
+    + '  - id: va\n    label: va\n    kind: external\n    host: va.terg.hr\n    note: the desk\n'
+    + 'arrows:\n  - from: person\n    to: va\n    label: https\n');
+  return { code: 0, out: FAKE_REPORT + '\n\n[worker] this answer is canned (--fake).', err: '', ms: Date.now() - started };
+}
+
 function runPi(jobDir, prompt) {
+  if (cfg.fake) return runFake(jobDir);
   return new Promise((resolve) => {
     const started = Date.now();
     const args = ['-p', '--model', cfg.model, '--session-dir', path.join(jobDir, '.session'), prompt];
@@ -306,6 +361,90 @@ async function runJob(jobDir) {
   return ok;
 }
 
+
+// --- the suite queue -----------------------------------------------------
+
+const api = cfg.supa.url
+  ? makeApi({ url: cfg.supa.url, anon: cfg.supa.anon, email: cfg.supa.email, password: cfg.supa.password })
+  : null;
+
+const MIME = {
+  '.md': 'text/markdown; charset=utf-8', '.txt': 'text/plain; charset=utf-8',
+  '.yaml': 'text/yaml; charset=utf-8', '.yml': 'text/yaml; charset=utf-8',
+  '.json': 'application/json', '.tf': 'text/plain; charset=utf-8',
+  '.hcl': 'text/plain; charset=utf-8', '.sh': 'text/plain; charset=utf-8',
+  '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.pdf': 'application/pdf',
+};
+const mimeOf = (name) => MIME[path.extname(name).toLowerCase()] || 'application/octet-stream';
+
+const stamp = (s) => (s ? new Date(s).toLocaleString('hr-HR', { dateStyle: 'short', timeStyle: 'short' }) : '');
+
+/* One queued row = one folder on disk = one call to pi = the same folder
+ * uploaded back. The row is claimed with the filter in the write, so two agents
+ * watching the same queue cannot both do the same job. */
+async function runBucketJob(row) {
+  const claimed = await api.claim(row.id);
+  if (!claimed) return say(`job ${row.id.slice(0, 8)} · somebody else took it`);
+  const dir = path.join(cfg.jobs, '.bucket', row.id);
+  const root = row.path || `${row.project_id}/jobs/${row.id}`;
+  say(`job ${row.id.slice(0, 8)} · ${row.template} · ${stamp(row.created_at)}`);
+
+  let ok = false;
+  let error = '';
+  let files = [];
+  try {
+    await fs.rm(dir, { recursive: true, force: true });
+    await fs.mkdir(path.join(dir, 'inputs'), { recursive: true });
+    const task = (await api.download(`${root}/task.md`)).toString('utf8');
+    await fs.writeFile(path.join(dir, 'task.md'), task);
+
+    // Whatever the desk put under inputs/ — nothing is guessed from the task text.
+    for (const f of await api.list(`${root}/inputs`)) {
+      const body = await api.download(`${root}/inputs/${f.name}`);
+      await fs.writeFile(path.join(dir, 'inputs', f.name), body);
+    }
+
+    ok = await runJob(dir);
+
+    const report = await fs.readFile(path.join(dir, 'out', 'report.md'), 'utf8');
+    await api.upload(`${root}/out/report.md`, report, 'text/markdown; charset=utf-8');
+    const outFiles = await walkOut(path.join(dir, 'out', 'files'));
+    files = [];
+    for (const rel of outFiles) {
+      const body = await fs.readFile(path.join(dir, 'out', 'files', rel));
+      await api.upload(`${root}/out/files/${rel}`, body, mimeOf(rel));
+      files.push({ name: rel, size: body.length });
+    }
+    await api.finish(row.id, {
+      status: ok ? 'done' : 'failed',
+      report: report.trim(),
+      files,
+      done_at: new Date().toISOString(),
+      error: ok ? '' : 'the agent did not finish; its own words are in the report',
+    });
+    say(`job ${row.id.slice(0, 8)} · ${ok ? 'done' : 'failed'} · ${files.length} file(s) back`);
+  } catch (err) {
+    error = String(err && err.message ? err.message : err).slice(0, 500);
+    await api.finish(row.id, {
+      status: 'failed',
+      report: `# failed\n\nThe agent could not finish this job.\n\n\`\`\`\n${error}\n\`\`\`\n`,
+      done_at: new Date().toISOString(),
+      error,
+    }).catch(() => {});
+    say(`job ${row.id.slice(0, 8)} · failed · ${error}`);
+  } finally {
+    if (!cfg.keepWork) await fs.rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
+  return ok;
+}
+
+async function bucketOnce() {
+  const rows = await api.queue();
+  if (!rows.length) return false;
+  for (const row of rows) await runBucketJob(row);
+  return true;
+}
+
 // --- the loop ------------------------------------------------------------
 
 async function pending() {
@@ -352,6 +491,32 @@ async function main() {
     }
     return;
   }
+  if (cfg.bucket) {
+    if (!api) throw new Error('--bucket needs VPL_SUPABASE_URL and VPL_SUPABASE_ANON');
+    if (!cfg.supa.email || !cfg.supa.password) throw new Error('--bucket needs VPL_AGENT_EMAIL and VPL_AGENT_PASS');
+    if (!cfg.fake) await preparePi();
+    await api.signIn();
+    say(`va-agent · queue ${cfg.supa.email} · model ${cfg.fake ? 'canned (--fake)' : cfg.model}`);
+    if (cfg.once) {
+      const any = await bucketOnce();
+      if (!any) say('nothing to do');
+      return;
+    }
+    let stopping = false;
+    process.on('SIGINT', () => (stopping = true));
+    process.on('SIGTERM', () => (stopping = true));
+    while (!stopping) {
+      let any = false;
+      try {
+        any = await bucketOnce();
+      } catch (err) {
+        say('queue: ' + (err && err.message ? err.message : err));
+      }
+      if (!any) await new Promise((r) => setTimeout(r, cfg.poll));
+    }
+    return say('stopped');
+  }
+
   await preparePi();
   say(`va-agent · jobs ${cfg.jobs} · model ${cfg.model}`);
 

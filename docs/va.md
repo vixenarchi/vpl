@@ -190,16 +190,73 @@ One bug the screenshot found and the tests could not: the template line said
 "expects: undefined" because `va`'s pack had no `needs` field. It is there now,
 and it is a reminder that "look at the thing" is still a test.
 
+## Built: the hand-off (slice 3)
+
+The desk can now write a job and an agent can answer it, and **nothing on the
+desk can command the agent's shell**. That is not a detail — it is the whole
+reason a page like this may exist on the open internet.
+
+- **A job is a row and a folder.** The row is `va_jobs` (`queued → running →
+  done|failed`, with `template`, `note`, `path`, `report`, `files`, `error`).
+  The folder is `<project>/jobs/<job>/task.md` plus `inputs/*.md` in the
+  `va-files` bucket. Both are written by one button, in that order, so a row
+  never points at a folder that is not there yet.
+- **Who may work a job is the project's own rule.** `va_jobs` reads with
+  `va_can_read(project_id)` and writes with `va_can_edit(project_id)` — the same
+  functions the bucket policies use. An agent is a colleague the person shared
+  the job with, not a new kind of account, and there is no second permission
+  system to keep in sync.
+- **The claim is the write.** The worker takes a job with
+  `PATCH va_jobs?id=…&status=eq.queued`; a second worker's request matches no
+  row and it says "somebody else took it". No lock, no lease, no scheduler, no
+  worker registry.
+- **The worker learns one thing: `--bucket`.** Same loop, same prompts, same
+  `runJob`; a small `agent/lib/api.mjs` signs in as the agent's own account over
+  plain REST — no supabase-js, no realtime — downloads `task.md` and `inputs/`,
+  runs pi in a local mirror under `jobs/.bucket/<id>`, and uploads
+  `out/report.md` and `out/files/**` back to the same folder before patching the
+  row. Folder mode stays the local dev mode; the two differ by one branch.
+- **`--fake` exists so the wiring can be tested for free.** It writes the same
+  shape without a model and says "this answer is canned" inside the report.
+- **The desk keeps or drops.** *keep what came back* turns the report into a new
+  answer on the desk and the agent's files into pile items; *drop* deletes the
+  row. A job in flight is the only thing the desk ever polls, and only while it
+  is in flight.
+
+**Proved twice.** `apps/vn/test/va-handoff.mjs` — **14/14**, locally and against
+`https://vpl-va.pages.dev` — walks the whole loop with `--fake`. Then one real
+job: a brief about this app, template `context`, model
+`vpl/nemotron-3.5-lightning-30b-a3b` behind **`api.terg.hr/vp`**, worker in the
+workshop. **61 s** from the button to *answered*, one file back (`context.yaml`,
+two boxes, one arrow), kept as an answer with the agent's own `[assumption]`
+marks intact. The worker log is the whole story:
+
+```
+14:38:11 job 3d58280c · context · 23. 11. 2026. 15:38
+14:38:12 job 3d58280c-… · template context · model vpl/nemotron-…
+14:39:02 job 3d58280c-… · done · 50s · 1 file(s)
+14:39:03 job 3d58280c · done · 1 file(s) back
+```
+
+**Three bugs the two runs found**, all the same family — obvious once it fails:
+
+- `va_jobs.user_id` had no default, so the desk's insert was rejected over a null
+  it never meant to send. The session knows who pressed the button; the column
+  now defaults to `auth.uid()`.
+- The storage path was encoded whole, so `…/task.md` became a single segment and
+  storage answered `Bucket not found`. Segments are encoded; slashes are not.
+- `va_outputs.kind` is a closed list (`doc|report|code`), so keeping an answer as
+  `'answer'` was a 400 that the browser reported as "failed to load resource".
+
 ## The slices, in the order that keeps it light
 
-1. ~~**The deck**~~ — done (above).
+1. ~~**The deck**~~ — done.
 2. **The box list and the canvas** — kind `diagram` artifact, YAML as text, the
    SVG canvas, the three views, the validation strip. This is the week's real
    work, and it is where "is the canvas worth it" gets answered by using it.
-3. **The hand-off** — the job folder, the protocol, the answered-job screen with
-   accept/drop, and the `terraform` template (output kind `code`). No agent ships
-   with it: the folder is the whole contract, so any agent works, including a
-   shell script.
+   Still to do: the agent already produces the list, so the canvas now renders
+   something real from the first day.
+3. ~~**The hand-off**~~ — done.
 4. **Only if it earns it** — the reverse pull, done by the agent, shown as a
    report and a drawing.
 

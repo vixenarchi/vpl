@@ -369,6 +369,37 @@ body[data-guest='1'] .brief { pointer-events: none; }
 }
 .print-doc { display: none; }
 
+
+/* ── the hand-off ─────────────────────────────────────────────────────
+   The worker reads its state from here, so the mark is a word plus a shape
+   plus a colour: a person must be able to tell "waiting" from "answered"
+   without knowing the palette. */
+.handoff {
+  display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: baseline;
+  margin-top: 1rem; padding-top: 0.8rem; border-top: 1px dashed var(--line);
+}
+.handoff .count { font-size: 0.76rem; flex: 1 1 14rem; }
+.jobs { list-style: none; margin: 0.7rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
+.jobs:empty { margin: 0; }
+.job { border: 1px solid var(--line); border-radius: 8px; padding: 0.5rem 0.65rem; background: var(--paper-2); }
+.job-line { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; font-size: 0.82rem; }
+.job-what { font-weight: 600; }
+.job-when { margin-left: auto; font-size: 0.74rem; }
+.job-state { display: inline-flex; gap: 0.35rem; align-items: center; font-size: 0.78rem; }
+.job-state .mark { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--ink-3); }
+.job.queued .job-state .mark { background: #b8860b; }
+.job.running .job-state .mark { background: #2f6f4f; }
+.job.done .job-state .mark { background: #2f6f4f; }
+.job.failed .job-state .mark { background: #a33a3a; }
+.job.failed { border-color: #a33a3a; }
+.job-acts { display: flex; gap: 0.5rem; align-items: baseline; margin-top: 0.4rem; }
+.job-err, .job-wait { margin: 0.35rem 0 0; font-size: 0.76rem; }
+.job-err { color: #a33a3a; }
+.job-files { list-style: none; margin: 0.35rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.job-files li { font-size: 0.74rem; font-family: var(--mono); color: var(--ink-2);
+  border: 1px solid var(--line); border-radius: 5px; padding: 0.1rem 0.35rem; }
+@media print { .handoff, .jobs { display: none !important; } }
+
 /* the key of record: three buttons under the key field (shell/ai.js) */
 .ai-account { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; margin: 4px 0 10px; }
 .ai-acc-note, .ai-acc-msg { flex-basis: 100%; margin: 0; font-size: .8rem; opacity: .72; }

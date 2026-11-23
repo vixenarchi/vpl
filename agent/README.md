@@ -100,3 +100,31 @@ node test/worker-test.mjs                                   # 12 checks, no mode
 node test/make-job.mjs context "a notes app with a database" jobs
 node worker.mjs --once && cat jobs/*/out/report.md
 ```
+
+## Two ways to get work: a folder, or the suite's queue
+
+The worker's contract is a job directory (`task.md`, `inputs/`, `out/`). Where
+that directory comes from is the only difference between the modes.
+
+**Folder mode** (default) — `VPL_JOBS` is a path; the worker works any directory
+that has `task.md` and no `out/state.json`. This is local development, a USB
+stick, a CI runner.
+
+**Queue mode** — `--bucket` — the worker signs in as the agent's own account and
+works queued rows of `va_jobs`:
+
+```
+VPL_SUPABASE_URL=https://<project>.supabase.co
+VPL_SUPABASE_ANON=eyJ...            # public by design; RLS is the lock
+VPL_AGENT_EMAIL=eva-agent@vpl.local # its own VPL account
+VPL_AGENT_PASS=...
+```
+
+Per job it downloads `<project>/jobs/<id>/task.md` and `inputs/*` from the
+`va-files` bucket, runs pi in a local mirror under `jobs/.bucket/<id>`, uploads
+`out/report.md` and `out/files/**` back, then patches the row to `done` or
+`failed`. The claim is the write, so two agents never do the same job; there is
+no lease and no scheduler, because a stuck job is a row a person can re-queue.
+
+`--fake` writes a canned report instead of calling a model, which is how the
+whole loop is tested without spending a credit.

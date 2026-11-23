@@ -1,6 +1,7 @@
 /* vpl · va — the whole database surface of this app, in one file.
  *
- * Five tables: a job, its inputs, its runs, its outputs, its shares.
+ * Six tables: a job, its inputs, its runs, its outputs, its shares, and the
+ * queue of hand-offs to an agent.
  * supabase-js comes from a CDN — no bundler, and nothing here knows about
  * the screen.
  */
@@ -38,6 +39,7 @@ const A = 'id,project_id,user_id,kind,title,text,file_path,file_name,file_size,f
 const R = 'id,project_id,user_id,template,model,notes,prompt,status,error,took_ms,created_at';
 const O = 'id,project_id,run_id,user_id,kind,title,body,pos,created_at,updated_at';
 const SH = 'id,project_id,owner_id,code,email,role,pending,created_at';
+const J = 'id,project_id,user_id,template,task,note,path,status,report,files,error,created_at,started_at,done_at';
 
 /* ── auth ─────────────────────────────────────────────────────────── */
 export async function session() {
@@ -241,6 +243,56 @@ export async function deleteOutput(id) {
 function newCode() {
   const bytes = crypto.getRandomValues(new Uint8Array(12));
   return [...bytes].map((b) => b.toString(36).padStart(2, '0')).join('').slice(0, 20);
+}
+
+/* ── the queue ──────────────────────────────────────────────────────── */
+/* A job is a row and a folder. The desk writes both; an agent watches the
+ * table, reads the folder, and writes its answer back into the same two. */
+
+export async function listJobs(projectId, limit = 6) {
+  const sb = await client();
+  const { data, error } = await sb.from('va_jobs').select(J)
+    .eq('project_id', projectId).order('created_at', { ascending: false }).limit(limit);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function addJob(projectId, row) {
+  const sb = await client();
+  const { data, error } = await sb.from('va_jobs')
+    .insert({ project_id: projectId, ...row }).select(J).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateJob(id, patch) {
+  const sb = await client();
+  const { data, error } = await sb.from('va_jobs').update(patch).eq('id', id).select(J).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteJob(id) {
+  const sb = await client();
+  const { error } = await sb.from('va_jobs').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/* The folder, not the row: task.md and the texts of the pile, under
+ * <project>/jobs/<job>/. Upload is idempotent so a retried hand-off cannot
+ * leave two versions of the same instruction. */
+export async function jobPut(path, text) {
+  const sb = await client();
+  const { error } = await sb.storage.from(BUCKET).upload(path, new Blob([text], { type: 'text/markdown' }),
+    { upsert: true, contentType: 'text/markdown; charset=utf-8' });
+  if (error) throw error;
+}
+
+export async function jobText(path) {
+  const sb = await client();
+  const { data, error } = await sb.storage.from(BUCKET).download(path);
+  if (error) throw error;
+  return data.text();
 }
 
 export async function listShares(projectId) {
