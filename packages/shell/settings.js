@@ -356,6 +356,9 @@ export function mountSettings({ dialog, proxy = 'https://api.terg.hr/chat', onSa
       dialog.showModal();
     },
     close: () => dialog.close(),
+    /* an app may have something to say in this dialog ("no key yet — paste one
+     * here"), and it should say it in the same place as everything else */
+    say: (text, state = '') => say(text, state),
     refresh: () => fillForm(),
     get tab() { return tab; },
   };

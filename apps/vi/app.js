@@ -924,7 +924,7 @@ async function searchFacts() {
   const c = searchCfg();
   if (!c.key || !c.provider) {
     openAiDialog();
-    say($('#ai-msg'), 'add a search key below — one per browser', 'bad');
+    SET?.say?.('add a search key below — one per browser', 'bad');
     return;
   }
   const query = factQuery(n);
@@ -1151,7 +1151,7 @@ async function ask(messages) {
   const c = aiCfg();
   if (!c.key) {
     openAiDialog();
-    say($('#ai-msg'), 'no key yet — paste one here, once', 'bad');
+    SET?.say?.('no key yet — paste one here, once', 'bad');
     throw new Error('no model key');
   }
   const endpoint = aiEndpoint(c.url);
