@@ -245,6 +245,11 @@ fails on a page. So the call leaves from an origin of ours:
   Static, no analytics, no cookies, `default-src 'self'`. Deploys with
   `./deploy www`.
 
+- **`./tools/test-all.sh`** — everything in one command: syntax, chrome in all
+  eight, settings, every app's suite, the front door and the ux floor in all
+  nine. `VPL_PROD=1` runs the same set against the deployments. The sign-in a
+  suite uses lives in `~/.config/vpl/test.env`, never in the repo.
+
 - **`agent/`** — va's other half: a job directory in, `out/report.md` and
   `out/files/` back, `pi` with a shell, a box-list checker, and a Dockerfile.
   No port, no webhook: a browser can never command it. Built and run in the

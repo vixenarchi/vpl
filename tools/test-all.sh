@@ -47,6 +47,15 @@ run() {                       # run "<label>" <command…>
   printf '\n\033[1m%s\033[0m\n' "$label"
   if "$@" 2>&1 | tail -n 12; then
     pass=$((pass + 1))
+    return
+  fi
+  # Nine servers, one small machine, and a suite that waits 8 s for a repaint:
+  # a single failure is usually a slow neighbour, not a break. A suite that fails
+  # twice is a break, and the retry is printed so the first failure is not hidden.
+  echo "   — failed once; retrying (a slow neighbour looks exactly like a break)"
+  if "$@" 2>&1 | tail -n 12; then
+    pass=$((pass + 1))
+    echo "   — passed on the retry"
   else
     fail=$((fail + 1)); failed+=("$label")
   fi

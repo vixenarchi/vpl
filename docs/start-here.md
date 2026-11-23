@@ -179,6 +179,9 @@ node chrome-check.mjs                               # bar, name, gear, dock, 24
 VPL_PROD=1 ./tools/test-chrome.sh                   # the same against the deployments
 node ux-sniff.mjs                                   # tap targets, tiny type, sideways scroll, 0
 PORT=8108 OAUTH_PORT=0 ./serve www; node www-check.mjs   # the front door, 58 checks
+
+../../tools/test-all.sh                            # all of it, one command
+VPL_PROD=1 ../../tools/test-all.sh                 # all of it, against the deployments
 VPL_PROD=1 node ux-sniff.mjs                        # the same against the deployments
 VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "project title"
 ```
