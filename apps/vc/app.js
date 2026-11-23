@@ -254,11 +254,13 @@ async function openJob(id) {
 function paintSpec() {
   const p = S.project;
   if (!p) return renderWelcome();
+  /* never write into a field the person is typing in: a late repaint must not
+   * eat the words between two keystrokes */
   const title = $('#proj-title');
-  if (title.value !== p.title) title.value = p.title;
+  if (document.activeElement !== title && title.value !== p.title) title.value = p.title;
   title.readOnly = S.role !== 'owner';
   const brief = $('#brief');
-  if (brief.value !== (p.brief || '')) brief.value = p.brief || '';
+  if (document.activeElement !== brief && brief.value !== (p.brief || '')) brief.value = p.brief || '';
   growBrief(brief);
 
   const sel = $('#template');
@@ -663,6 +665,8 @@ async function generate() {
 }
 
 /* ── the model's door and its key ────────────────────────────────── */
+let aiAccount = null;
+
 function wireAi() {
   ai.mountAi({
     provider: $('#ai-provider'), url: $('#ai-url'),
@@ -684,13 +688,24 @@ function wireAi() {
     $('#ai-key').value = '';
     msg('#ai-msg', 'forgotten', 'ok');
     paintSpec();
+    if (aiAccount) aiAccount.paint();
   };
+  aiAccount = ai.mountAccountAi({
+    box: $('#ai-account'),
+    read: () => ({
+      url: $('#ai-url').value.trim(),
+      model: $('#ai-model').value.trim(),
+      key: $('#ai-key').value.trim() || ai.readAi().key,
+    }),
+  });
 }
 
-function openAi() {
+async function openAi() {
+  if (await ai.adoptAccountAi()) paintSpec();
   const c = ai.readAi();
   $('#ai-key').value = c.key || '';
   msg('#ai-msg', '');
+  if (aiAccount) aiAccount.paint();
   $('#ai-dialog').showModal();
 }
 

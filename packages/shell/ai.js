@@ -5,11 +5,14 @@
  * independent apps" means here. Change this file, run tools/stage.sh <app>, and
  * that app carries the new list.
  *
- * What lives here is only the list of doors and the shape of the settings.
- * Where a key is stored is the browser's business, and it is per address — the
- * same person on vn and vi pastes a key twice, because localStorage does not
- * cross subdomains. There is no server to share it through, and that is the
- * point of the suite.
+ * What lives here is the list of doors, the shape of the settings, and the one
+ * thing every app may read from the database: the key of record (`vpl_ai`).
+ *
+ * A key is still per browser, because localStorage does not cross subdomains.
+ * But it can be saved on the account once, and then every app, on every
+ * address, in every browser, adopts it quietly when it finds itself without
+ * one. The call still leaves from the browser and the key still goes only to
+ * the provider — this is a drawer, not a proxy. (The proxy is stage 2 of vp.)
  */
 
 export const AI_KEY = 'vpl.ai';
@@ -153,4 +156,175 @@ export function mountAi({ provider, url, model, models }) {
     read: () => ({ url: url.value.trim(), key: '', model: model.value.trim() }),
     paintModels,
   };
+}
+
+/* ── the key of record (stage 1 of vp) ──────────────────────────────
+ *
+ * One row per person in `vpl_ai`, readable by nobody else. The apps read it,
+ * copy it into localStorage and otherwise behave exactly as before. If this
+ * whole section fails — no config, no token, no table — the suite still works
+ * with a pasted key, which is why it is a fallback and not in the path of
+ * every call.
+ *
+ * The token is the app's own session, read from the same localStorage key
+ * supabase-js writes; this file deliberately creates no second auth client.
+ * The database is reached with plain fetch, so the suite keeps its shape:
+ * no bundler, no library beyond the page's own.
+ */
+
+const AI_TABLE = 'vpl_ai';
+
+function authBase() {
+  const c = window.__VPL_CONFIG__;
+  const m = c && c.url ? c.url.match(/^https?:\/\/([^.]+)/) : null;
+  return m ? 'sb-' + m[1] + '-auth-token' : null;
+}
+
+/* supabase-js stores one JSON blob, or several chunks when the session is
+ * large: sb-<ref>-auth-token, .0, .1 ... */
+function storedSession() {
+  const base = authBase();
+  if (!base) return null;
+  let raw = localStorage.getItem(base);
+  if (!raw) {
+    const parts = Object.keys(localStorage).filter((k) => k.startsWith(base + '.')).sort();
+    if (!parts.length) return null;
+    raw = parts.map((k) => localStorage.getItem(k)).join('');
+  }
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+function storedToken() {
+  const s = storedSession();
+  return s?.access_token || s?.currentSession?.access_token || null;
+}
+
+function tokenUser(token) {
+  try {
+    const body = token.split('.')[1];
+    return JSON.parse(atob(body.replace(/-/g, '+').replace(/_/g, '/'))).sub || null;
+  } catch { return null; }
+}
+
+async function rest(path, init = {}) {
+  const c = window.__VPL_CONFIG__;
+  const token = storedToken();
+  if (!c?.url || !token) return { token: null, data: [], status: 0 };
+  const r = await fetch(c.url + '/rest/v1/' + path, {
+    ...init,
+    headers: {
+      apikey: c.anon,
+      authorization: 'Bearer ' + token,
+      'content-type': 'application/json',
+      ...(init.headers || {}),
+    },
+  });
+  let data = null;
+  try { data = await r.json(); } catch { data = null; }
+  return { token, status: r.status, data };
+}
+
+/* The row, or null when signed out / nothing saved. A missing key is not an
+ * error, so this never throws for the ordinary reasons. */
+export async function accountAi() {
+  const { data } = await rest(AI_TABLE + '?select=url,model,api_key,updated_at&limit=1');
+  const row = Array.isArray(data) ? data[0] : null;
+  if (!row) return null;
+  return { url: row.url || '', model: row.model || '', key: row.api_key || '', updated: row.updated_at };
+}
+
+export async function saveAccountAi({ url, model, key }) {
+  const token = storedToken();
+  if (!token) throw new Error('sign in first');
+  const id = tokenUser(token);
+  if (!id) throw new Error('this session has no name');
+  const res = await rest(AI_TABLE + '?on_conflict=user_id', {
+    method: 'POST',
+    headers: { prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ user_id: id, url: url || '', model: model || '', api_key: key || '',
+      updated_at: new Date().toISOString() }),
+  });
+  if (res.status >= 300) throw new Error('the account refused it (' + res.status + ')');
+}
+
+export async function forgetAccountAi() {
+  const token = storedToken();
+  const id = token && tokenUser(token);
+  if (!id) return;
+  await rest(AI_TABLE + '?user_id=eq.' + id, { method: 'DELETE' });
+}
+
+/* A new browser with no key takes the account's, quietly, once. Returns true
+ * when it did — the app uses that to repaint whatever says "no key yet". */
+export async function adoptAccountAi() {
+  if (readAi().key) return false;
+  let row = null;
+  try { row = await accountAi(); } catch { return false; }
+  if (!row || !row.key) return false;
+  writeAi({ url: row.url, model: row.model, key: row.key });
+  return true;
+}
+
+/* The three buttons under the key field. `read` returns what is currently in
+ * the form, so saving to the account saves the same thing as saving here. */
+export function mountAccountAi({ box, read }) {
+  let signedIn = false;
+  let note = '';
+
+  async function repaint() {
+    const row = signedIn ? await accountAi().catch(() => null) : null;
+    const buttons = !signedIn ? ''
+      : !row?.key
+        ? `<button type="button" class="ghost" data-a="save">save to my account</button>`
+        : `<button type="button" class="ghost" data-a="save">replace it on my account</button>
+           <button type="button" class="ghost" data-a="use">use the account's key here</button>
+           <button type="button" class="ghost danger" data-a="forget">remove from my account</button>`;
+    const line = !signedIn
+      ? 'sign in and one key follows you into every browser, on every address.'
+      : !row?.key
+        ? 'no key on your account yet.'
+        : `on your account since ${when(row.updated)}.`;
+    box.innerHTML = `<p class="ai-acc-note">${line}</p>${buttons}
+      <p class="ai-acc-msg" aria-live="polite">${note}</p>`;
+    box.querySelectorAll('[data-a]').forEach((b) => { b.onclick = () => act(b.dataset.a); });
+  }
+
+  async function act(what) {
+    try {
+      if (what === 'save') {
+        const next = read();
+        if (!next.key || !next.url) { note = 'both an address and a key, please'; return repaint(); }
+        await saveAccountAi(next);
+        writeAi(next);
+        note = 'on your account, and in this browser';
+      }
+      if (what === 'use') {
+        const fresh = await accountAi();
+        if (!fresh?.key) { note = 'nothing on the account'; return repaint(); }
+        writeAi({ url: fresh.url, model: fresh.model, key: fresh.key });
+        note = 'the account\'s key is now in this browser';
+      }
+      if (what === 'forget') {
+        await forgetAccountAi();
+        note = 'gone from your account. this browser keeps its key until you forget it.';
+      }
+    } catch (e) {
+      note = e.message || 'that did not work';
+    }
+    await repaint();
+  }
+
+  async function init() {
+    signedIn = !!storedToken();
+    await repaint();
+  }
+  init();
+  return { paint: repaint, refresh: init };
+}
+
+/* "20 Nov 2026" without a date library and without a timezone argument. */
+function when(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return 'earlier';
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }

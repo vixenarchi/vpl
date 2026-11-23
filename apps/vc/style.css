@@ -388,3 +388,9 @@ body[data-guest='1'] .brief { pointer-events: none; }
   }
 }
 .print-doc { display: none; }
+
+/* the key of record: three buttons under the key field (shell/ai.js) */
+.ai-account { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; margin: 4px 0 10px; }
+.ai-acc-note, .ai-acc-msg { flex-basis: 100%; margin: 0; font-size: .8rem; opacity: .72; }
+.ai-acc-msg { opacity: .9; }
+.ai-acc-msg:empty { display: none; }

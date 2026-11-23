@@ -1057,6 +1057,8 @@ const SHARED_PROXY = 'https://api.terg.hr/chat';
 
 function aiCfg() { return ai.readAi(); }
 
+let aiAccount = null;
+
 function wireAiDialog() {
   const dlg = $('#ai-dialog');
   $('#ai-x').onclick = () => dlg.close();
@@ -1066,6 +1068,14 @@ function wireAiDialog() {
     url: $('#ai-url'),
     model: $('#ai-model'),
     models: $('#ai-models'),
+  });
+  aiAccount = ai.mountAccountAi({
+    box: $('#ai-account'),
+    read: () => ({
+      url: $('#ai-url').value.trim(),
+      model: $('#ai-model').value.trim(),
+      key: $('#ai-key').value.trim() || aiCfg().key,
+    }),
   });
   $('#search-provider').innerHTML = ai.SEARCH_PROVIDERS
     .map((p) => `<option value="${p.id}">${p.label}</option>`).join('');
@@ -1097,13 +1107,15 @@ function paintAiHint() {
   if (el) el.hidden = !!aiCfg().key;
 }
 
-function openAiDialog() {
+async function openAiDialog() {
+  if (await ai.adoptAccountAi()) paintAiHint();
   const c = aiCfg();
   $('#ai-key').value = c.key || '';
   const sc = searchCfg();
   $('#search-provider').value = sc.provider || '';
   $('#search-key').value = sc.key || '';
   say($('#ai-msg'), '');
+  if (aiAccount) aiAccount.paint();
   $('#ai-dialog').showModal();
 }
 

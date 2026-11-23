@@ -2199,12 +2199,22 @@ function setAiConfig(next) {
 const aiEndpoint = ai.aiEndpoint;
 
 // one list of providers for the whole suite, staged from packages/shell/ai.js
+let aiAccount = null;
+
 if (el.setAiProvider) {
   ai.mountAi({
     provider: el.setAiProvider,
     url: el.setAiUrl,
     model: el.setAiModel,
     models: document.querySelector('#ai-models'),
+  });
+  aiAccount = ai.mountAccountAi({
+    box: $('ai-account'),
+    read: () => ({
+      url: el.setAiUrl.value.trim(),
+      model: el.setAiModel.value.trim(),
+      key: el.setAiKey.value.trim() || aiConfig().key,
+    }),
   });
 }
 
@@ -2440,6 +2450,7 @@ function agentInto(where) {
 
 /* ── settings ──────────────────────────────────────────────────────── */
 async function openSettings() {
+  if (await ai.adoptAccountAi()) { /* the key field below picks it up */ }
   const user = await db.session().then((s) => s?.user).catch(() => null);
   const meta = user?.user_metadata || {};
 
@@ -2463,6 +2474,7 @@ async function openSettings() {
     (links ? ' and ' + links + (links === 1 ? ' shared link' : ' shared links') : '') +
     ', and the account itself.';
 
+  if (aiAccount) aiAccount.paint();
   el.settings.showModal();
 }
 

@@ -18,7 +18,19 @@ Two halves, and they are different sizes:
    is for handing access to somebody else (a client, a colleague, a demo)
    without handing over a provider key.
 
-## Stage 1 — a key of record (no new secret, no new server)
+## Stage 1 — a key of record: shipped
+
+`20261201000000_vpl_ai.sql` adds the table, its four owner-only policies and the
+trigger that stamps `updated_at`; `packages/shell/ai.js` adds the four calls
+(`accountAi`, `saveAccountAi`, `forgetAccountAi`, `adoptAccountAi`) and the three
+buttons. `apps/vn/test/key-check.mjs` (22 checks) proves adoption across two
+origins and that a guest — and a bare anon key — sees nothing.
+
+That migration also **fixed an old bug while passing through**: the vc migration
+had been copied from vd and purged `vc_` twice, so deleting an account left its
+`vd_` jobs behind. `vpl_delete_my_account()` now deletes both, plus the key.
+
+## Stage 1 — the design, as written before the code
 
 ```
 vpl_ai

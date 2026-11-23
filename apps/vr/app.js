@@ -833,11 +833,21 @@ const SHARED_PROXY = 'https://api.terg.hr/chat';
 const aiCfg = () => ai.readAi();
 const aiEndpoint = ai.aiEndpoint;
 
+let aiAccount = null;
+
 function wireAiDialog() {
   const dlg = $('#ai-dialog');
   $('#btn-ai').onclick = () => openAiDialog();
   $('#ai-hint-open').onclick = () => openAiDialog();
   $('#ai-x').onclick = () => dlg.close();
+  aiAccount = ai.mountAccountAi({
+    box: $('#ai-account'),
+    read: () => ({
+      url: $('#ai-url').value.trim(),
+      model: $('#ai-model').value.trim(),
+      key: $('#ai-key').value.trim() || aiCfg().key,
+    }),
+  });
   const form = ai.mountAi({
     provider: $('#ai-provider'), url: $('#ai-url'),
     model: $('#ai-model'), models: $('#ai-models'),
@@ -864,13 +874,15 @@ function wireAiDialog() {
   };
 }
 
-function openAiDialog() {
+async function openAiDialog() {
+  if (await ai.adoptAccountAi()) paintAiHint();
   const c = aiCfg();
   $('#ai-key').value = c.key || '';
   const sc = ai.readSearch();
   $('#search-provider').value = sc.provider || '';
   $('#search-key').value = sc.key || '';
   say($('#ai-msg'), '');
+  if (aiAccount) aiAccount.paint();
   $('#ai-dialog').showModal();
 }
 

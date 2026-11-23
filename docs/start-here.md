@@ -61,8 +61,10 @@ in `vi`.
    `vi_ideas`, `vi_shares`, `vr_projects`, `vr_reqs`, `vr_terms`, `vr_shares`,
    `vr_themes`, `vr_vocab`, `vr_log`, `vz_projects`, `vz_pairs`, `vz_shares`,
    `vd_projects`, `vd_artifacts`, `vd_runs`, `vd_outputs`, `vd_shares`,
-   `vc_projects`, `vc_artifacts`, `vc_runs`, `vc_outputs`, `vc_shares`. An
-   app never writes into another app's table. `vpl_prefix_check()` guards the
+   `vc_projects`, `vc_artifacts`, `vc_runs`, `vc_outputs`, `vc_shares`, and the
+   one row that is deliberately not per app: **`vpl_ai`**, the key of record, a
+   person's own model key that every app may read and nobody else can. An app
+   never writes into another app's table. `vpl_prefix_check()` guards the
    convention.
 2. **Migrations are numbered and re-runnable.** A schema change is a new file in
    `supabase/migrations/`, pushed with
@@ -152,10 +154,11 @@ it deletes the project it made and the copy a guest took of it.
 
 Two things, both on the same pattern and neither a new architecture:
 
-- **`vp`, keys and codes** (`docs/vp.md`). Stage 1 is a key of record per
-  account, so a person pastes a model key once instead of once per browser and
-  address. Stage 2 is a proxy with credits and top-up codes, and it is the first
-  thing in the suite that would hold a server-side secret — hence the delay.
+- **`vp`, stage 2** (`docs/vp.md`). Stage 1 shipped: one model key saved on the
+  account (`vpl_ai`) is adopted by every app, on every address, in every new
+  browser. Stage 2 is the proxy with credits and top-up codes — the codes are
+  for other people, so it will come; it is the first thing in the suite that
+  would hold a server-side secret, hence not yet.
 - **a few more apps.** Each one is a folder, one prefixed table set, one Pages
   project, one subdomain, one `docs/<app>.md`, one `<app>-check.mjs`. The rule
   for accepting a new app is not "is it useful" but **"does it have one

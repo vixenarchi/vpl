@@ -862,3 +862,45 @@ The local `./serve` already answers `/api/chat`, so a mock in a test has to
 intercept both `/api/chat` and `https://api.terg.hr/chat` — otherwise the test
 spends its key or fails with the proxy's own words. `**/chat` is the shorter
 route pattern.
+
+---
+
+## vp, stage 1: the key that follows you
+
+The complaint was specific: five apps, two browsers, three accounts, and a model
+key pasted into every combination. The fix is one row.
+
+`vpl_ai` is the only table in the suite without an app prefix, because it is the
+only thing every app may read. Four policies, all "your own row". The apps do
+not change how they call a model: they copy the row into their own
+`localStorage` and the call still leaves from the browser. What changed is that a
+browser without a key asks the account for one — the settings dialog adopts it
+before it opens, and `vd`/`vc` adopt at sign-in so *generate* is not blocked by a
+key that was already on file.
+
+Three things were learned in the doing.
+
+**A second auth client is not free.** The first version created its own
+supabase-js client to read the row, which produced a real warning: two
+GoTrueClients on the same storage key, and with them a chance of racing session
+refreshes. The suite's shell now reads the session token out of the same
+storage key supabase-js writes (chunks included) and speaks REST with plain
+`fetch`. No library, no second client, no warning.
+
+**Never write into a field somebody is typing in.** `paintSpec()` filled the
+title from the database whenever the two differed — correct until a repaint
+lands one keystroke after the person started typing, and then it eats the
+sentence. Both `vd` and `vc` now skip the write when the element has focus. The
+vc test caught it as a shared check whose title had quietly gone back to
+"untitled job"; the report was right and the name was wrong, which is the kind of
+bug that looks like a test flake for an hour.
+
+**The guard sees the prefix, not the intention.** `vpl_ai` would have been a
+`vd_`-shaped mistake if it had been named after the app it was written in; it is
+named `vpl_` because stage 2 (`vp_keys`, `vp_charges`) will read it too, from a
+proxy that knows nothing about vd or vc.
+
+Stage 2 is still not built, and the reason is in `docs/vp.md`: it needs the
+service-role key in the proxy's environment, which is the largest secret this
+suite would hold. The answer to "save me one paste" did not need it. The answer
+to "give my colleague fifty tries until March" will.
