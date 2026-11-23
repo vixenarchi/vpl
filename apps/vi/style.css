@@ -376,7 +376,7 @@ body { font-family: var(--round); background: var(--paper-page); }
   display: grid; place-items: center; font-family: var(--display); font-size: 0.95rem;
 }
 #pick-reason {
-  flex: 1 1 18rem; min-width: 0;
+  flex: 1 1 18rem; min-width: 0; min-height: 2rem;
   border: 2.5px solid var(--ink-line); border-radius: 5px;
   background: var(--paper); padding: 0.45rem 0.65rem; font-size: 0.86rem;
   font-family: var(--round); text-align: left;
@@ -452,7 +452,7 @@ body { font-family: var(--round); background: var(--paper-page); }
 }
 .parked-list .t { font-size: 0.84rem; font-weight: 700; }
 .parked-list .r {
-  display: block; width: 100%; margin-top: 0.15rem;
+  display: block; width: 100%; margin-top: 0.15rem; min-height: 2rem;
   border: 1.5px dashed var(--line-strong); border-radius: 4px;
   background: transparent; color: var(--ink-2);
   font-family: var(--hand); font-size: 0.95rem; padding: 0.08rem 0.35rem; text-align: left;

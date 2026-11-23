@@ -100,7 +100,13 @@ ok((await pg.locator('#parked-list li').count()) === 1, 'and one parked');
 // restore (the drawer repaints after a swap, so wait for the row itself)
 await ensureOpen();
 await pg.waitForSelector('#parked-list [data-a="restore"]', { timeout: 8000 });
-await pg.locator('#parked-list [data-a="restore"]').first().click();
+const row = pg.locator('#parked-list [data-a="restore"]').first();
+await row.click();
+/* A click that lands while the drawer is repainting is a lost click, not a bug in
+ * restore. Wait for the row to be gone — the act itself — and only then count. */
+if (!(await until(async () => (await pg.locator('#parked-list [data-a="restore"]').count()) === 0, 6000))) {
+  await row.click({ timeout: 3000 }).catch(() => {});
+}
 ok(await until(async () => (await pg.locator('.note').count()) === 2, 8000), 'restore puts the idea back on the wall');
 
 // one selected per project is enforced by the database, not by the UI

@@ -41,8 +41,12 @@ const audit = ({ SMALL_HIT, SMALL_TYPE }) => {
     return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none';
   };
   const hit = document.querySelectorAll('button, a[href], select, input:not([type=hidden]), [role=button], [tabindex="0"]');
+  /* WCAG draws the same line: a link inside a sentence is text, and its target
+   * is the sentence. A button, or a link that stands alone, is a control and is
+   * measured. Without this, every prose page looks like a phone full of bugs. */
+  const inSentence = (el) => el.tagName === 'A' && !!el.closest('p, dd, dt, figcaption') && !el.classList.contains('quiet');
   for (const el of hit) {
-    if (!visible(el) || el.closest('#dock')) continue;
+    if (!visible(el) || el.closest('#dock') || inSentence(el)) continue;
     const r = el.getBoundingClientRect();
     const w = Math.round(r.width);
     const h = Math.round(r.height);
@@ -50,7 +54,16 @@ const audit = ({ SMALL_HIT, SMALL_TYPE }) => {
       const label = (el.getAttribute('aria-label') || el.textContent || el.id || el.className || el.tagName).trim().slice(0, 28);
       out.small.push(`${label} ${w}×${h}`);
     }
-    const name = (el.getAttribute('aria-label') || el.textContent || '').replace(/\s+/g, ' ').trim();
+    /* a name is whatever a screen reader would read: aria-label, the text, a
+     * <label for>, aria-labelledby, or a title. An audit that only knew the
+     * first two reported a correctly labelled field as unlabelled. */
+    const labelled = el.id
+      ? document.querySelector(`label[for="${CSS.escape(el.id)}"]`)?.textContent
+      : '';
+    const by = el.getAttribute('aria-labelledby');
+    const refd = by ? by.split(/\s+/).map((id) => document.getElementById(id)?.textContent || '').join(' ') : '';
+    const name = (el.getAttribute('aria-label') || el.getAttribute('title') || labelled || refd || el.textContent || '')
+      .replace(/\s+/g, ' ').trim();
     if (!name && !el.querySelector('svg title')) {
       out.unnamed.push((el.id || el.className || el.tagName) + '');
     }
@@ -84,13 +97,22 @@ async function look(br, app, viewport, tag) {
     }));
   }
   await pg.goto(app.url, { waitUntil: 'networkidle' });
-  const gate = await pg.evaluate(audit, { SMALL_HIT, SMALL_TYPE });
-  await pg.fill('#email', OWNER.email);
-  await pg.fill('#pass', OWNER.pass);
-  await pg.click('#btn-login');
-  await pg.waitForSelector('#app:not([hidden])', { timeout: 20000 });
-  await pg.waitForTimeout(1500);
-  const work = await pg.evaluate(audit, { SMALL_HIT, SMALL_TYPE });
+  /* The site has no gate: a page that asks for no account is already the work.
+   * Signing in is what turns a gate into a workspace, not a requirement of the
+   * audit — otherwise www.terg.hr could never be measured with the same rule. */
+  const gated = await pg.$('#email');
+  const gate = gated ? await pg.evaluate(audit, { SMALL_HIT, SMALL_TYPE }) : null;
+  let work;
+  if (gated) {
+    await pg.fill('#email', OWNER.email);
+    await pg.fill('#pass', OWNER.pass);
+    await pg.click('#btn-login');
+    await pg.waitForSelector('#app:not([hidden])', { timeout: 20000 });
+    await pg.waitForTimeout(1500);
+    work = await pg.evaluate(audit, { SMALL_HIT, SMALL_TYPE });
+  } else {
+    work = await pg.evaluate(audit, { SMALL_HIT, SMALL_TYPE });
+  }
   await ctx.close();
   return { app: app.id, tag, gate, work, errors: errors.filter((e) => !/401|Failed to load resource/.test(e)) };
 }
@@ -114,7 +136,7 @@ for (const app of list) {
     continue;
   }
   rows.push(r);
-  const phone = r.phone ? r.phone.work : { small: [], tiny: [], unnamed: [], overflow: 0 };
+  const phone = r.phone?.work || { small: [], tiny: [], unnamed: [], overflow: 0 };
   const desk = r.work;
   console.log(`\n${app.id}`);
   console.log(`  hits under ${SMALL_HIT}px (phone): ${phone.small.length ? phone.small.slice(0, 5).join(' · ') : 'none'}`);

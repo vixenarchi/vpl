@@ -45,3 +45,18 @@ It cannot tell you that a screen is confusing, that a label lies, or that the
 order of two buttons is wrong. Those need eyes: the va drawing looked "empty"
 while every measurement was fine, because all the boxes were stacked at 0,0.
 `ux-sniff` is the floor, not the review.
+
+## The second pass: the site, and a gate
+
+`./tools/test-all.sh` runs everything in one command — syntax, chrome, settings,
+every app suite, the front door and the ux floor in all nine — locally or, with
+`VPL_PROD=1`, against the deployments. It found:
+
+- **`vi`'s parked reason field was 28 px** — a thumb-sized miss, invisible on a
+  desk. It now has the same 2 rem floor as every other control.
+- **A correctly labelled field was reported as unlabelled.** The audit knew
+  `aria-label` and text, and nothing else; a `<label for>` is a name too. Two new
+  rules were added to `ux-sniff` that day: labels count, and **a link inside a
+  sentence is text** (WCAG's own line) rather than a control that is too small.
+- **`www.terg.hr` now measures zero** under the same rule as the apps, which was
+  the point of pointing the tool at it.
