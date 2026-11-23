@@ -1,0 +1,153 @@
+# va · solutioning, infrastructure, and the hand-off
+
+Not built. This is the design, written before the code, because `va` is the one
+app that can quietly become the monster.
+
+The sentence: **"a desk of papers and a box list; the list becomes a drawing, a
+drawing becomes code, and an agent on your own machine does the typing."**
+
+## What it is, in two halves
+
+**Solutioning** — a deck: uploaded documents, ideas, minutes, requirements,
+images already drawn elsewhere, and the diagram. Everything the suite already
+makes (a `vn` note, a `vr` sheet, a `vc` report, a `vd` offer) arrives by
+**clipboard**, not by a database join. That is the suite's rule and `va` is its
+best customer, not its exception.
+
+**Infrastructure** — the same deck, read backwards: a pasted inventory (tfstate,
+`kubectl get -o json`, a cloud export, a diagram) becomes a box list, a report
+and a drawing. Then the box list becomes Terraform.
+
+Both halves are the engine we already have: **artifacts in, a template, one
+output**. No new machinery. What is new is exactly two things: the box list and
+the hand-off.
+
+## The one diagram, and why the drawing is not the truth
+
+There are dozens of drawing tools. Copying one is the surest way to lose the
+week and the lightness. So `va` does not hold a diagram: it holds a **list of
+boxes and arrows**, and the canvas is an *editor for that list*.
+
+```yaml
+# an artifact of kind: diagram, stored as text like everything else
+boxes:
+  - id: api            # identity, not a database key
+    label: Public API
+    kind: service      # service | db | queue | gateway | k8s | vm | external | person
+    host: api.example.hr:443
+    note: behind Cloudflare
+    attrs: {}          # free: namespace, replicas, image, whatever is true
+    x: 120
+    y: 80
+arrows:
+  - from: person
+    to: api
+    label: https
+  - from: api
+    to: db
+    label: reads
+```
+
+- **Text is the truth; the canvas edits the text.** Dragging a box writes `x`
+  and `y` back into the YAML. The agent writing a box writes the same YAML. That
+  is the whole of "bidirectional", and it needs no sync engine, no graph
+  database and no shadow model.
+- **Three views, one list** — not three diagram types: *context* (people and
+  systems, nothing inside), *overview* (everything, with kinds), *deployment*
+  (only what has a host, namespace or image, with the address under the label).
+  A view is a filter and a layout, not a schema.
+- **Universal by construction.** `kind` is from a short closed list; everything
+  cloud-specific goes in `attrs`, a free map. No `aws_instance` column, no
+  per-hyperscaler fields, no crosswalk. A box is a box on Azure or on a laptop.
+- **Validation is a strip, not a gate** (the `vc` lesson): a box without a host
+  says `[no address]`, an arrow to an unknown id is an error, an orphan box says
+  so, and a component with no `note` gets `[assumption]`. The device cannot be
+  all green and vague at once.
+
+**Is the canvas worth it?** A *small* one, yes: boxes, arrows, drag, labels,
+three views, maybe a grid. Roughly 500–700 lines of SVG and pointer events — the
+same order as `vi`'s road and `vn`'s tree, and it keeps the suite's no-bundler
+rule. ReactFlow would give pan/zoom/edges for free and then ask to own the
+document's state, which is the one thing we are not giving away. If the canvas
+starts needing minimaps, auto-layout, groups and orthogonal routing, that is the
+signal to stop and let people draw elsewhere and upload a PNG — which the deck
+already accepts.
+
+## The hand-off to an agent
+
+The agent is not inside the app. The app cannot run a command, and this is not a
+limitation — it is the design. A web page that can tell a shell-enabled agent
+what to do is a remote code execution button with a login screen on it.
+
+**Pull, never push.** The person presses *hand it over*, and `va` writes a job:
+
+```
+va-jobs/2026-12-03-1422/
+  task.md          what to do, in the template's words
+  boxes.yaml       the list, if the job is about infrastructure
+  inputs/          the artifacts the person chose, as text or files
+  README           one paragraph: read task.md, write into out/
+          (agent works here)
+  out/
+    report.md      what it did, in prose a person can check
+    boxes.yaml     the list, updated or observed
+    files/         code, terraform, directories it created
+```
+
+The agent — PI, or a script, or a person — watches that folder. When `out/`
+appears, `va` shows **"the agent answered"**: the report as an editable text, the
+changed list as a diagram, and the files as a tree with **accept** and **drop**
+per item. Nothing lands in a field on its own; that is the suite's balloon rule
+with a directory instead of a speech bubble.
+
+Why a folder and not a webhook: no credential for the agent, no port open on the
+laptop, no way for a page to make it act, and it works while offline. The folder
+is the interface.
+
+**From the other direction**, the same job: *"this is the environment (pasted
+inventory or a folder the agent reads), tell me what is in it"* → `report.md` +
+`boxes.yaml` + a drawing. Migration planning is then a diff between two box
+lists, which is a text diff and needs no feature.
+
+## What it deliberately is not
+
+- **No graph database.** The graph is a list of arrows in a text file.
+- **No metamodel.** No artifact types, no relations between artifacts, no
+  universal Party/Artifact/Project. The four tables of the engine, and `attrs`.
+- **No cloud credentials in the app**, ever. Reading a real environment is the
+  agent's job, in the agent's own environment, with the agent's own keys.
+- **No bidirectional sync with a live environment.** One pull, one drawing, one
+  person deciding. Drift detection is a daemon, and daemons are not this suite.
+- **No C4 hierarchy, no auto-layout, no templates gallery.** Three views.
+- **No code execution, no sandbox, no WebContainer.** The browser does not run
+  what the agent wrote.
+- **No multi-agent orchestration.** One job, one agent, one answer, a person
+  accepting it.
+- **No cost estimation, no policy engine, no compliance scoring.** `vc` exists.
+
+## The slices, in the order that keeps it light
+
+1. **The deck** — an engine skin: inputs (text, file, image, note), templates
+   (`context`, `overview`, `plan`), one editable output, the balloon loop, the
+   share link, the copy. No canvas, no agent. This is a day, and it already
+   integrates the suite by clipboard.
+2. **The box list and the canvas** — kind `diagram` artifact, YAML as text, the
+   SVG canvas, the three views, the validation strip. This is the week's real
+   work, and it is where "is the canvas worth it" gets answered by using it.
+3. **The hand-off** — the job folder, the protocol, the answered-job screen with
+   accept/drop, and the `terraform` template (output kind `code`). No agent ships
+   with it: the folder is the whole contract, so any agent works, including a
+   shell script.
+4. **Only if it earns it** — the reverse pull, done by the agent, shown as a
+   report and a drawing.
+
+## Tests, when it exists
+
+`va-check.mjs` in the style of the others: the deck saves and autosaves; a box
+added on the canvas is in the YAML; a box written into the YAML appears on the
+canvas; an arrow to an unknown id is refused with a sentence; the three views
+show the same list; a job folder appears with `task.md` and the chosen inputs;
+an answer is shown, accepted item by item, and nothing enters a field by itself;
+the terraform output is a code block, not prose; print prints the whole document.
+`va-agent.mjs` drives a fake agent (a script that writes `out/`) so the hand-off
+is proven without an agent.

@@ -55,6 +55,8 @@ in `vi`.
   standards, a link/PDF door, and bulk checks as a queue
 - `docs/vp.md` — the key of record, codes with calls and an expiry, the door,
   and the service-role key that comes with it
+- `docs/va.md` — solutioning and infrastructure: the box list that is the truth,
+  the small canvas, and the job folder an agent pulls (never a command endpoint)
 - `docs/unify.md` — the bar, settings, gate texts and share dialog, written down
   as one unification job for later
 - `docs/build-notes.md` — why v2 exists, the gotchas, where Google's redirect URL lives
