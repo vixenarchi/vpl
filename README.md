@@ -36,6 +36,10 @@ No servers, no bundler, no build step, no monthly bill.
 - **An assistant in the top bar.** It answers into the note. The key is yours,
   kept in your browser, and settings can test it before you save it.
 
+Not built yet: a few more apps by the same recipe, and **www.terg.hr** — a page
+with no table behind it that describes the suite and lists the addresses. Each
+app stays independent; only that page knows the whole family.
+
 ## What it deliberately does not do
 
 No teams, no roles beyond view and edit, no realtime collaboration, no search

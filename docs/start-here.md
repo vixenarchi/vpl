@@ -18,6 +18,9 @@ Cloudflare Pages project.
 - **vr** — requirements, at <https://vr.terg.hr>: one document is one sheet of
   rows, each a testable sentence, marked must / optional / wish, with proof and
   a glossary. See `docs/vr.md`.
+- **vz** — zed, a dictionary, at <https://vz.terg.hr>: a project is a box of
+  keys, a value is any text, and a project can be published as a read-only
+  service at `/p/<code>`. See `docs/vz.md`.
 - **api** — the shared proxy at <https://api.terg.hr>: `/chat` (model calls) and
   `/search` (Tavily/Serper evidence). Model APIs send no CORS headers, so the
   call leaves from our own origin.
@@ -32,6 +35,8 @@ in `vi`.
 - `docs/vi.md` — why a funnel, the five stages, the look and why it is not a dashboard
 - `docs/vr.md` — why a requirements sheet, the three axes, the stable names, the
   proof column, what is deliberately not there
+- `docs/vz.md` — why a dictionary, the key that ignores case, hidden values as a
+  curtain, and the one project switch that makes a service
 - `docs/build-notes.md` — why v2 exists, the gotchas, where Google's redirect URL lives
 - `docs/specification.md` — the 0-architecture this is built against
 - `~/.config/vpl/accounts.md` — **outside the repo, mode 600**: project ref, app
@@ -43,7 +48,7 @@ in `vi`.
 
 1. **One table per app, prefixed.** `vn_notes`, `vn_shares`, `vi_projects`,
    `vi_ideas`, `vi_shares`, `vr_projects`, `vr_reqs`, `vr_terms`, `vr_shares`,
-   `vr_themes`, `vr_vocab`, `vr_log`. An
+   `vr_themes`, `vr_vocab`, `vr_log`, `vz_projects`, `vz_pairs`, `vz_shares`. An
    app never writes into another app's table. `vpl_prefix_check()`
    guards the convention.
 2. **Migrations are numbered and re-runnable.** A schema change is a new file in
@@ -127,7 +132,26 @@ VPL_MODEL_URL=… VPL_MODEL_KEY=… VPL_MODEL=… node vi-real.mjs "project titl
 
 `vi-check` and `vi-ai` clean up after themselves (the project they create is
 deleted at the end). `vi-real.mjs` is a real model pass through an existing
-project and keeps every answer in `/tmp/model-*.txt`.
+project and keeps every answer in `/tmp/model-*.txt`. `vz-check` does the same:
+it deletes the project it made and the copy a guest took of it.
+
+## What is not built yet
+
+Two things, both on the same pattern and neither a new architecture:
+
+- **a few more apps.** Each one is a folder, one prefixed table set, one Pages
+  project, one subdomain, one `docs/<app>.md`, one `<app>-check.mjs`. The rule
+  for accepting a new app is not "is it useful" but **"does it have one
+  sentence the interface can hold"** — vn holds a tree, vi holds a funnel, vr
+  holds a sheet, vz holds a dictionary. An app whose sentence is a paragraph
+  will be a paragraph of interface.
+- **`www.terg.hr`, the front door.** Not an app: a page with no table behind it
+  that says what the suite is, lists the four (soon more) addresses with one
+  line each, and the one login. It is the only place that knows the whole
+  family — every app stays independent and never links to a sibling from its
+  own screen.
+
+Until then the addresses are the front door.
 
 `vn` has its own checks: `e2e.mjs`, `dnd-check.mjs`, `tree-check.mjs`,
 `share-check.mjs`, `touch-check.mjs`, `mode-check.mjs`.
