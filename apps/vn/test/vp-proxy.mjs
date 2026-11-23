@@ -60,6 +60,14 @@ const providerKey = await ask({ ...CORS, authorization: 'Bearer sk-real-key' }, 
 ok(providerKey.status === 401 && /vp key/i.test(providerKey.body.error),
   'a provider key is not a vp key');
 
+/* a server calling with a key has no Origin: that is allowed, and the key is
+ * the credential. A browser always sends one, and a wrong one is refused. */
+spendAnswer = { ok: false, status: 200, body: [{ ok: false, reason: 'that key is not one of ours' }] };
+const serverCall = await ask({ 'content-type': 'application/json', authorization: 'Bearer vp_x' },
+  { model: 'm', messages: msgs });
+ok(serverCall.status !== 403 || !/origin/.test(serverCall.body.error),
+  'a caller with no Origin (a server, an app\'s own /api/chat) is not refused for that');
+
 const noMessages = await ask({ ...CORS, authorization: 'Bearer vp_x' }, { model: 'm' });
 ok(noMessages.status === 400, 'no messages, no call');
 

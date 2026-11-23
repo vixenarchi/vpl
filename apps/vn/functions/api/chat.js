@@ -34,6 +34,9 @@ const ALLOWED = [
   'models.inference.ai.azure.com',
   'openai.azure.com',
   '.openai.azure.com',
+  /* the suite's own door: a vp key is used against api.terg.hr/vp, and an app
+   * with its own /api/chat forwards to it like any other endpoint */
+  'api.terg.hr',
 ];
 
 const json = (body, status = 200) =>

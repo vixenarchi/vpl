@@ -29,6 +29,8 @@ ALLOWED = {
     'api.novita.ai', 'api.hyperbolic.xyz', 'integrate.api.nvidia.com',
     'api.x.ai', 'generativelanguage.googleapis.com',
     'models.inference.ai.azure.com',
+    # the suite's own vp door, so a vp key works in local development too
+    'api.terg.hr',
 }
 ALLOWED_SUFFIX = ('openai.azure.com',)
 
@@ -78,7 +80,15 @@ class NoCache(SimpleHTTPRequestHandler):
         req = urllib.request.Request(
             url,
             data=json.dumps(payload).encode(),
-            headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key},
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + key,
+                'Origin': self.headers.get('Origin', ''),
+                # Cloudflare in front of api.terg.hr refuses python's default
+                # agent (error 1010), which would make local dev lie about a
+                # door that works in production
+                'User-Agent': 'vpl-dev/1.0',
+            },
         )
         try:
             with urllib.request.urlopen(req, timeout=60) as r:

@@ -52,6 +52,10 @@ Authorization: Bearer vp_…
 - Only hosts on `ALLOWED` in `apps/api/functions/vp.js` are forwarded to, and
   only origins on `ORIGINS` may call it — both lists live in the one file, and
   the file is short enough to read in a sitting.
+- A request with **no Origin** is a server, not a page (an app's own
+  `/api/chat` forwarding, `curl`, a script): the vp key is the credential and
+  CORS is not authentication, so it is let in. A browser always sends an Origin,
+  so a wrong page is still refused.
 
 Refusals, in sentences a person can act on:
 
@@ -122,7 +126,7 @@ One page, five cards, no navigation:
 ```
 PORT=8106 OAUTH_PORT=0 ./serve vp
 cd apps/vn/test && VP_URL=http://127.0.0.1:8106 node vp-check.mjs   # 33
-node vp-proxy.mjs                                                   # 18
+node vp-proxy.mjs                                                   # 19
 ```
 
 `vp-check` proves the drawer end to end with two accounts: slips are shown once,

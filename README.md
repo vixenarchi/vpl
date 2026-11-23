@@ -337,7 +337,7 @@ VC_URL=http://127.0.0.1:8105 node vc-check.mjs    # 34 checks (two piles, verdic
 PORT=8106 ./serve vp in another shell, then:
 VP_URL=http://127.0.0.1:8106 node vp-check.mjs    # 33 checks (slips, taking one, the ledger,
                                                   #   the door's refusals, revoking)
-node vp-proxy.mjs                                 # 18 checks (the door's logic, both ends faked)
+node vp-proxy.mjs                                 # 19 checks (the door's logic, both ends faked)
 ```
 
 or a whole app at once, server and all: `tools/test-vr.sh`, `tools/test-vz.sh`,

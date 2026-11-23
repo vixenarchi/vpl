@@ -60,6 +60,10 @@ const ORIGINS = [
 
 function corsFor(request) {
   const origin = request.headers.get('Origin') || '';
+  /* No Origin at all means a server is calling, not a page: the key it holds is
+   * the credential, and CORS is not authentication. A browser always sends one,
+   * so a page from the wrong place is still refused below. */
+  if (!origin) return '';
   let host = '';
   try { host = new URL(origin).hostname.toLowerCase(); } catch { host = ''; }
   const local = host === '127.0.0.1' || host === 'localhost' || host === '0.0.0.0';
@@ -125,8 +129,10 @@ function completionsUrl(base) {
 }
 
 export async function onRequestPost({ request, env }) {
-  const allow = corsFor(request);
-  if (!allow) return json({ error: 'this origin may not use the door' }, 403, request);
+  const origin = request.headers.get('Origin');
+  if (origin && !corsFor(request)) {
+    return json({ error: 'this origin may not use the door' }, 403, request);
+  }
 
   const auth = request.headers.get('Authorization') || '';
   const token = auth.replace(/^Bearer\s+/i, '').trim();
