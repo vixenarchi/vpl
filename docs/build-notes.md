@@ -1007,3 +1007,23 @@ agent uses `pi`'s own provider — which is how these runs were done, with the
 workshop's Gemini key. Twelve checks run with no model and no network
 (`tools/test-agent.sh`); the docker image is for giving the same thing to other
 people, and it needs outbound HTTPS only.
+
+## vp: the first real call found what the fakes could not
+
+The door was tested with nineteen checks and a fake database, and it had never
+worked. The first real slip on a real row answered `column reference
+"credits_left" is ambiguous` — `vp_spend` returns a table with that column, so
+its own `UPDATE` could not name it. Two more came out of the same hour: the door
+forwarded the caller's model name instead of the issuer's (an agent calling its
+model `nemotron` got a 404 from NVIDIA), and it dropped `tools`, which turns an
+agent into a chatbot.
+
+All three are fixed, and the fix for the class of bug is `tools/test-vp-live.sh`:
+one real call with a real key, two seconds, one credit — because a fake database
+cannot tell you that your SQL does not run.
+
+The agent now spends a slip: terraform job, 157 s, six files, `terraform
+validate` green, 44 credits. Gemini stays as pi's own provider; behind the door
+an agent needs an OpenAI-shaped upstream (NVIDIA `nim` here), because Gemini's
+compatible surface wants a `thought_signature` back on every function call and a
+generic client does not keep one.

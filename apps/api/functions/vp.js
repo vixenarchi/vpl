@@ -2,7 +2,7 @@
  *
  *   POST https://api.terg.hr/vp
  *   Authorization: Bearer vp_…
- *   { model, messages, max_tokens?, temperature? }
+ *   { model, messages, max_tokens?, temperature?, tools?, stream? }
  *
  * This is the only function in the suite that holds a secret big enough to hurt:
  * the service-role key, because `vp_spend` hands back the provider key of the
@@ -71,9 +71,9 @@ function corsFor(request) {
   return ok ? origin : '';
 }
 
-const json = (body, status, request, extra = {}) => {
+const headersFor = (request, extra, contentType) => {
   const headers = {
-    'Content-Type': 'application/json',
+    'Content-Type': contentType,
     'Cache-Control': 'no-store',
     'X-Vpl-Proxy': 'vp',
     ...extra,
@@ -84,8 +84,32 @@ const json = (body, status, request, extra = {}) => {
     headers['Access-Control-Expose-Headers'] = 'X-Vpl-Proxy';
     headers['Vary'] = 'Origin';
   }
-  return new Response(JSON.stringify(body), { status, headers });
+  return headers;
 };
+
+const json = (body, status, request, extra = {}) =>
+  new Response(JSON.stringify(body), { status, headers: headersFor(request, extra, 'application/json') });
+
+const sse = (text, status, request, extra = {}) =>
+  new Response(text, { status, headers: headersFor(request, extra, 'text/event-stream') });
+
+/* The door relays, it does not rewrite: an agent's tool calls must survive the
+ * trip. `usage` is the only thing read out of the stream, because that is what
+ * the ledger is allowed to keep. */
+function usageFromSse(text) {
+  let usage = null;
+  for (const line of text.split('\n')) {
+    const s = line.trim();
+    if (!s.startsWith('data:')) continue;
+    const data = s.slice(5).trim();
+    if (!data || data === '[DONE]') continue;
+    try {
+      const j = JSON.parse(data);
+      if (j && j.usage) usage = j.usage;
+    } catch { /* a partial chunk is not an error */ }
+  }
+  return usage;
+}
 
 export async function onRequestOptions({ request }) {
   const headers = {
@@ -169,9 +193,27 @@ export async function onRequestPost({ request, env }) {
     return json({ error: `the issuer's address ${host || '(none)'} is not one this door forwards to` }, 403, request);
   }
 
+  /* An allowlist, not a pass-through: the caller's body may carry anything
+   * (`store`, `metadata`, provider-specific knobs) and only these fields are
+   * forwarded. That is also what keeps a vp key from being a proxy of its own. */
   const payload = { model: row.provider_model, messages: body.messages };
   if (typeof body.max_tokens === 'number') payload.max_tokens = Math.min(body.max_tokens, 4096);
   if (typeof body.temperature === 'number') payload.temperature = body.temperature;
+  if (typeof body.top_p === 'number') payload.top_p = body.top_p;
+  if (Array.isArray(body.stop)) payload.stop = body.stop.slice(0, 4);
+  if (Array.isArray(body.tools)) payload.tools = body.tools.slice(0, 64);
+  if (body.tool_choice !== undefined) payload.tool_choice = body.tool_choice;
+  if (body.response_format && typeof body.response_format === 'object') {
+    payload.response_format = body.response_format;
+  }
+  if (body.parallel_tool_calls === false) payload.parallel_tool_calls = false;
+  const wantsStream = body.stream === true;
+  if (wantsStream) {
+    payload.stream = true;
+    if (body.stream_options && body.stream_options.include_usage) {
+      payload.stream_options = { include_usage: true };
+    }
+  }
 
   const started = Date.now();
   let upstream; let text = '';
@@ -191,21 +233,34 @@ export async function onRequestPost({ request, env }) {
     return json({ error: `could not reach ${host}: ${err.message}` }, 502, request);
   }
 
+  const settle = (status, usage) =>
+    rpc(env, 'vp_settle', {
+      p_hash: hash,
+      p_status: status,
+      p_app: '',
+      p_model: model,
+      p_in: usage?.prompt_tokens || 0,
+      p_out: usage?.completion_tokens || 0,
+      p_ms: Date.now() - started,
+    });
+
+  const metered = {
+    'X-Vpl-Credits': String(row.credits_left ?? ''),
+    'X-Vpl-Calls': String(row.calls_left ?? ''),
+  };
+
+  /* A stream is relayed whole rather than chunk by chunk: the door is one call
+   * at a time and it has to read the bytes anyway to count the tokens. Faster
+   * looking, slower to arrive — the honest trade for this suite. */
+  if (wantsStream && upstream.ok && text.trimStart().startsWith('data:')) {
+    await settle(upstream.status, usageFromSse(text));
+    return sse(text, upstream.status, request, metered);
+  }
+
   let parsed = null;
   if (text && text[0] === '{') { try { parsed = JSON.parse(text); } catch { parsed = null; } }
 
-  await rpc(env, 'vp_settle', {
-    p_hash: hash,
-    p_status: upstream.status,
-    p_app: '',
-    p_model: model,
-    p_in: parsed?.usage?.prompt_tokens || 0,
-    p_out: parsed?.usage?.completion_tokens || 0,
-    p_ms: Date.now() - started,
-  });
+  await settle(upstream.status, parsed && parsed.usage);
 
-  return json(parsed || { raw: text.slice(0, 4000) }, upstream.status, request, {
-    'X-Vpl-Credits': String(row.credits_left ?? ''),
-    'X-Vpl-Calls': String(row.calls_left ?? ''),
-  });
+  return json(parsed || { raw: text.slice(0, 4000) }, upstream.status, request, metered);
 }

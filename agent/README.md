@@ -56,11 +56,20 @@ environment:
 - `VPL_MODEL=google/gemini-3.1-flash-lite` with `GEMINI_API_KEY` (the default)
 - `VPL_MODEL=nim/nvidia/nemotron-3.5-lightning-30b-a3b` with `NVIDIA_API_KEY`
 
-A **vp key** is the shared option: `VPL_MODEL_BASE=https://api.terg.hr/vp/v1`,
+A **vp key** is the shared option — and the one the agent actually ran on
+(157 s terraform job, 44 credits, NVIDIA `nim` behind the door): `VPL_MODEL_BASE=https://api.terg.hr/vp/v1`,
 `VPL_MODEL=vpl/<model>`, `VPL_MODEL_KEY=vp_…` — one credit per call, an expiry
 and usage in the vp ledger, so an agent can be given a number of calls instead
 of a provider secret. The key is referenced from the generated `models.json` as
-`$VPL_MODEL_KEY`, so it is never written to disk.
+`$VPL_MODEL_KEY`, so it is never written to disk. `tools/agent-vp-setup.mjs` in
+the suite repo creates the agent's own account, saves the model key on it and
+writes `~/.config/vpl/agent.env` with the slip.
+
+One limit worth knowing before choosing an upstream: **Gemini behind the door
+cannot carry tools** — its OpenAI-compatible surface wants a `thought_signature`
+back on every function call and a generic client does not keep one. An agent that
+uses tools wants an OpenAI-shaped upstream (NVIDIA `nim`, DeepSeek, OpenRouter);
+Gemini is fine as pi's own provider.
 
 A job is not a single request: a free tier answers `429` after a handful of tool
 calls, so the worker waits and takes the job again (`VPL_RETRIES`, default 2)

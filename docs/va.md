@@ -234,6 +234,14 @@ Three real runs on the workshop, all with the agent doing the work itself:
 - `report` (an inventory read) — **18 s**, an honest list of gaps, and the
   mechanical check catching the missing edges.
 
+The agent then ran **on a vp key**, through `api.terg.hr/vp`, with a real NVIDIA
+`nim` model behind the door: a terraform job finished in **157 s**, six files,
+`terraform validate` green, and **44 credits** — one job is dozens of calls,
+which is the case the ledger was built for. What that first real run found in the
+door (an ambiguous column in `vp_spend`, the caller's model winning over the
+issuer's, `tools` being dropped, and Gemini's `thought_signature` making tools
+impossible behind an OpenAI-shaped relay) is written down in `docs/vp.md`.
+
 One thing the runs proved by failing: **free-pi refuses unattended work**
 (`403 ads_required` — ads pay for it, and a headless container shows none). A
 docker agent therefore cannot run on the free-pi backend; it runs on a **vp

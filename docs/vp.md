@@ -147,3 +147,48 @@ refusal to forward off-list — is proven without spending anything.
 
 The reason is the same as everywhere in this suite: the moment credits have a
 price, vp stops being this app.
+
+## The first real call, and everything it found
+
+On 2026-11-23 the chain was finally used the way it is meant to be: an agent
+with a shell, a vp key as its model, and a real provider behind the door. It
+took four fixes, all of them invisible to the proxy tests because those fake the
+database.
+
+- **`vp_spend` never worked.** `column reference "credits_left" is ambiguous` —
+  the function returns a table with a `credits_left` column, so inside its own
+  `UPDATE` the bare name matched both the output parameter and the table column.
+  Every real call failed with a 400 while every faked one passed. The column is
+  qualified now, and the lesson is written into `tools/test-vp-live.sh`: one real
+  call, one real credit, two seconds.
+- **The model is the issuer's, not the caller's guess.** The door documented
+  that and the SQL did the opposite (`coalesce(p_model, a.model)`), so an agent
+  that calls its model `nemotron` sent `nemotron` upstream and got a 404 for a
+  model that does not exist. Now the caller's `model` is only a label on the
+  ledger row; what reaches the provider is what the person who saved the key
+  chose.
+- **An agent needs tools, so the door relays them.** The body is still an
+  allowlist — `model`, `messages`, `max_tokens` (capped 4096), `temperature`,
+  `top_p`, `stop`, `tools` (capped 64), `tool_choice`, `response_format`,
+  `parallel_tool_calls`, `stream`, `stream_options.include_usage` — and
+  everything else a client sends (`store`, `metadata`, provider knobs) is
+  dropped. Without `tools` an agent through the door is a chatbot with a shell it
+  cannot reach.
+- **A stream is relayed whole, not chunk by chunk.** The door has to read the
+  bytes to count the tokens anyway, so it buffers the SSE transcript, reads the
+  last `usage` it finds, settles, and hands the transcript over as
+  `text/event-stream`. Slower to arrive, honest about the cost; the suite is one
+  call at a time by design.
+
+One thing this deliberately does not fix: **Gemini behind the door cannot carry
+an agent's tools**, because its OpenAI-compatible surface demands a
+`thought_signature` on every function-call part it is handed back, and a generic
+OpenAI client does not echo one. Gemini works as *pi's own provider* (pi's Google
+client keeps the signature) and works through the door for plain chat; an agent
+that uses tools wants an OpenAI-shaped upstream — NVIDIA `nim`, DeepSeek,
+OpenRouter — which is what the agent now uses.
+
+The numbers from that first run: a terraform job, **157 s**, six files,
+`terraform validate` saying *Success*, and **44 credits** spent — one job is
+dozens of calls, which is exactly why the ledger counts calls instead of pricing
+tokens.
