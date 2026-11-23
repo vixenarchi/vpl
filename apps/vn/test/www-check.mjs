@@ -12,7 +12,7 @@
 import { chromium } from 'playwright';
 
 const B = process.env.WWW_URL || 'http://127.0.0.1:8108';
-const PAGES = ['/', '/faq.html', '/privacy.html', '/imprint.html', '/404.html'];
+const PAGES = ['/', '/hr.html', '/faq.html', '/privacy.html', '/imprint.html', '/404.html'];
 
 let pass = 0; let fail = 0;
 const ok = (c, what) => { if (c) { pass++; console.log('  ok   ' + what); } else { fail++; console.log('  FAIL ' + what); } };
@@ -69,6 +69,48 @@ await pg.reload({ waitUntil: 'networkidle' });
 ok((await pg.evaluate(() => document.documentElement.dataset.theme || 'light')) === theme1, 'and it survives a reload');
 await pg.evaluate(() => localStorage.clear());
 await pg.reload({ waitUntil: 'networkidle' });
+
+/* ── what a shared link sees, and what a crawler reads ───────────── */
+for (const path of ['/', '/hr.html', '/faq.html']) {
+  await pg.goto(B + path, { waitUntil: 'networkidle' });
+  const meta = await pg.evaluate(() => {
+    const g = (sel, attr = 'content') => document.querySelector(sel)?.getAttribute(attr) || '';
+    return {
+      canonical: g('link[rel=canonical]', 'href'),
+      ogTitle: g('meta[property="og:title"]'),
+      ogImage: g('meta[property="og:image"]'),
+      card: g('meta[name="twitter:card"]'),
+      locale: g('meta[property="og:locale"]'),
+    };
+  });
+  ok(meta.canonical === 'https://www.terg.hr' + path, path + ': the canonical address is itself');
+  ok(meta.ogTitle.length > 4 && meta.ogImage.endsWith('/og.png') && meta.card === 'summary_large_image',
+     path + ': a shared link has a title, an image and a large card');
+  ok(meta.locale === (path === '/hr.html' ? 'hr_HR' : 'en_GB'), path + ': the language of the preview is declared');
+}
+
+const og = await pg.evaluate(async () => {
+  const r = await fetch('/og.png');
+  return { ok: r.ok, type: r.headers.get('content-type') || '', size: (await r.blob()).size };
+});
+ok(og.ok && og.type === 'image/png' && og.size > 20000, 'the preview image is served as a real png (' + Math.round(og.size / 1024) + ' KB)');
+
+const sec = await pg.evaluate(async () => {
+  const r = await fetch('/.well-known/security.txt');
+  return r.ok ? await r.text() : '';
+});
+ok(/^Contact: mailto:/m.test(sec) && /^Expires:/m.test(sec), 'a security.txt exists, with a contact and an expiry');
+
+/* the two front pages point at each other, and each says which language it is */
+await pg.goto(B + '/', { waitUntil: 'networkidle' });
+ok((await pg.getAttribute('html', 'lang')) === 'en', 'the front page is in english');
+ok(await pg.locator('a[href="hr.html"][hreflang="hr"]').isVisible(), 'and offers the croatian version');
+await pg.goto(B + '/hr.html', { waitUntil: 'networkidle' });
+ok((await pg.getAttribute('html', 'lang')) === 'hr', 'the croatian page says so');
+ok(await pg.locator('a[href="/"], a[href="index.html"]').first().isVisible(), 'and offers the english one');
+const hrText = (await pg.textContent('body')).replace(/\s+/g, ' ');
+ok(/jedan račun/i.test(hrText) && /bez analitike/i.test(hrText), 'the croatian page makes the same two promises');
+ok((await pg.evaluate(() => [...document.querySelectorAll('.apps a')].length)) === 8, 'and lists the same eight addresses');
 
 /* ── every page: structure, links, headings ───────────────────────── */
 for (const path of PAGES.slice(1)) {

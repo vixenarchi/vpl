@@ -54,7 +54,7 @@ for f in "$SRC"/* "$SRC"/.[!.]*; do
   esac
   cp "$f" "$STAGE/"
 done
-for d in lib icons vendor functions assets img; do
+for d in lib icons vendor functions assets img .well-known; do
   [ -d "$SRC/$d" ] && cp -r "$SRC/$d" "$STAGE/"
 done
 
