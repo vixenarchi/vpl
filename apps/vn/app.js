@@ -366,9 +366,13 @@ function wire() {
     await db.signOut();
   });
 
-  for (const b of [el.btnTheme, el.gateTheme, el.readerTheme]) {
-    if (b) b.addEventListener('click', toggleTheme);
+  /* every ◐ walks the one list of themes (vendor/settings.js); vn's own
+   * `toggleTheme` stays for the reader's paper/ink choice, which is about the
+   * note in front of you, not about the suite. */
+  for (const b of [el.btnTheme, el.gateTheme]) {
+    if (b) b.addEventListener('click', () => { settings.cycleTheme(); paintThemeButtons(); });
   }
+  if (el.readerTheme) el.readerTheme.addEventListener('click', toggleTheme);
 
   el.btnList.addEventListener('click', () => el.list.classList.toggle('open'));
   el.btnNew.addEventListener('click', newNote);
@@ -2718,4 +2722,35 @@ function wireSettings() {
 
 wireSettings();
 
-const DOCK = mountDock({ app: 'vn', openSettings: () => SET && SET.open() });
+/* *use it* means "put these words in the note I am looking at", at the caret,
+ * through the same autosave as typing. Nothing else is decided for you. */
+function useFromDock(text) {
+  if (!S.current || !canEdit(S.current)) return 'open a note you can edit first';
+  if (S.mode !== 'write') setMode('write');
+  el.editable.focus();
+
+  /* put it where the caret is if there is one; at the end if there is not */
+  const inside = el.editable.contains(document.getSelection()?.anchorNode || null);
+  if (!inside) {
+    const r = document.createRange();
+    r.selectNodeContents(el.editable);
+    r.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+  }
+  const added = document.execCommand('insertText', false, '\n' + text + '\n');
+  if (!added) {
+    const p = document.createElement('p');
+    p.textContent = text;
+    el.editable.append(p);
+  }
+  el.editable.dispatchEvent(new Event('input', { bubbles: true }));
+  scheduleSave();
+}
+
+const DOCK = mountDock({
+  app: 'vn',
+  openSettings: () => SET && SET.open(),
+  onUse: useFromDock,
+});

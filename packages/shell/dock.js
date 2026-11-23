@@ -80,9 +80,15 @@ export function mountDock({ app = 'this app', context, onUse, placeholder, openS
     thread.append(row);
     row.scrollIntoView({ block: 'nearest' });
     if (canUse) {
-      row.querySelector('[data-use]').onclick = () => {
-        if (onUse) onUse(text);
-        row.querySelector('.dock-acts').innerHTML = '<span class="dock-used">used</span>';
+      row.querySelector('[data-use]').onclick = async () => {
+        /* an app may refuse — "open a note you can edit first" — and it says so
+         * in the dock instead of looking like it did something */
+        let refusal = '';
+        try { refusal = (await (onUse ? onUse(text) : '')) || ''; } catch (e) { refusal = e.message || String(e); }
+        const acts = row.querySelector('.dock-acts');
+        if (refusal) { say(refusal, 'bad'); return; }
+        acts.innerHTML = '<span class="dock-used">used</span>';
+        say('');
       };
       row.querySelector('[data-drop]').onclick = () => { row.remove(); };
     }

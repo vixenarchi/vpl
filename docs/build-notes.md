@@ -1122,3 +1122,12 @@ took the theme branch, and save / forget / ✕ were unreachable until the theme 
 put back. A selector that can match an ancestor of the dialog is a selector that
 swallows the dialog. `chrome-check.mjs` (24 in each app, 192 total) now changes a
 theme and then closes, so it cannot come back quietly.
+
+## polish, before the next build
+
+The ◐ in the bar now walks the same three themes as the settings tab instead of
+flipping two of them: one list, one place to learn it. And *use it* became a real
+contract — an app that accepts the answer passes `onUse`, may refuse with a
+sentence, and the dock shows the refusal instead of a cheerful "used". vn inserts
+at the caret through its autosave; vi pins a card; the other six have no button
+at all, which is the honest default.

@@ -43,6 +43,13 @@ export function applyTheme(id) {
   return t;
 }
 
+/** The bar's ◐ is a shortcut, not a second opinion: it walks the same list. */
+export function cycleTheme() {
+  const now = currentTheme();
+  const i = THEMES.findIndex((t) => t.id === now);
+  return applyTheme(THEMES[(i + 1) % THEMES.length].id);
+}
+
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 

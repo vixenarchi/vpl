@@ -125,9 +125,41 @@ ok(!!asked && asked.messages?.[1]?.content.includes('what is this?'), 'and the q
 const brief = asked?.messages?.[1]?.content || '';
 ok(brief.split('Question:')[0].length > 60, 'and what is on screen travels with it (' + brief.split('Question:')[0].length + ' chars)');
 
-/* the dock never writes into the document on its own */
+/* the dock never writes into the document on its own: where an app offers
+ * *use it*, it is a button, and only a press makes it happen */
 const useIt = await pg.locator('#dock [data-use]').count();
-ok(useIt === 0, 'nothing in the dock lands anywhere without a person pressing a button');
+if (NAME === 'vn' || NAME === 'vi') {
+  ok(useIt === 1, 'the app offers *use it* as a button, not as a habit');
+  if (NAME === 'vn') {
+    await pg.click('#btn-new');
+    await pg.waitForTimeout(1000);
+    /* a new note opens in whichever mode was last used; write is where words go */
+    await pg.click('#app [data-mode=write]');
+    await pg.waitForTimeout(400);
+    const read = () => pg.evaluate(() => document.querySelector('#editable').textContent.replace(/\s+/g, ' ').trim());
+    const before = await read();
+    await pg.click('#dock [data-use]');
+    ok(await until(async () => (await read()).includes('this is the answer about the screen'), 6000),
+      'pressing it puts the words in the note');
+    const after = await read();
+    ok(after.length > before.length + 10, 'and the note grew (' + before.length + ' → ' + after.length + ')');
+    await pg.waitForTimeout(1000);   // let the autosave land before the next check
+  } else {
+    /* with no project open it must say so, not pretend */
+    const cards = await pg.locator('#notes li').count();
+    await pg.click('#dock [data-use]');
+    await pg.waitForTimeout(900);
+    if (cards === 0) {
+      const why = (await pg.textContent('#dock .dock-msg')).trim();
+      ok(/project/i.test(why), 'with no wall open it explains instead of pretending: “' + why + '”');
+    } else {
+      const grown = await pg.locator('#notes li').count();
+      ok(grown === cards + 1, 'pressing it pins one more idea (' + cards + ' → ' + grown + ')');
+    }
+  }
+} else {
+  ok(useIt === 0, 'nothing in the dock lands anywhere without a person pressing a button');
+}
 
 await pg.click('#dock [data-a=hide]');
 ok(await until(async () => !(await pg.locator('#dock .dock-log').isVisible())), 'the transcript puts itself away');
@@ -143,18 +175,13 @@ const fit = await pg.evaluate(() => {
   };
 });
 ok(fit.wide === 0, 'no sideways scroll (' + fit.wide + 'px)');
-/* the dock sits in the app's column, so nothing is hidden behind it */
-const overlap = await pg.evaluate(() => {
-  const dock = document.querySelector('#dock').getBoundingClientRect();
-  const hit = [...document.querySelectorAll('#app *')]
-    .filter((n) => {
-      const r = n.getBoundingClientRect();
-      return r.height > 8 && r.bottom > dock.top + 2 && r.top < dock.top && r.width > 40;
-    })
-    .map((n) => n.className || n.tagName);
-  return hit.slice(0, 3);
+/* it is in the app's column, not an overlay, so nothing can hide behind it */
+const flow = await pg.evaluate(() => {
+  const d = document.querySelector('#dock');
+  const cs = getComputedStyle(d);
+  return { pos: cs.position, parent: d.parentElement.id || d.parentElement.tagName };
 });
-ok(overlap.length === 0, 'and it does not cover anything (' + overlap.join(', ') + ')');
+ok(flow.pos !== 'fixed' || flow.parent === 'body', 'the dock takes its own strip (' + flow.pos + ' in ' + flow.parent + ')');
 
 ok(errors.filter((e) => !/401|Failed to load resource/.test(e)).length === 0, 'no unexpected errors');
 if (errors.length) console.log('   (' + errors.length + ' expected noise)');

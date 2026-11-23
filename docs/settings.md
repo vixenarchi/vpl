@@ -147,3 +147,30 @@ There are now three shared pieces of every app, all copies from
 
 The sign-in is one card in every app too, from one block of CSS, and one
 sentence on all eight gates: **one account for the whole suite**.
+
+## The ◐ in the bar is a shortcut, not a second opinion
+
+Once the theme lives in the settings tab, a bar button that flips only
+paper/ink is a smaller, dumber copy of the same idea. So the bar's ◐ walks the
+same list as the tab — paper → ink → comic → paper — through `cycleTheme()` in
+`vendor/settings.js`. vn keeps its own `toggleTheme` for the reader (paper or ink
+*for the note in front of you*), which is a different question from what the
+suite looks like.
+
+## *use it* is a button and a promise
+
+The dock never writes into a document by itself. Where an app can take the
+answer it passes `onUse`, and then — and only then — the answer grows a **use it**
+button next to **drop**:
+
+- **vn** puts the words in the open note, at the caret, through the same autosave
+  as typing; if there is no editable note it returns a sentence instead.
+  *open a note you can edit first*.
+- **vi** pins the answer as one more idea on the wall; with no project open it
+  says *open a project first — an idea needs a wall*.
+
+`onUse` may return a string, and the dock shows it as a refusal. An app that says
+"used" when it did nothing is worse than a button that explains itself.
+
+The other six apps pass no `onUse`, so their dock has no *use it* at all. That is
+the honest default: reading an answer is not the same as accepting it.

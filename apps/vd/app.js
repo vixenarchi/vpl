@@ -99,7 +99,7 @@ function plainAuthError(err) {
 
 /* ── boot ─────────────────────────────────────────────────────────── */
 async function boot() {
-  $('#btn-theme').onclick = applyTheme;
+  $('#btn-theme').onclick = () => { settings.cycleTheme(); paintSpec(); };
   $('#gate-theme').onclick = applyTheme;
   lowerField($('#email'));
   wireGate();

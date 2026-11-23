@@ -108,7 +108,7 @@ async function boot() {
     try { await db.signInWithGoogle(); }
     catch (e) { say($('#gate-msg'), e.message || String(e), 'bad'); }
   };
-  $('#btn-theme').onclick = toggleTheme;
+  $('#btn-theme').onclick = () => settings.cycleTheme();
   $('#btn-out').onclick = async () => { await db.signOut(); location.reload(); };
 
   db.onAuthChange((s) => { if (!s) showGate(); });
@@ -1195,4 +1195,20 @@ boot();
  * Same dialog as every other app, same dock. The dock reads what is on
  * screen and answers about it; nothing it writes lands anywhere until a
  * person says so. */
-const DOCK = mountDock({ app: 'vi', openSettings: () => SET && SET.open() });
+/* *use it* means "this becomes a card on the wall" — one idea, nothing else. */
+async function useFromDock(text) {
+  if (!S.project) return 'open a project first — an idea needs a wall';
+  if (!canWrite()) return 'this wall is read-only for you';
+  const color = COLORS[total() % COLORS.length];
+  try {
+    const row = await db.addIdea(S.project.id, text, color);
+    S.ideas.push(row);
+    paintAll();
+  } catch (e) { console.warn(e); }
+}
+
+const DOCK = mountDock({
+  app: 'vi',
+  openSettings: () => SET && SET.open(),
+  onUse: useFromDock,
+});

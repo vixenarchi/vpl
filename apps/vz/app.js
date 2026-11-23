@@ -109,7 +109,7 @@ function until(fn, ms = 8000) {
 
 /* ── boot ─────────────────────────────────────────────────────────── */
 async function boot() {
-  $('#btn-theme').onclick = applyTheme;
+  $('#btn-theme').onclick = () => settings.cycleTheme();
   $('#gate-theme').onclick = applyTheme;
   lowerField($('#email'));
   wireGate();

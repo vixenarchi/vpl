@@ -294,7 +294,7 @@ async function paintAll() {
 
 /* ── boot ─────────────────────────────────────────────────────────── */
 async function boot() {
-  $('#btn-theme').onclick = applyTheme;
+  $('#btn-theme').onclick = () => settings.cycleTheme();
   const gateTheme = document.getElementById('gate-theme');
   if (gateTheme) gateTheme.onclick = applyTheme;
   $('#btn-out').onclick = async () => { await db.signOut(); location.reload(); };

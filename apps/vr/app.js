@@ -1376,7 +1376,7 @@ async function enterGuest(code) {
 
 /* ── wiring ───────────────────────────────────────────────────────── */
 function wireChrome() {
-  $('#btn-theme').onclick = toggleTheme;
+  $('#btn-theme').onclick = () => settings.cycleTheme();
   $('#btn-out').onclick = async () => { await db.signOut(); location.reload(); };
   $('#btn-projects').onclick = () => {
     document.body.dataset.rail = document.body.dataset.rail === 'open' ? '' : 'open';
