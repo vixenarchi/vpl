@@ -65,8 +65,14 @@ instead of losing the work.
 
 ```bash
 docker build -t va-agent .
-docker run --rm -v "$PWD/jobs:/jobs" --env-file agent.env va-agent
+docker run -d --name va-agent -v "$PWD/jobs:/jobs" --env-file agent.env va-agent   # watch
+docker run --rm -v "$PWD/jobs:/jobs" --env-file agent.env va-agent node /agent/worker.mjs --once
 ```
+
+The default command is the watch loop, so the container stays up; add `--once`
+to run one pass and exit. The image runs as uid 1000, the usual uid on a laptop,
+so the mounted jobs directory is writable as it is — with a different uid, add
+`--user "$(id -u):$(id -g)"`.
 
 The image has `pi`, `git`, `ripgrep`, `jq` and `terraform`, and needs outbound
 HTTPS only — no inbound port, no database, which is why a free tier box is

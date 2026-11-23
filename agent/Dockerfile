@@ -20,14 +20,19 @@ RUN apt-get update \
  && npm i -g @earendil-works/pi-coding-agent \
  && npm cache clean --force
 
-RUN useradd -m -s /bin/bash agent
+# The base image already has a non-root `node` user (uid 1000), which is the
+# usual uid on a laptop — so a mounted jobs directory is writable without
+# arguments. Different uid? run with --user "$(id -u):$(id -g)".
 WORKDIR /agent
-COPY --chown=agent:agent . /agent
+COPY --chown=node:node . /agent
+# WORKDIR creates /agent as root and `.dockerignore` keeps var/ out, so the
+# directory the worker writes its models.json into has to be made on purpose.
+RUN mkdir -p /agent/jobs /home/node/.pi/agent && chown -R node:node /agent /home/node/.pi
 
 ENV NODE_ENV=production \
     VPL_JOBS=/jobs \
-    VPL_PI_DIR=/agent/var/pi
+    VPL_PI_DIR=/home/node/.pi/agent
 
-USER agent
+USER node
 VOLUME ["/jobs"]
 CMD ["node", "/agent/worker.mjs"]
