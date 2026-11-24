@@ -23,7 +23,7 @@ await pg.waitForSelector('#app:not([hidden])');
 await pg.waitForTimeout(600);
 
 // fresh funnel
-await pg.click('#btn-new-project');
+await pg.click('#btn-new');
 await pg.waitForTimeout(900);
 ok(await pg.isVisible('#funnel'), 'new funnel opens');
 await pg.fill('#proj-title', 'check funnel');

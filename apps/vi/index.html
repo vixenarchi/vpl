@@ -27,7 +27,7 @@
     <div class="gate-brand">
       <span class="gate-mark" aria-hidden="true">v</span>
       <h1>vi</h1>
-      <span class="gate-sub">vixen idea</span>
+      <span class="gate-sub">vixen ideas</span>
     </div>
     <label for="email">e-mail or username</label>
     <input id="email" type="text" autocomplete="username" spellcheck="false"
@@ -56,14 +56,15 @@
 <!-- ── the app ───────────────────────────────────────────────────── -->
 <div id="app" class="app" hidden>
   <header class="bar">
-    <span class="brand-mark" aria-hidden="true">v</span>
-    <span class="brand-word">vi</span>
-    <span class="brand-sub">idea</span>
-    <button id="btn-projects" class="icon only-narrow" type="button" title="projects">☰</button>
+    <button id="btn-projects" class="icon" type="button" title="projects" aria-label="projects">☰</button>
+    <a class="brand" href="#/" title="vi · ideas">
+      <span class="brand-mark" aria-hidden="true">vi</span>
+      <span class="brand-word">ideas</span>
+    </a>
+    <button id="btn-new" class="icon" type="button" title="new funnel" aria-label="new funnel">＋</button>
     <span class="grow"></span>
     <span id="who" class="who"></span>
-    <button id="btn-ai" class="icon" type="button" title="the model this app may use">⚙</button>
-    <button id="btn-theme" class="icon" type="button" title="light or dark">◐</button>
+    <button id="btn-ai" class="icon" type="button" title="settings" aria-label="settings">⚙</button>
     <button id="btn-out" class="ghost" type="button" title="sign out">out</button>
   </header>
 
@@ -72,7 +73,6 @@
     <nav id="projects" class="projects" aria-label="projects">
       <div class="proj-head">
         <span>projects</span>
-        <button id="btn-new-project" class="icon o-only" type="button" title="new funnel">＋</button>
       </div>
       <ul id="proj-list" class="proj-list"></ul>
       <p id="proj-none" class="proj-none muted">no funnels yet. one project is one funnel.</p>

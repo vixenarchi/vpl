@@ -9,6 +9,18 @@
 import { chromium } from 'playwright';
 import { OWNER, GUEST } from './_account.mjs';
 
+/* The theme left the bar: it is one press inside settings now (◐ next to the
+ * word), and the palette tab underneath has all three. This is the same press. */
+async function darkMode(pgOrPage) {
+  const pg = pgOrPage;
+  await pg.click('#btn-ai');
+  await pg.waitForSelector('#ai-dialog[open]');
+  await pg.click('#ai-dialog [data-a=mode]');
+  await pg.waitForTimeout(150);
+  await pg.click('#ai-dialog [data-a=close]');
+  await pg.waitForTimeout(150);
+}
+
 const B = process.env.VI_URL || 'http://127.0.0.1:8100';
 const KEY = process.env.VPL_SEARCH_KEY || '';
 const PROV = process.env.VPL_SEARCH_PROVIDER || 'tavily';
@@ -49,7 +61,7 @@ await pg.fill('#pass', OWNER.pass);
 await pg.click('#btn-login');
 await pg.waitForSelector('#app:not([hidden])');
 await pg.waitForTimeout(700);
-await pg.click('#btn-new-project');
+await pg.click('#btn-new');
 await pg.waitForTimeout(1200);
 await pg.fill('#proj-title', 'vi-ai test');
 await pg.press('#proj-title', 'Enter');
@@ -105,7 +117,7 @@ await pg.waitForTimeout(300);
 ok((await pg.inputValue('#explore-text')).includes('customer:'), 'draft accepted');
 
 await pg.screenshot({ path: '/tmp/vi-balloon.png' });
-await pg.click('#btn-theme');
+await darkMode(pg);
 await pg.waitForTimeout(400);
 await pg.screenshot({ path: '/tmp/vi-dark2.png' });
 

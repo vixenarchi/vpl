@@ -80,7 +80,7 @@ const clip = (page) => page.evaluate(() => navigator.clipboard.readText());
 /* ── 1. the owner builds a funnel ─────────────────────────────────── */
 const op = await newPage();
 await signIn(op, OWNER);
-await op.click('#btn-new-project');
+await op.click('#btn-new');
 await op.waitForTimeout(1200);
 await op.fill('#proj-title', TITLE);
 await op.press('#proj-title', 'Enter');

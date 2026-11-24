@@ -12,6 +12,18 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createServer } from 'node:http';
 
+/* The theme left the bar: it is one press inside settings now (◐ next to the
+ * word), and the palette tab underneath has all three. This is the same press. */
+async function darkMode(pgOrPage) {
+  const pg = pgOrPage;
+  await pg.click('#btn-ai');
+  await pg.waitForSelector('#ai-dialog[open]');
+  await pg.click('#ai-dialog [data-a=mode]');
+  await pg.waitForTimeout(150);
+  await pg.click('#ai-dialog [data-a=close]');
+  await pg.waitForTimeout(150);
+}
+
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, '..');
 const PORT = 8099;
@@ -247,7 +259,7 @@ try {
   check('the recycle bin is empty again after restoring', binEmpty);
 
   /* ── dark mode has a visible edge colour ────────────────────────── */
-  await page.click('#btn-theme');
+  await darkMode(page);
   await page.waitForTimeout(300);
   const contrast = await page.evaluate(() => {
     const s = getComputedStyle(document.documentElement);
@@ -281,7 +293,7 @@ try {
     return getComputedStyle(document.documentElement).getPropertyValue('--line').trim();
   });
   check('light mode palette is untouched', lightLine === '#e0d9cd', lightLine);
-  await page.click('#btn-theme');        // back to light
+  await darkMode(page);        // back to light
 
   /* ── console hygiene ────────────────────────────────────────────── */
   const realErrors = errors.filter((e) =>

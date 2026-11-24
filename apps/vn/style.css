@@ -8,9 +8,6 @@
 
 [data-theme='dark'] .list-head input { background: var(--paper-3); }
 
-[data-theme='dark'] .bar {
-  border-bottom: 2px solid var(--line-strong);
-}
 
 [data-theme='dark'] .list {
   border-right: 2px solid var(--line-strong);
@@ -142,28 +139,6 @@ button.google {
 /* ── bar ────────────────────────────────────────────────────────── */
 .app { height: 100%; display: flex; flex-direction: column; }
 
-.bar {
-  height: var(--bar-h);
-  flex: 0 0 auto;
-  display: flex; align-items: center; gap: 0.15rem;
-  padding: 0 0.5rem;
-  border-bottom: 1px solid var(--line);
-  background: var(--paper);
-  position: relative;          /* the assistant's answer drops out of here */
-  z-index: 30;
-}
-.bar-spacer { flex: 1 1 0; min-width: 0; }
-.brand {
-  display: flex; align-items: center; gap: 0.4rem;
-  text-decoration: none; color: var(--ink);
-  font-family: var(--serif); font-size: 1rem;
-  margin-left: 0.15rem;
-}
-.brand-mark {
-  width: 1.35rem; height: 1.35rem; display: grid; place-items: center;
-  border-radius: 50%; background: var(--ink); color: var(--paper);
-  font-size: 0.8rem; font-family: var(--serif);
-}
 
 /* ── workspace ──────────────────────────────────────────────────── */
 .workspace {
@@ -1084,9 +1059,6 @@ kbd {
   .toolbar button { flex: 0 0 auto; }
   .tb-sep { flex: 0 0 auto; }
 
-  /* the assistant keeps its line, without its ornaments, and the bar gives it
-   * room by dropping the wordmark and thinning the icons */
-  .brand-word { display: none; }
   .bar > .icon { padding: 0.25rem; min-width: 2.4rem; min-height: 2.4rem; }
   .bar-gap-a { display: none; }
   .agent { flex: 1 1 auto; margin: 0 0.25rem; max-width: none; }

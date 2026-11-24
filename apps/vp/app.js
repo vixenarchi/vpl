@@ -96,6 +96,7 @@ async function enterApp() {
   $('#gate').hidden = true;
   $('#app').hidden = false;
   $('#who').textContent = displayName(S.session);
+  who.chip($('#who'));
   $('#who').title = S.session?.user?.email || '';
   /* a code spends the issuer's key, so say plainly when there is none */
   try {
@@ -133,6 +134,11 @@ $('#btn-register').addEventListener('click', async () => {
     msg($('#gate-msg'), plainAuthError(err), 'bad');
   }
 });
+$('#btn-google').addEventListener('click', async () => {
+  try { await db.signInWithGoogle(); }
+  catch (err) { msg($('#gate-msg'), err.message || String(err), 'bad'); }
+});
+
 
 /* ── making slips ─────────────────────────────────────────────────── */
 $('#mk-go').addEventListener('click', async () => {
@@ -297,7 +303,6 @@ async function paintAll() {
 
 /* ── boot ─────────────────────────────────────────────────────────── */
 async function boot() {
-  $('#btn-theme').onclick = () => settings.cycleTheme();
   const gateTheme = document.getElementById('gate-theme');
   if (gateTheme) gateTheme.onclick = applyTheme;
   $('#btn-out').onclick = async () => { await db.signOut(); location.reload(); };

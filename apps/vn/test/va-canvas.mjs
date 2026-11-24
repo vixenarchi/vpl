@@ -100,7 +100,7 @@ await pg.waitForSelector('#app:not([hidden])');
 await pg.waitForTimeout(900);
 
 /* ── a job with one input and one (mocked) answer ─────────────────── */
-await pg.click('#btn-new-project');
+await pg.click('#btn-new');
 await pg.waitForTimeout(900);
 await pg.fill('#brief', 'an editor, an api, one postgres');
 await pg.click('#btn-add-text');

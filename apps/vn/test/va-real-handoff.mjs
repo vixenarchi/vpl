@@ -35,7 +35,7 @@ await pg.waitForSelector('#app:not([hidden])');
 await pg.waitForTimeout(900);
 
 if (await pg.locator('#welcome').isVisible()) await pg.click('#btn-first');
-else await pg.click('#btn-new-project');
+else await pg.click('#btn-new');
 await pg.waitForTimeout(1200);
 await pg.fill('#proj-title', 'real hand-off ' + STAMP);
 await pg.waitForTimeout(1200);

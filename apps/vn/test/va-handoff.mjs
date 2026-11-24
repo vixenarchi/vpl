@@ -71,7 +71,7 @@ await pg.waitForTimeout(900);
 
 /* ── a job with one input, shared with the agent ─────────────────── */
 if (await pg.locator('#welcome').isVisible()) await pg.click('#btn-first');
-else await pg.click('#btn-new-project');
+else await pg.click('#btn-new');
 await until(async () => (await pg.inputValue('#proj-title')) === 'untitled job');
 await pg.fill('#proj-title', 'va-handoff ' + STAMP);
 await pg.waitForTimeout(1200);

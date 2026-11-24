@@ -96,7 +96,7 @@ ok(await pg.locator('#app').isVisible(), 'signed in, the desk is up');
 
 /* ── a check, with two empty piles ──────────────────────────────── */
 if (await pg.locator('#welcome').isVisible()) await pg.click('#btn-first');
-else await pg.click('#btn-new-project');
+else await pg.click('#btn-new');
 await until(async () => (await pg.inputValue('#proj-title')) === 'untitled job');
 await pg.fill('#proj-title', 'vc-check ' + STAMP);
 await pg.waitForTimeout(1300);

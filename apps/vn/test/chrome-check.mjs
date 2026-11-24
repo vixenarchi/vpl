@@ -80,12 +80,39 @@ ok(who.length > 2, 'the bar names the person: “' + who + '”');
 ok(!who.includes('@'), 'and it is a name, not an address');
 ok(/^[A-Z]/.test(who), 'starting with a capital');
 
+/* ── one bar, one order, in all eight ───────────────────────────────
+ * The bar is the one thing a hand learns once and expects everywhere: the list,
+ * the boxed letters of the app, its name, the one thing you add — then air,
+ * who you are, the gear and out. vp has no list and nothing to add, so its bar
+ * is the same order with those two absent.
+ *
+ * The theme left the bar on purpose: it lives inside settings now, one press,
+ * next to the word. A bar that grows a fourth button is a bar that stops
+ * matching the other seven. */
+const order = await pg.evaluate(() => {
+  const bar = document.querySelector('header.bar');
+  if (!bar) return null;
+  return [...bar.children]
+    .filter((c) => c.offsetParent !== null && !c.hidden)
+    .map((c) => (c.id ? '#' + c.id : c.classList[0]));
+});
+const wanted = NAME === 'vp'
+  ? ['brand', 'grow', '#who', '#btn-ai', '#btn-out']
+  : ['#btn-projects', 'brand', '#btn-new', 'grow', '#who', '#btn-ai', '#btn-out'];
+ok(JSON.stringify(order) === JSON.stringify(wanted),
+  'the bar is in the suite\'s order', JSON.stringify(order));
+const boxed = (await pg.textContent('.bar .brand-mark') || '').trim().toLowerCase();
+ok(boxed === NAME, 'the box says which app this is (' + boxed + ')');
+ok(await pg.locator('.bar #btn-theme').count() === 0, 'the theme is not a fourth button in the bar');
+
 /* ── one gear, one dialog ───────────────────────────────────────── */
 ok(await pg.locator('#btn-ai').isVisible(), 'there is a settings gear');
 await pg.click('#btn-ai');
 ok(await until(async () => pg.locator('#ai-dialog[open]').isVisible()), 'it opens the shared settings');
 ok((await pg.locator('#ai-dialog [role=tab]').allTextContents()).join(',') === 'model,search,key,theme',
   'and it is the same four tabs');
+const mode = await pg.locator('#ai-dialog [data-a=mode]').count();
+ok(mode === 1, 'and one press next to the word switches dark or normal');
 
 /* the bug: a theme change used to swallow save and close */
 await pg.click('#ai-dialog [data-tab=theme]');

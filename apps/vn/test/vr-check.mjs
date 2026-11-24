@@ -54,7 +54,7 @@ for (let i = 0; i < 6; i++) {
 // The document is created over the network. Naming it before it exists types
 // into whichever document was open before, so wait for the rail to grow.
 const railBefore = await pg.locator('.proj-row').count();
-await pg.click('#btn-new-project');
+await pg.click('#btn-new');
 if (!(await until(async () => (await pg.locator('.proj-row').count()) === railBefore + 1, 12000)))
   console.log('  note: the new document did not appear in the rail');
 await pg.fill('#proj-title', 'vr-check dog house');

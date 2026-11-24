@@ -26,7 +26,7 @@ const el = {
   gateMsg: $('gate-msg'),
 
   app: $('app'),
-  btnList: $('btn-list'), btnNew: $('btn-new'), btnHelp: $('btn-help'),
+  btnList: $('btn-projects'), btnNew: $('btn-new'), btnHelp: $('btn-help'),
   btnTheme: $('btn-theme'), gateTheme: $('gate-theme'), readerTheme: $('reader-theme'), btnOut: $('btn-out'), btnSettings: $('btn-settings'),
 
   settings: $('settings'), setWho: $('set-who'), setClose: $('set-close'),
@@ -171,6 +171,31 @@ function indexShares() {
     if (g.email && !g.pending && mine && g.email === mine) S.sharedRoots.set(g.note_id, g.role);
   }
 }
+
+/* The bar's ✎, ⌨ and ⚙ are commented out in index.html (the dock is the
+ * assistant, the gear is #btn-ai, and Ctrl+/ still opens the shortcut list).
+ * What is left of that wiring gets a stand-in rather than twelve null checks:
+ * it listens to nothing, it hides nothing, it says nothing. */
+const quietEl = new Proxy({}, {
+  get: (t, k) => {
+    if (k === 'hidden') return true;
+    if (k === 'children') return [];
+    if (k === 'classList') return { toggle() {}, contains: () => false, add() {}, remove() {} };
+    if (k === 'dataset') return {};
+    if (['addEventListener', 'removeEventListener', 'setAttribute', 'append', 'appendChild',
+      'focus', 'blur', 'click', 'scrollIntoView'].includes(k)) return () => {};
+    if (k === 'contains') return () => false;
+    if (k === 'getBoundingClientRect') return () => ({ width: 0, height: 0, top: 0, left: 0 });
+    if (k === 'querySelector' || k === 'closest') return () => null;
+    if (k === 'querySelectorAll') return () => [];
+    return '';
+  },
+  set: () => true,
+});
+const QUIET = ['btnHelp', 'btnTheme', 'btnSettings', 'btnEye', 'agent', 'agentOpen',
+  'agentForm', 'agentInput', 'agentGo', 'agentOut', 'agentText', 'agentMsg',
+  'agentAdd', 'agentReplace', 'agentDrop'];
+for (const k of QUIET) if (!el[k]) el[k] = quietEl;
 
 const MODES = ['write', 'view'];
 

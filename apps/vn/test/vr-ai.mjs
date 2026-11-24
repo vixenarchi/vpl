@@ -91,7 +91,7 @@ await pg.fill('#pass', OWNER.pass);
 await pg.click('#btn-login');
 await pg.waitForSelector('#app:not([hidden])');
 await pg.waitForTimeout(1500);
-await pg.click('#btn-new-project');
+await pg.click('#btn-new');
 await pg.waitForTimeout(1200);
 await pg.fill('#proj-title', 'vr-ai test');
 await pg.waitForTimeout(800);

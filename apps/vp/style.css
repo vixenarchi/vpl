@@ -36,17 +36,6 @@ body {
 .gate-row button { flex: 1; }
 .gate-foot { margin: 16px 0 0; font-size: .78rem; color: var(--soft); }
 
-/* ── the bar ───────────────────────────────────────────────────────── */
-.bar {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--line);
-  background: var(--card);
-  position: sticky; top: 0; z-index: 5;
-}
-.mark { font-family: var(--mono, monospace); font-weight: 600; letter-spacing: .04em; }
-.crumb { color: var(--soft); font-size: .84rem; }
-.who { color: var(--soft); font-size: .8rem; max-width: 30ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── the desk ──────────────────────────────────────────────────────── */
 .desk {

@@ -1,4 +1,8 @@
-# The unification list (waiting)
+# The unification list
+
+**The bar and the gate are done (24 Nov 2026).** What follows in *The bar* below
+is the old description of the drift; the rules that are now shipped are in
+"One bar, one order" underneath it. The rest of the list is still waiting.
 
 The apps grew one at a time and the differences that remain are accidents, not
 opinions. Nothing here is a redesign; it is the same thing said the same way.
@@ -13,6 +17,59 @@ Written down now so it is one job later instead of five small surprises.
 - Same words: `out`, `⚙` title "the model and its key", `◐` title "light or
   dark".
 - Only the app with a rail gets `☰`; no app invents a second way to open it.
+
+
+## One bar, one order (shipped)
+
+The bar is now markup the apps share and CSS that lives once, in
+`packages/shell/tokens.css` (`tools/stage.sh` copies it). Left to right, always:
+
+1. `☰` — the list, in the apps that have one (`#btn-projects`).
+2. the boxed **two letters of the app** — `[vn]`, `[vi]`, `[vr]`… — and then the
+   app's own word: `notes`, `ideas`, `requirements`, `dictionary`, `documents`,
+   `compliance`, `keys & codes`, `architecture`.
+3. `＋` — the one thing you add (`#btn-new`), in the bar and nowhere else.
+4. air (`span.grow`).
+5. `#who` — the initials chip and the name.
+6. `⚙` (`#btn-ai`) — settings.
+7. `out` (`#btn-out`) — sign out.
+
+`vp` has no list and nothing to add, so its bar is the same order with those two
+absent. The box and the word are one link to the app's own start.
+
+**The theme left the bar.** `◐` was a fourth button that no two apps placed in
+the same spot. It is now one press *inside* settings, next to the word: a small
+`dark` / `normal` button (`[data-a=mode]`) that says what pressing it gives you,
+with the palette tab underneath for all three. The bar is not a place for
+preferences.
+
+**On a phone the word goes** (`max-width: 26rem`), it does not shrink to its
+initial: `[vn] n` reads as a cut-off word, while `[vn]` alone still says which
+app this is. `chrome-check` measures the order in all eight and fails if any app
+grows a fourth button or moves one.
+
+**The gate is one form too:** mark, the app's letters, `vixen <name>`, e-mail or
+username, password, create / sign in, *continue with Google*, and the same
+sentence underneath — "one account for the whole suite". `vp` had a version of
+its own; it now has this one, Google button included (`vp/lib/db.js` grew
+`signInWithGoogle`).
+
+**`vn`'s bar lost four buttons**: the inline assistant's `✎`, the shortcut list
+`⌨`, the `✳` key icon and the second gear. The dock is the assistant now, and the
+`⌨` button is commented out in `app.js`'s neighbours (`index.html`) on purpose:
+*Ctrl+/* still opens the same list, and the button goes back when the suite is
+finished. The wiring it left behind is kept quiet by one `Proxy` stand-in rather
+than twelve null checks.
+
+**`＋` moved out of the panes.** `vi`, `vz`, `vr`, `vd`, `vc` and `va` had it in
+the rail head (two of them only while the rail was open); there is one place to
+add a thing now, and it is the bar.
+
+**What made the bar fall apart was not the markup.** Six apps still carried their
+own `.bar`, `.brand`, `.brand-word` and `.who` rules — including one that made
+the brand an `inline-grid` through the tap-target floor, which stacked the box
+above the word and shrank the whole link to the width of "ideas". Those rules
+were deleted; the tap floor no longer touches `.bar .brand`.
 
 ## Settings (the model dialog)
 

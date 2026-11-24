@@ -35,9 +35,24 @@ export function whoInitials(session) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+/**
+ * The initials chip in front of the name. Apps write `#who` themselves (one has
+ * "a guest" where another has a name), so this reads what was written instead
+ * of asking them to agree: two letters, from the words already there.
+ */
+export function chip(el) {
+  if (!el) return;
+  const parts = String(el.textContent || '').trim().split(/\s+/).filter(Boolean);
+  const two = parts.length === 0 ? '?'
+    : parts.length === 1 ? parts[0].slice(0, 2)
+      : parts[0][0] + parts[parts.length - 1][0];
+  el.dataset.initial = two.toUpperCase();
+}
+
 /** Put the label in an element, and the address in its title. */
 export function paintWho(el, session) {
   if (!el) return;
   el.textContent = whoLabel(session);
   el.title = session?.user?.email || '';
+  chip(el);
 }

@@ -109,7 +109,6 @@ function until(fn, ms = 8000) {
 
 /* ── boot ─────────────────────────────────────────────────────────── */
 async function boot() {
-  $('#btn-theme').onclick = () => settings.cycleTheme();
   $('#gate-theme').onclick = applyTheme;
   lowerField($('#email'));
   wireGate();
@@ -169,6 +168,7 @@ async function enterApp() {
   $('#gate').hidden = true;
   $('#app').hidden = false;
   $('#who').textContent = displayName(S.session);
+  who.chip($('#who'));
   $('#who').title = S.session?.user?.email || '';
   await loadProjects();
   const last = localStorage.getItem('vz.last');
@@ -196,7 +196,7 @@ function renderRail() {
     list.append(li);
   }
   $('#proj-none').hidden = S.projects.length > 0;
-  $('#btn-new-project').hidden = !!S.guest;
+  $('#btn-new').hidden = !!S.guest;
   const count = S.bin.length;
   $('#bin-rail').hidden = !S.project || !!S.guest;
   $('#bin-count').textContent = count ? String(count) : '';
@@ -219,7 +219,7 @@ $('#proj-list').addEventListener('click', async (e) => {
   await openProject(li.dataset.id);
 });
 
-$('#btn-new-project').onclick = async () => {
+$('#btn-new').onclick = async () => {
   const p = await db.createProject('untitled');
   await loadProjects();
   await openProject(p.id);
@@ -227,7 +227,7 @@ $('#btn-new-project').onclick = async () => {
   $('#proj-title').select();
 };
 
-$('#btn-first').onclick = () => $('#btn-new-project').click();
+$('#btn-first').onclick = () => $('#btn-new').click();
 
 function renderWelcome() {
   $('#welcome').hidden = false;
@@ -898,6 +898,7 @@ async function openGuest(code, kind) {
   $('#btn-projects').hidden = true;
   document.body.dataset.guest = '1';
   $('#who').textContent = displayName(S.session);
+  who.chip($('#who'));
 
   applyRole();
   renderMeta();

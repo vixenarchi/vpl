@@ -53,14 +53,15 @@
 <!-- ── the app ───────────────────────────────────────────────────── -->
 <div id="app" class="app" hidden>
   <header class="bar">
-    <span class="brand-mark" aria-hidden="true">v</span>
-    <span class="brand-word">va</span>
-    <span class="brand-sub">architecture</span>
-    <button id="btn-projects" class="icon only-narrow" type="button" title="jobs">☰</button>
+    <button id="btn-projects" class="icon" type="button" title="jobs" aria-label="jobs">☰</button>
+    <a class="brand" href="#/" title="va · architecture">
+      <span class="brand-mark" aria-hidden="true">va</span>
+      <span class="brand-word">architecture</span>
+    </a>
+    <button id="btn-new" class="icon" type="button" title="a new job" aria-label="a new job">＋</button>
     <span class="grow"></span>
     <span id="who" class="who"></span>
-    <button id="btn-ai" class="icon" type="button" title="the model and its key">⚙</button>
-    <button id="btn-theme" class="icon" type="button" title="light or dark">◐</button>
+    <button id="btn-ai" class="icon" type="button" title="settings" aria-label="settings">⚙</button>
     <button id="btn-out" class="ghost" type="button" title="sign out">out</button>
   </header>
 
@@ -68,7 +69,6 @@
     <nav id="projects" class="projects" aria-label="jobs">
       <div class="proj-head">
         <span>jobs</span>
-        <button id="btn-new-project" class="icon" type="button" title="a new job">＋</button>
       </div>
       <ul id="proj-list" class="proj-list"></ul>
       <p id="proj-none" class="proj-none muted">no jobs yet. one job is one picture you have to draw in words.</p>

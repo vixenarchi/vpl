@@ -59,6 +59,15 @@ export async function signUp(email, password) {
   if (!data.session) throw new Error('confirm your address first');
 }
 
+export async function signInWithGoogle() {
+  const db = await client();
+  const { error } = await db.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: location.origin + location.pathname },
+  });
+  if (error) throw error;
+}
+
 export async function signOut() {
   const db = await client();
   await db.auth.signOut();

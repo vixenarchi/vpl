@@ -104,7 +104,6 @@ function plainAuthError(err) {
 
 /* ── boot ─────────────────────────────────────────────────────────── */
 async function boot() {
-  $('#btn-theme').onclick = () => { settings.cycleTheme(); paintSpec(); };
   $('#gate-theme').onclick = () => settings.cycleTheme();
   lowerField($('#email'));
   wireGate();
@@ -202,6 +201,7 @@ async function enterApp() {
   $('#gate').hidden = true;
   $('#app').hidden = false;
   $('#who').textContent = displayName(S.session);
+  who.chip($('#who'));
   $('#who').title = S.session?.user?.email || '';
   wireAi();
   await loadProjects();
@@ -258,7 +258,7 @@ $('#proj-list').addEventListener('click', async (e) => {
   await openJob(id);
 });
 
-$('#btn-new-project').onclick = async () => {
+$('#btn-new').onclick = async () => {
   const p = await db.createProject('untitled job', DEFAULT_TEMPLATE);
   await loadProjects();
   await openJob(p.id);
@@ -267,7 +267,7 @@ $('#btn-new-project').onclick = async () => {
   document.body.dataset.rail = '';
 };
 
-$('#btn-first').onclick = () => $('#btn-new-project').click();
+$('#btn-first').onclick = () => $('#btn-new').click();
 
 $('#btn-projects').onclick = () => {
   document.body.dataset.rail = document.body.dataset.rail === 'open' ? '' : 'open';
@@ -1047,6 +1047,7 @@ async function openGuest(code) {
   document.body.dataset.guest = '1';
   document.body.dataset.role = 'view';
   $('#who').textContent = S.session ? displayName(S.session) : 'a guest';
+  who.chip($('#who'));
   $('#welcome').hidden = true;
   $('#spec').hidden = false;
   $('#btn-share').hidden = true;
@@ -1090,7 +1091,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && document.body.dataset.rail === 'open') document.body.dataset.rail = '';
   if (!typing && e.key === 'n' && (e.metaKey || e.ctrlKey)) {
     e.preventDefault();
-    $('#btn-new-project').click();
+    $('#btn-new').click();
   }
 });
 

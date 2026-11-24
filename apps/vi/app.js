@@ -108,7 +108,6 @@ async function boot() {
     try { await db.signInWithGoogle(); }
     catch (e) { say($('#gate-msg'), e.message || String(e), 'bad'); }
   };
-  $('#btn-theme').onclick = () => settings.cycleTheme();
   $('#btn-out').onclick = async () => { await db.signOut(); location.reload(); };
 
   db.onAuthChange((s) => { if (!s) showGate(); });
@@ -145,6 +144,7 @@ async function enter() {
   $('#gate').hidden = true;
   $('#app').hidden = false;
   $('#who').textContent = displayName(S.session);
+  who.chip($('#who'));
   $('#who').title = S.session.user.email;
   wireChrome();
   await loadProjects();
@@ -155,7 +155,7 @@ async function enter() {
 function wireChrome() {
   $('#btn-ai').onclick = openAiDialog;
   $('#btn-projects').onclick = () => $('#projects').classList.toggle('open');
-  $('#btn-new-project').onclick = newProject;
+  $('#btn-new').onclick = newProject;
   $('#btn-first').onclick = newProject;
 
   $('#proj-title').addEventListener('change', saveTitle);
@@ -1044,6 +1044,7 @@ async function enterGuest(code) {
   $('#gate').hidden = true;
   $('#app').hidden = false;
   $('#who').textContent = 'guest';
+  who.chip($('#who'));
   $('#who').title = '';
   $('#welcome').hidden = true;
   $('#funnel').hidden = false;

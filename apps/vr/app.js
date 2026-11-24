@@ -195,6 +195,7 @@ async function enter() {
   wirePaste();
   wireReview();
   $('#who').textContent = displayName(S.session);
+  who.chip($('#who'));
   await loadProjects();
 }
 
@@ -1379,7 +1380,6 @@ async function enterGuest(code) {
 
 /* ── wiring ───────────────────────────────────────────────────────── */
 function wireChrome() {
-  $('#btn-theme').onclick = () => settings.cycleTheme();
   $('#btn-out').onclick = async () => { await db.signOut(); location.reload(); };
   $('#btn-projects').onclick = () => {
     document.body.dataset.rail = document.body.dataset.rail === 'open' ? '' : 'open';
@@ -1412,7 +1412,7 @@ function wireChrome() {
     }
   };
 
-  $('#btn-new-project').onclick = newProject;
+  $('#btn-new').onclick = newProject;
   $('#btn-first').onclick = newProject;
   $('#proj-list').addEventListener('click', (e) => {
     const del = e.target.closest('button[data-del-project]');

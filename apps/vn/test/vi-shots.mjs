@@ -1,5 +1,17 @@
 import { chromium } from 'playwright';
 import { OWNER, GUEST } from './_account.mjs';
+/* The theme left the bar: it is one press inside settings now (◐ next to the
+ * word), and the palette tab underneath has all three. This is the same press. */
+async function darkMode(pgOrPage) {
+  const pg = pgOrPage;
+  await pg.click('#btn-ai');
+  await pg.waitForSelector('#ai-dialog[open]');
+  await pg.click('#ai-dialog [data-a=mode]');
+  await pg.waitForTimeout(150);
+  await pg.click('#ai-dialog [data-a=close]');
+  await pg.waitForTimeout(150);
+}
+
 const B = process.env.VI_URL || 'http://127.0.0.1:8100';
 const OUT = '/tmp/vi';
 const notes = [
@@ -26,7 +38,7 @@ await pg.waitForTimeout(700);
 await pg.screenshot({ path: `${OUT}-welcome.png` });
 
 if (await pg.isVisible('#btn-first')) { await pg.click('#btn-first'); }
-else { await pg.click('#btn-new-project'); }
+else { await pg.click('#btn-new'); }
 await pg.waitForTimeout(900);
 await pg.fill('#proj-title', 'Rooftop ERP');
 await pg.press('#proj-title', 'Enter');  // blur -> save
@@ -87,14 +99,14 @@ await pg.screenshot({ path: `${OUT}-sim.png` });
 
 // dark
 await pg.click('.step[data-stage="ideation"]');
-await pg.click('#btn-theme');
+await darkMode(pg);
 await pg.waitForTimeout(300);
 await pg.screenshot({ path: `${OUT}-dark.png` });
 await pg.click('#btn-ai');
 await pg.waitForTimeout(300);
 await pg.screenshot({ path: `${OUT}-ai.png` });
 await pg.click('#ai-x');
-await pg.click('#btn-theme');
+await darkMode(pg);
 await pg.waitForTimeout(250);
 
 // narrow

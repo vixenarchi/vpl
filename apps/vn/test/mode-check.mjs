@@ -203,19 +203,25 @@ const tight = await page.evaluate(() => {
 check(tight.margin === '0px' && tight.gaps.every((g) => g === 0),
   'consecutive lines sit flush — no paragraph margin', JSON.stringify(tight));
 
-/* ── the assistant's key can be tried before it is trusted ────────── */
-await page.click('#btn-settings');
-await page.waitForTimeout(500);
+/* ── the assistant's key can be tried before it is trusted ──────────
+ * One settings dialog in the suite now (vendor/settings.js): the gear opens the
+ * model tab, and "test" is the same button in every app. */
+await page.click('#btn-ai');
+await page.waitForSelector('#ai-dialog[open]');
+await page.waitForTimeout(300);
 const testFeedback = await page.evaluate(async () => {
-  const btn = document.getElementById('set-ai-test');
-  if (!btn) return null;
-  document.getElementById('set-ai-url').value = '';
-  btn.click();
+  const dlg = document.getElementById('ai-dialog');
+  const url = dlg.querySelector('#set-url');
+  const key = dlg.querySelector('#set-key');
+  if (!url || !key) return 'no model tab at all';
+  url.value = '';
+  key.value = '';
+  dlg.querySelector('[data-a="test"]').click();
   await new Promise((r) => setTimeout(r, 200));
-  return document.getElementById('set-ai-msg').textContent;
+  return dlg.querySelector('.set-msg').textContent;
 });
-check(testFeedback === 'add an api url first.', 'the assistant can be tested, and says what is missing', String(testFeedback));
-await page.click('#set-ai-clear').catch(() => {});
+check(testFeedback === 'nothing to test yet', 'the assistant can be tested, and says what is missing', String(testFeedback));
+await page.click('#ai-dialog [data-a="close"]').catch(() => {});
 await page.keyboard.press('Escape').catch(() => {});
 
 /* ── the gate: brand on one line, and "username" in the field ─────── */

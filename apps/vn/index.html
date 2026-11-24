@@ -25,41 +25,24 @@
 
 <!-- ── gate: sign in ─────────────────────────────────────────────── -->
 <section id="gate" class="gate" hidden>
-  <button id="gate-theme" class="icon corner-theme" type="button"
-          title="light or dark" aria-label="light or dark">◐</button>
+  <button id="gate-theme" class="corner-theme" type="button" aria-label="light or dark">◐</button>
   <form id="gate-form" class="gate-form">
     <div class="gate-brand">
       <span class="gate-mark" aria-hidden="true">v</span>
-      <h1>vpl</h1>
-      <span class="gate-sub">vixen productivity light</span>
+      <h1>vn</h1>
+      <span class="gate-sub">vixen notes</span>
     </div>
-
-    <label for="email">email or a name</label>
-    <input id="email" type="text" autocomplete="username" required
-           spellcheck="false" autocapitalize="none" autocorrect="off"
+    <label for="email">e-mail or username</label>
+    <input id="email" type="text" autocomplete="username" spellcheck="false"
+           autocapitalize="none" autocorrect="off"
            placeholder="you@example.com or username">
-    <p class="gate-hint">any name will do — an email is only needed to get a
-      forgotten password back.</p>
-
     <label for="pass">password</label>
-    <div class="pass-wrap">
-      <input id="pass" type="password" autocomplete="current-password"
-             minlength="6" required placeholder="at least 6 characters">
-      <button id="btn-eye" type="button" class="eye" aria-pressed="false"
-              aria-controls="pass" aria-label="show password" title="show password">
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <path d="M1.6 12S5.6 5.8 12 5.8 22.4 12 22.4 12 18.4 18.2 12 18.2 1.6 12 1.6 12z"/>
-          <circle cx="12" cy="12" r="3.1"/>
-          <path class="eye-slash" d="M3.5 20.5 20.5 3.5"/>
-        </svg>
-      </button>
+    <input id="pass" type="password" autocomplete="current-password">
+    <p id="gate-msg" class="gate-msg" aria-live="polite"></p>
+    <div class="confirm-row">
+      <button id="btn-register" class="ghost" type="button">create account</button>
+      <button id="btn-login" class="primary" type="submit">sign in</button>
     </div>
-
-    <div class="gate-row">
-      <button id="btn-login" type="submit" class="primary">sign in</button>
-      <button id="btn-register" type="button">create account</button>
-    </div>
-
     <button id="btn-google" type="button" class="google">
       <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
         <path fill="#4285F4" d="M23 12.2c0-.8-.1-1.6-.2-2.3H12v4.4h6.2c-.3 1.4-1.1 2.6-2.4 3.4v2.8h3.9c2.3-2.1 3.3-5.2 3.3-8.3z"/>
@@ -69,9 +52,7 @@
       </svg>
       continue with Google
     </button>
-
-    <p id="gate-msg" class="gate-msg" role="status"></p>
-      <p class="gate-fine">one account for the whole suite</p>
+    <p class="gate-fine">one account for the whole suite</p>
   </form>
 </section>
 
@@ -79,43 +60,16 @@
 <div id="app" class="app" hidden>
 
   <header class="bar">
-    <button id="btn-list" class="icon" title="notes (Ctrl+\)" aria-label="toggle note list">☰</button>
-    <a class="brand" href="#/"><span class="brand-mark" aria-hidden="true">v</span><span class="brand-word">vpl</span></a>
-
-    <span class="bar-spacer bar-gap-a"></span>
-
-    <button id="btn-agent" class="icon agent-open" type="button" hidden
-            title="assistant" aria-label="assistant" aria-expanded="false" aria-controls="agent">✎</button>
-
-    <section id="agent" class="agent" hidden>
-      <form id="agent-form" class="agent-form">
-        <span class="agent-mark" aria-hidden="true">✎</span>
-        <input id="agent-input" type="text" autocomplete="off"
-               placeholder="ask: expand this idea, tidy the list, make a summary…"
-               aria-label="ask the assistant">
-        <button id="agent-go" class="ghost agent-go" type="submit">go</button>
-      </form>
-      <div class="agent-pop">
-        <p id="agent-msg" class="agent-msg muted" aria-live="polite"></p>
-        <div id="agent-out" class="agent-out" hidden>
-          <div id="agent-text" class="agent-text"></div>
-          <div class="agent-actions">
-            <button id="agent-add" class="ghost" type="button">add at the end</button>
-            <button id="agent-replace" class="ghost" type="button">replace the note</button>
-            <button id="agent-drop" class="ghost" type="button">discard</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <span class="bar-spacer bar-gap-b"></span>
-    <button id="btn-new" class="icon" title="new note (Alt+N)" aria-label="new note">＋</button>
-    <button id="btn-help" class="icon" title="keyboard shortcuts (?)" aria-label="keyboard shortcuts">⌨</button>
-    <button id="btn-theme" class="icon" title="theme" aria-label="toggle theme">◐</button>
+    <button id="btn-projects" class="icon" type="button" title="the notes" aria-label="the notes">☰</button>
+    <a class="brand" href="#/" title="vn · notes">
+      <span class="brand-mark" aria-hidden="true">vn</span>
+      <span class="brand-word">notes</span>
+    </a>
+    <button id="btn-new" class="icon" type="button" title="new note (Alt+N)" aria-label="new note (Alt+N)">＋</button>
+    <span class="grow"></span>
     <span id="who" class="who"></span>
-    <button id="btn-ai" class="icon" title="the model and its key" aria-label="the model and its key">✳</button>
-    <button id="btn-settings" class="icon" title="you: name, assistant, account" aria-label="settings">⚙</button>
-    <button id="btn-out" class="icon" title="sign out" aria-label="sign out">⏻</button>
+    <button id="btn-ai" class="icon" type="button" title="settings" aria-label="settings">⚙</button>
+    <button id="btn-out" class="ghost" type="button" title="sign out">out</button>
   </header>
 
   <div class="workspace">

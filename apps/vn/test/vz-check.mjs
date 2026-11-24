@@ -46,7 +46,7 @@ ok(await pg.locator('#app').isVisible(), 'signed in, the app is up');
 
 // ── a project, and three keys
 if (await pg.locator('#welcome').isVisible()) await pg.click('#btn-first');
-else await pg.click('#btn-new-project');
+else await pg.click('#btn-new');
 await pg.waitForTimeout(1200);
 await pg.fill('#proj-title', 'vz-check ' + STAMP);
 await pg.locator('#proj-title').blur();

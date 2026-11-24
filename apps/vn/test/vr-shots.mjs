@@ -9,6 +9,18 @@ import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
 import { OWNER, GUEST } from './_account.mjs';
 
+/* The theme left the bar: it is one press inside settings now (◐ next to the
+ * word), and the palette tab underneath has all three. This is the same press. */
+async function darkMode(pgOrPage) {
+  const pg = pgOrPage;
+  await pg.click('#btn-ai');
+  await pg.waitForSelector('#ai-dialog[open]');
+  await pg.click('#ai-dialog [data-a=mode]');
+  await pg.waitForTimeout(150);
+  await pg.click('#ai-dialog [data-a=close]');
+  await pg.waitForTimeout(150);
+}
+
 const B = process.env.VR_URL || 'http://127.0.0.1:8101';
 const cfg = readFileSync(new URL('../../../apps/vr/config.local.js', import.meta.url), 'utf8');
 const URL_ = /url:\s*'([^']+)'/.exec(cfg)[1];
@@ -117,7 +129,7 @@ const shot = async (name, opts = {}, steps = []) => {
 
 await shot('vr-sheet');
 await shot('vr-open', {}, [async (page) => page.locator('#rows tr[data-id]').nth(2).locator('.req-open').click()]);
-await shot('vr-dark', { colorScheme: 'dark' }, [async (page) => page.click('#btn-theme')]);
+await shot('vr-dark', { colorScheme: 'dark' }, [async (page) => darkMode(page)]);
 await shot('vr-print', {}, [async (page) => page.emulateMedia({ media: 'print' })]);
 await shot('vr-phone', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 });
 

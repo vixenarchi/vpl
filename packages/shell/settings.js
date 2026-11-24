@@ -69,6 +69,8 @@ export function mountSettings({ dialog, proxy, onSaved } = {}) {
   dialog.innerHTML = `
     <div class="set-head">
       <h2>settings</h2>
+      <button class="set-mode" type="button" data-a="mode"
+              title="switch between normal and dark (the palette tab has three)">dark</button>
       <button class="dialog-x" type="button" data-a="close" aria-label="close">✕</button>
     </div>
 
@@ -161,11 +163,28 @@ export function mountSettings({ dialog, proxy, onSaved } = {}) {
     });
     if (tab === 'key') paintAccount();
     if (tab === 'theme') paintThemes();
+    paintMode();
   }
 
   function paintModels() {
     const p = PROVIDERS.find((x) => x.id === provider.value);
     models.innerHTML = (p?.models || []).map((m) => `<option value="${esc(m.id)}">`).join('');
+  }
+
+  /* one press: dark or normal. It writes the same palette the tab writes, so
+   * the two can never disagree — the button is a shortcut, not a second state. */
+  function toggleMode() {
+    applyTheme(currentTheme() === 'light' ? 'dark' : 'light');
+    paintThemes();
+    paintMode();
+    say(currentTheme() === 'dark' ? 'ink, for a dark room.' : 'paper, the default.');
+  }
+
+  /* the button says what pressing it gives you, not what is on now */
+  function paintMode() {
+    const b = $('[data-a=mode]');
+    if (!b) return;
+    b.textContent = currentTheme() === 'light' ? 'dark' : 'normal';
   }
 
   function paintThemes() {
@@ -354,6 +373,7 @@ export function mountSettings({ dialog, proxy, onSaved } = {}) {
     const a = aHit ? aHit.dataset.a : '';
     if (!a) return;
     if (a === 'close') return dialog.close();
+    if (a === 'mode') return toggleMode();
     if (a === 'save') return save();
     if (a === 'test') return test();
     if (a === 'forget') return forget();

@@ -294,6 +294,60 @@ body.dock-fixed { padding-bottom: calc(var(--dock-h) + 1px); }
 }
 .gate { position: relative; }
 
+
+/* ── the bar: one order, in all eight ─────────────────────────────────
+ * Left to right, always the same: the list, the app's boxed letters, its own
+ * name, the one thing you add. Then air. Then who you are, the gear, out.
+ * A hand learns this once and it works in every app.
+ *
+ * The name, not the letters, is what gives way on a phone: the box already
+ * says which app this is, so the word can fall back to its first letter.
+ */
+.bar {
+  height: var(--bar-h); flex: 0 0 auto;
+  display: flex; align-items: center; gap: 0.25rem;
+  padding: 0 0.6rem; background: var(--paper);
+  border-bottom: 1px solid var(--line);
+  position: relative; z-index: 30;
+}
+.bar .grow { flex: 1 1 0; min-width: 0; }
+.bar .brand {
+  display: inline-flex; align-items: center; gap: 0.45rem; min-width: 0;
+  text-decoration: none; color: var(--ink);
+}
+.bar .brand-mark {
+  display: grid; place-items: center; flex: none;
+  min-width: 1.9rem; height: 1.6rem; padding: 0 0.28rem;
+  border: 1px solid var(--line-strong); border-radius: 4px; background: var(--paper-2);
+  font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.03em;
+  text-transform: uppercase; color: var(--ink);
+}
+.bar .brand-word {
+  display: inline-block; overflow: hidden; white-space: nowrap;
+  font-family: var(--serif); font-size: 0.98rem; color: var(--ink-2);
+}
+.bar .brand:hover .brand-word { color: var(--ink); }
+/* On a phone the word goes rather than shrink to one letter: "[vn] n" reads as
+ * a cut-off word, while the box alone still says which app this is. */
+@media (max-width: 26rem) {
+  .bar .brand-word { display: none; }
+}
+
+/* ── the theme, in the settings dialog ────────────────��──────────────
+ * ◐ sits next to the word "settings" and means one thing: dark or normal, in
+ * one press. The palette tab underneath is where a person goes to choose. */
+/* the ✕ is pinned in the corner (it is in every dialog), so the head keeps a
+ * strip clear of it: the ◐ sat under the ✕ and could not be pressed */
+dialog.settings .set-head { gap: 0.4rem; padding-right: 2.3rem; }
+dialog.settings .set-head h2 { margin-right: auto; }
+dialog.settings .set-mode {
+  border: 1px solid var(--line); background: var(--paper-2); color: var(--ink-2);
+  border-radius: var(--radius); min-height: 1.6rem;
+  font-family: var(--mono); font-size: 0.72rem; line-height: 1;
+  padding: 0 0.45rem; cursor: pointer;
+}
+dialog.settings .set-mode:hover { border-color: var(--line-strong); color: var(--ink); }
+
 /* ── a control has to be hittable ─────────────────────────────────────
  * Measured, not guessed: ux-sniff found bar buttons at 28px and a dialog's ✕
  * at 20×24. A mouse forgives 20px; a thumb does not. Every tappable thing in
@@ -311,10 +365,14 @@ button.icon, a.icon, .dialog-x, .corner-theme {
 /* Small tools — the delete, the page arrow, the "show values" — are used with a
  * thumb as often as with a mouse. Same floor as the icons, and the same floor
  * for the brand link, whose only clickable pixels used to be the letter itself. */
-.kill, .d-close, .pager button, .bar .brand, .views .view, .dock-x, .dock-badge {
+.kill, .d-close, .pager button, .views .view, .dock-x, .dock-badge {
   min-width: 1.9rem; min-height: 1.9rem;
   display: inline-grid; place-items: center;
 }
+/* the brand is a link with two parts side by side, so it keeps its own display:
+ * the floor above used to make it an inline-grid, which stacked the box and the
+ * word and shrank the whole thing to the width of "ideas" */
+.bar .brand { display: inline-flex; align-items: center; min-height: 1.9rem; }
 @media (max-width: 640px) {
   .kill, .d-close, .pager button, .dock-x, .dock-badge { min-width: 2.2rem; min-height: 2.2rem; }
   .bar .brand { min-height: 2.2rem; }
@@ -333,8 +391,5 @@ button { min-height: 1.9rem; }
  * above made every tool bigger. */
 @media (max-width: 640px) {
   .side-head, .doc-head, .bar-tools, .row-tools, .draw-bar, .tools { flex-wrap: wrap; }
-  /* a phone bar keeps who you are, the gear and out; the theme lives in the
-   * settings tab there, where it has a name instead of a glyph */
-  .bar #btn-theme { display: none; }
   .bar { gap: 0.1rem; padding: 0 0.35rem; }
 }

@@ -27,7 +27,7 @@ await pg.click('#btn-login');
 await pg.waitForSelector('#app:not([hidden])');
 await pg.waitForTimeout(1200);
 
-await pg.click('#btn-new-project');
+await pg.click('#btn-new');
 await pg.waitForTimeout(1200);
 await pg.fill('#proj-title', 'vi-share test');
 await pg.press('#proj-title', 'Enter');

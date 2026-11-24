@@ -17,40 +17,49 @@
 <body>
 
 <!-- ── the gate ───────────────────────────────────────────────────── -->
-<section id="gate" class="gate">
-  <button id="gate-theme" class="icon corner-theme" type="button"
-          title="light or dark" aria-label="light or dark">◐</button>
-  <div class="gate-box">
-    <h1 class="gate-mark">vp</h1>
-    <p class="gate-line">keys, codes and the door.</p>
-
-    <form id="gate-form" autocomplete="on">
-      <label for="email">e-mail or name</label>
-      <input id="email" name="email" type="text" autocapitalize="none" spellcheck="false"
-             autocomplete="username" placeholder="ime or ime@primjer.hr">
-      <label for="pass">password</label>
-      <input id="pass" name="password" type="password" autocomplete="current-password">
-      <p id="gate-msg" class="msg" aria-live="polite"></p>
-      <div class="gate-row">
-        <button id="btn-login" class="primary" type="submit">sign in</button>
-        <button id="btn-register" class="ghost" type="button">make an account</button>
-      </div>
-    </form>
-
-    <p class="gate-foot">one account for the whole suite</p>
-  </div>
+<section id="gate" class="gate" hidden>
+  <button id="gate-theme" class="corner-theme" type="button" aria-label="light or dark">◐</button>
+  <form id="gate-form" class="gate-form">
+    <div class="gate-brand">
+      <span class="gate-mark" aria-hidden="true">v</span>
+      <h1>vp</h1>
+      <span class="gate-sub">vixen keys &amp; codes</span>
+    </div>
+    <label for="email">e-mail or username</label>
+    <input id="email" type="text" autocomplete="username" spellcheck="false"
+           autocapitalize="none" autocorrect="off"
+           placeholder="you@example.com or username">
+    <label for="pass">password</label>
+    <input id="pass" type="password" autocomplete="current-password">
+    <p id="gate-msg" class="gate-msg" aria-live="polite"></p>
+    <div class="confirm-row">
+      <button id="btn-register" class="ghost" type="button">create account</button>
+      <button id="btn-login" class="primary" type="submit">sign in</button>
+    </div>
+    <button id="btn-google" type="button" class="google">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <path fill="#4285F4" d="M23 12.2c0-.8-.1-1.6-.2-2.3H12v4.4h6.2c-.3 1.4-1.1 2.6-2.4 3.4v2.8h3.9c2.3-2.1 3.3-5.2 3.3-8.3z"/>
+        <path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-2.8c-1.1.7-2.5 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3C3.4 21.5 7.4 24 12 24z"/>
+        <path fill="#FBBC05" d="M5.4 14.6c-.2-.7-.4-1.4-.4-2.2s.1-1.5.4-2.2v-3H1.4C.5 8.9 0 10.4 0 12s.5 3.1 1.4 4.4l4-2.6z"/>
+        <path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4C17.9 1.2 15.2 0 12 0 7.4 0 3.4 2.5 1.4 6.2l4 3C6.3 6.4 8.9 4.8 12 4.8z"/>
+      </svg>
+      continue with Google
+    </button>
+    <p class="gate-fine">one account for the whole suite</p>
+  </form>
 </section>
 
 <!-- ── the drawer ─────────────────────────────────────────────────── -->
 <div id="app" hidden>
   <header class="bar">
-    <span class="mark">vp</span>
-    <span class="crumb" id="crumb">keys, codes and the door</span>
+    <a class="brand" href="#/" title="vp · keys and codes">
+      <span class="brand-mark" aria-hidden="true">vp</span>
+      <span class="brand-word">keys &amp; codes</span>
+    </a>
     <span class="grow"></span>
     <span id="who" class="who"></span>
-    <button id="btn-theme" class="icon" type="button" title="light or dark">◐</button>
-    <button id="btn-ai" class="icon" type="button" title="the model and its key">⚙</button>
-    <button id="btn-out" class="icon" type="button" title="sign out">out</button>
+    <button id="btn-ai" class="icon" type="button" title="settings" aria-label="settings">⚙</button>
+    <button id="btn-out" class="ghost" type="button" title="sign out">out</button>
   </header>
 
   <main class="desk">
