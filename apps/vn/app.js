@@ -2241,13 +2241,17 @@ if (el.setAiProvider) {
  * a published app still works if its own function is missing. `proxyMode`
  * remembers which one answered, so the test button can say so out loud and a
  * CORS wall is never mistaken for a bad key. */
-const SHARED_PROXY = 'https://api.terg.hr/chat';
+/* The shared door, if this deployment has one. `proxy` in config.local.js names
+ * it; with no value the app uses its own /api/chat and stops there. Nothing
+ * here has a default that points at somebody else's server. */
+const SHARED_PROXY = ((window.__VPL_CONFIG__ || {}).proxy || '').replace(/\/$/, '');
 let proxyMode = null;   /* 'same' | 'shared' | 'direct' */
 
 async function chatCall({ url, key, model, messages, max_tokens, temperature }) {
   const target = aiEndpoint(url);
   const body = JSON.stringify({ url: target, key, model, messages, max_tokens, temperature });
-  const doors = proxyMode === 'shared' ? [SHARED_PROXY, '/api/chat'] : ['/api/chat', SHARED_PROXY];
+  const doors = (proxyMode === 'shared' ? [SHARED_PROXY, '/api/chat'] : ['/api/chat', SHARED_PROXY])
+    .filter(Boolean);
 
   for (const door of doors) {
     let res;
@@ -2363,7 +2367,7 @@ async function testAiEndpoint() {
     const said = json?.choices?.[0]?.message?.content;
     if (!said) return fail('it answered, but not in the chat format this app expects.');
     const via = proxyMode === 'direct' ? 'directly'
-      : proxyMode === 'shared' ? 'through api.terg.hr'
+      : proxyMode === 'shared' ? 'through the shared proxy'
       : 'through this app';
     say(`works — ${model} answered in ${ms} ms ${via}: “${String(said).trim().slice(0, 40)}”`);
   } catch (err) {

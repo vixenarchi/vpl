@@ -13,6 +13,8 @@
  * the CORS answer names the caller's origin and no credentials.
  */
 
+import { corsFor } from './_origins.js';
+
 const ALLOWED = [
   'api.openai.com',
   'openrouter.ai',
@@ -37,35 +39,6 @@ const ALLOWED = [
 /* Who may call this door. The key is the caller's own, so a wrong origin can
  * only spend its own quota — but an open relay is still an open relay, and a
  * list is cheaper than an incident. Local development is allowed on purpose. */
-const ORIGINS = [
-  'https://vn.terg.hr',
-  'https://vi.terg.hr',
-  'https://vr.terg.hr',
-  'https://va.terg.hr',
-  'https://vg.terg.hr',
-  'https://vpl-ae9.pages.dev',
-  '.vpl-ae9.pages.dev',
-  'https://vpl-vr.pages.dev',
-  'https://vd.terg.hr',
-  'https://vc.terg.hr',
-  'https://vz.terg.hr',
-  'https://vpl-vd.pages.dev',
-  'https://vpl-vc.pages.dev',
-  '.vpl-vd.pages.dev',
-  '.vpl-vc.pages.dev',
-  '.vpl-vz.pages.dev',
-  '.vpl-vr.pages.dev',
-];
-
-function corsFor(request) {
-  const origin = request.headers.get('Origin') || '';
-  let host = '';
-  try { host = new URL(origin).hostname.toLowerCase(); } catch { host = ''; }
-  const local = host === '127.0.0.1' || host === 'localhost' || host === '0.0.0.0';
-  const ok = local || ORIGINS.some((o) => (o.startsWith('.') ? host.endsWith(o) : origin === o));
-  return ok ? origin : '';
-}
-
 const json = (body, status, request) => {
   const headers = {
     'Content-Type': 'application/json',

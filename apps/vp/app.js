@@ -11,7 +11,9 @@ import { mountDock } from './vendor/dock.js';
 import * as db from './lib/db.js';
 import { writeAi, readAi, accountAi } from './vendor/ai.js';
 
-const DOOR = 'https://api.terg.hr/vp';
+/* Where a credit is spent: `door` in config.local.js. Without one, vp still
+ * writes keys and tracks credits — it simply has no door to hand them out at. */
+const DOOR = ((window.__VPL_CONFIG__ || {}).door || '').replace(/\/$/, '');
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
@@ -213,7 +215,7 @@ $('#rd-go').addEventListener('click', async () => {
     const got = await db.redeem(code);
     if (!got) throw new Error('that code did not answer');
     $('#rd-out').hidden = false;
-    $('#rd-url').textContent = DOOR;
+    $('#rd-url').textContent = DOOR || 'no door configured';
     $('#rd-model').textContent = got.model || '';
     $('#rd-key').textContent = got.api_key;
     $('#rd-key').dataset.key = got.api_key;

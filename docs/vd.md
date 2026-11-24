@@ -8,7 +8,7 @@ with owners and dates. The model reads the pile and proposes; the person keeps
 what is true, because the output sits in a textarea and nobody is asked to
 "accept" anything.
 
-At <https://vd.terg.hr>. Tables: `vd_projects`, `vd_artifacts`, `vd_runs`,
+At <https://vd.<your-domain>>. Tables: `vd_projects`, `vd_artifacts`, `vd_runs`,
 `vd_outputs`, `vd_shares`. Files: bucket `vd-files`, 10 MB per file.
 
 ## The shape the three generators share
@@ -21,7 +21,7 @@ screen:
   job's brief, every input as a titled block, the template's task and shape, and
   the notes from the last answer.
 - `callModel(messages)` — through `/api/chat`, falling back to
-  `https://api.terg.hr/chat` when the app is served statically. The key is the
+  `https://api.<your-domain>/chat` when the app is served statically. The key is the
   person's, in `localStorage`, per address.
 - `extract(file)` — pdf.js in the browser for PDFs, plain text for text files,
   nothing for images (the file still travels with the job).
@@ -94,5 +94,5 @@ and its own cleanup.
 ```
 PORT=8104 OAUTH_PORT=0 ./serve vd
 VD_URL=http://127.0.0.1:8104 node vd-check.mjs
-VD_URL=https://vd.terg.hr node vd-check.mjs       # production
+VD_URL=https://vd.<your-domain> node vd-check.mjs       # production
 ```

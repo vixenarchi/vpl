@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { OWNER, GUEST } from './_account.mjs';
 const B = process.env.VI_URL || 'http://127.0.0.1:8100';
 const br = await chromium.launch();
 const ctx = await br.newContext({ viewport: { width: 1180, height: 860 } });
@@ -15,8 +16,8 @@ const until = async (fn, ms = 5000) => {
 };
 
 await pg.goto(B, { waitUntil: 'networkidle' });
-await pg.fill('#email', 'vpl-agent@terg.hr');
-await pg.fill('#pass', 'agent-vpl-2026!');
+await pg.fill('#email', OWNER.email);
+await pg.fill('#pass', OWNER.pass);
 await pg.click('#btn-login');
 await pg.waitForSelector('#app:not([hidden])');
 await pg.waitForTimeout(600);

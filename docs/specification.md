@@ -67,7 +67,7 @@ If one appears, this document is wrong and must be rewritten.
 | R9 | RLS | User A cannot read user B's note, proven by a test |
 | R10 | Mermaid | A ```mermaid block renders as a diagram; a broken one shows an error, not a crash |
 | R11 | Works on a phone | Layout usable at 375 px wide |
-| R12 | Deploys | `git push` → live on a `terg.hr` subdomain |
+| R12 | Deploys | `git push` → live on a `<your-domain>` subdomain |
 
 ### 3.2 Must have (day 3 — the funnel)
 
@@ -261,7 +261,7 @@ Every gate writes to `gate_note`. A decision with no reason is not a decision.
 7. Playwright test: two users, RLS isolation proven
 8. Google OIDC (needs one click from Vixen — the only blocker)
 9. PWA manifest + service worker
-10. Deploy: `vpl.terg.hr` via Cloudflare Pages (needs one `wrangler login`)
+10. Deploy: `vpl.<your-domain>` via Cloudflare Pages (needs one `wrangler login`)
 
 **Two clicks in total are needed from Vixen.** Everything else is mechanical.
 

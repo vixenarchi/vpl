@@ -15,7 +15,9 @@
 
 import { readAi, aiEndpoint } from './ai.js';
 
-const PROXY = 'https://api.terg.hr/chat';
+/* `proxy` in config.local.js is this deployment's shared door. With none, the
+ * dock uses the app's own /api/chat and says so if that is missing too. */
+const PROXY = ((typeof window !== 'undefined' && window.__VPL_CONFIG__) || {}).proxy || '';
 const LIMIT = 12000;
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
@@ -142,8 +144,12 @@ export function mountDock({ app = 'this app', context, onUse, placeholder, openS
         messages, max_tokens: 700, temperature: 0.2,
       });
       let res = await fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body });
-      if (res.status === 404 || res.status === 405) {
+      if ((res.status === 404 || res.status === 405) && PROXY) {
         res = await fetch(PROXY, { method: 'POST', headers: { 'content-type': 'application/json' }, body });
+      }
+      if (res.status === 404 || res.status === 405) {
+        say('this page has no /api/chat and no shared proxy. Add one in tools, or deploy apps/api.', 'bad');
+        return;
       }
       const text = await res.text();
       let data = null;

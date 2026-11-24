@@ -39,7 +39,7 @@ vc_standards
   field therefore does two different things and says which:
   - the URL is always stored as `source_url` (a citation is worth having even
     with no text);
-  - "fetch the text" exists only through a new `api.terg.hr/fetch` door with an
+  - "fetch the text" exists only through a new `api.<your-domain>/fetch` door with an
     allowlist of legal sources, a size cap and HTML→text stripping. Anything not
     on the list gets one sentence: *download the PDF and drop it here*.
 - No OCR, no crawling, no background sync of a law. A standard changes when the
@@ -106,7 +106,7 @@ paragraph, it is a product, and this is not that.
 
 1. `vc_standards` + "add from library" (no batch yet) — smallest real step.
 2. PDF upload into the library (pdf.js already in the engine).
-3. `source_url` + `api.terg.hr/fetch` with the allowlist, and the sentence for
+3. `source_url` + `api.<your-domain>/fetch` with the allowlist, and the sentence for
    everything else.
 4. `vc_targets` + the queue + per-target verdict counts, with the 50 cap and the
    cost line.

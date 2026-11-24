@@ -7,6 +7,7 @@
  */
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
+import { OWNER, GUEST } from './_account.mjs';
 
 const B = process.env.VR_URL || 'http://127.0.0.1:8101';
 const cfg = readFileSync(new URL('../../../apps/vr/config.local.js', import.meta.url), 'utf8');
@@ -17,7 +18,7 @@ async function token() {
   const r = await fetch(`${URL_}/auth/v1/token?grant_type=password`, {
     method: 'POST',
     headers: { apikey: KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'vpl-agent@terg.hr', password: 'agent-vpl-2026!' }),
+    body: JSON.stringify({ email: OWNER.email, password: OWNER.pass }),
   });
   return (await r.json()).access_token;
 }
@@ -103,8 +104,8 @@ const shot = async (name, opts = {}, steps = []) => {
   await ctx.addInitScript((id) => { try { localStorage.setItem('vpl.vr.last', id); } catch {} }, p.id);
   const page = await ctx.newPage();
   await page.goto(B, { waitUntil: 'networkidle' });
-  await page.fill('#email', 'vpl-agent@terg.hr');
-  await page.fill('#pass', 'agent-vpl-2026!');
+  await page.fill('#email', OWNER.email);
+  await page.fill('#pass', OWNER.pass);
   await page.click('#btn-login');
   await page.waitForSelector('#app:not([hidden])');
   await page.waitForTimeout(1600);

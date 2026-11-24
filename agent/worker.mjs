@@ -171,7 +171,7 @@ const FAKE_REPORT = [
   '  - id: va',
   '    label: va',
   '    kind: external',
-  '    host: va.terg.hr',
+  '    host: va.example.com',
   '    note: the desk',
   'arrows:',
   '  - from: person',
@@ -193,7 +193,7 @@ async function runFake(jobDir) {
   await fs.mkdir(path.join(jobDir, 'out', 'files'), { recursive: true });
   await fs.writeFile(path.join(jobDir, 'out', 'files', 'boxes.yaml'),
     'boxes:\n  - id: person\n    label: Person\n    kind: person\n    host: ""\n    note: [no address] the one user\n'
-    + '  - id: va\n    label: va\n    kind: external\n    host: va.terg.hr\n    note: the desk\n'
+    + '  - id: va\n    label: va\n    kind: external\n    host: va.example.com\n    note: the desk\n'
     + 'arrows:\n  - from: person\n    to: va\n    label: https\n');
   return { code: 0, out: FAKE_REPORT + '\n\n[worker] this answer is canned (--fake).', err: '', ms: Date.now() - started };
 }

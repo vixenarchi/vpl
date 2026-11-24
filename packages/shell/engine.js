@@ -18,7 +18,9 @@
 
 import * as ai from './ai.js';
 
-export const PROXY = 'https://api.terg.hr/chat';
+/* `proxy` in config.local.js names the shared door; the app's own /api/chat is
+ * tried first either way. No value means no fallback — and no surprise. */
+export const PROXY = ((typeof window !== 'undefined' && window.__VPL_CONFIG__) || {}).proxy || '';
 
 /* How much of one artifact and of all of them together goes to the model. A
  * tender document that is 200 pages is not going to fit, and pretending
@@ -111,7 +113,7 @@ export async function callModel(messages, { signal } = {}) {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal,
   });
   /* on a phone or a static host there is no /api/chat; the shared door is it */
-  if (res.status === 404 || res.status === 405) {
+  if ((res.status === 404 || res.status === 405) && PROXY) {
     res = await fetch(PROXY, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal,
     });

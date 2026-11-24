@@ -98,7 +98,7 @@ run on GCP free tier. So:
   the same machine; it is a convenience, not the contract.
 
 **What powers the agent**: `pi` reads `models.json`, and a **vp code** is a
-model key. Verified: a provider entry with `baseUrl: https://api.terg.hr/vp/v1`,
+model key. Verified: a provider entry with `baseUrl: https://api.<your-domain>/vp/v1`,
 `api: openai-completions`, `apiKey: $VPL_VP_KEY` lists the model and answers.
 So an agent gets *N calls until a date*, visible in `vp`'s ledger — its spending
 is the same ledger as everything else in the suite, and its access can be cut
@@ -163,7 +163,7 @@ lists, which is a text diff and needs no feature.
 
 ## Built: the desk (slice 1)
 
-`apps/va` is live at **`va.terg.hr`** (Pages project `vpl-va`), and it is the
+`apps/va` is live at **`va.<your-domain>`** (Pages project `vpl-va`), and it is the
 engine's fourth skin: the same desk as `vd`, with `va`'s templates and words.
 
 - Tables **`va_projects`, `va_artifacts`, `va_runs`, `va_outputs`, `va_shares`**,
@@ -226,7 +226,7 @@ reason a page like this may exist on the open internet.
 **Proved twice.** `apps/vn/test/va-handoff.mjs` — **14/14**, locally and against
 `https://vpl-va.pages.dev` — walks the whole loop with `--fake`. Then one real
 job: a brief about this app, template `context`, model
-`vpl/nemotron-3.5-lightning-30b-a3b` behind **`api.terg.hr/vp`**, worker in the
+`vpl/nemotron-3.5-lightning-30b-a3b` behind **`api.<your-domain>/vp`**, worker in the
 workshop. **61 s** from the button to *answered*, one file back (`context.yaml`,
 two boxes, one arrow), kept as an answer with the agent's own `[assumption]`
 marks intact. The worker log is the whole story:
@@ -353,7 +353,7 @@ Three real runs on the workshop, all with the agent doing the work itself:
 - `report` (an inventory read) — **18 s**, an honest list of gaps, and the
   mechanical check catching the missing edges.
 
-The agent then ran **on a vp key**, through `api.terg.hr/vp`, with a real NVIDIA
+The agent then ran **on a vp key**, through `api.<your-domain>/vp`, with a real NVIDIA
 `nim` model behind the door: a terraform job finished in **157 s**, six files,
 `terraform validate` green, and **44 credits** — one job is dozens of calls,
 which is the case the ledger was built for. What that first real run found in the

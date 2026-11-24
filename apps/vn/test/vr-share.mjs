@@ -8,12 +8,12 @@
  */
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
+import { OWNER, GUEST } from './_account.mjs';
 
 const B = process.env.VR_URL || 'http://127.0.0.1:8101';
 const cfg = readFileSync(new URL('../../../apps/vr/config.local.js', import.meta.url), 'utf8');
 const URL_ = /url:\s*'([^']+)'/.exec(cfg)[1];
 const KEY = /anon:\s*'([^']+)'/.exec(cfg)[1];
-const GUEST = { email: 'vpl-guest@terg.hr', pass: 'guest-vpl-2026!' };
 
 let pass = 0, fail = 0;
 const ok = (cond, what) => { cond ? pass++ : fail++; console.log(`  ${cond ? 'ok  ' : 'FAIL'} ${what}`); };
@@ -51,8 +51,8 @@ pg.on('pageerror', (e) => errors.push(e.message));
 pg.on('dialog', (d) => d.accept());
 
 await pg.goto(B, { waitUntil: 'networkidle' });
-await pg.fill('#email', 'vpl-agent@terg.hr');
-await pg.fill('#pass', 'agent-vpl-2026!');
+await pg.fill('#email', OWNER.email);
+await pg.fill('#pass', OWNER.pass);
 await pg.click('#btn-login');
 await pg.waitForSelector('#app:not([hidden])');
 await pg.waitForTimeout(1200);

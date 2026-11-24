@@ -11,11 +11,10 @@
  *   VD_URL=... VR_URL=... node key-check.mjs
  */
 import { chromium } from 'playwright';
+import { OWNER, GUEST } from './_account.mjs';
 
 const VD = process.env.VD_URL || 'http://127.0.0.1:8104';
 const VR = process.env.VR_URL || 'http://127.0.0.1:8101';
-const OWNER = { email: 'vpl-agent@terg.hr', pass: 'agent-vpl-2026!' };
-const GUEST = { email: 'vpl-guest@terg.hr', pass: 'guest-vpl-2026!' };
 const KEY = 'account-key-not-real-' + Math.random().toString(36).slice(2, 8);
 const URL_ = 'https://generativelanguage.googleapis.com/v1beta/openai';
 const MODEL = 'gemini-3.1-flash-lite';
@@ -65,8 +64,13 @@ const localKey = (pg) => pg.evaluate(() => {
   try { return JSON.parse(localStorage.getItem('vpl.ai') || '{}').key || ''; } catch { return ''; }
 });
 
-const accNote = (pg) => pg.locator('#ai-account .ai-acc-note').first().textContent();
-const accMsg = (pg) => pg.locator('#ai-account .ai-acc-msg').first().textContent();
+/* The panel this suite walks is the shared settings dialog — one dialog in all
+ * eight apps, filled by packages/shell/settings.js. Its ids are the shell's:
+ * #set-url / #set-model / #set-key, the account line #set-acc-line, its buttons
+ * in #set-acc, and one message line #set-msg. When the dialog was rewritten
+ * (v1.2) this suite still asked for the old ids and quietly stopped running. */
+const accNote = (pg) => pg.locator('#set-acc-line').textContent();
+const accMsg = (pg) => pg.locator('.set-msg').textContent();
 
 const br = await chromium.launch();
 const ctx = await br.newContext({ viewport: { width: 1400, height: 950 } });
@@ -87,16 +91,20 @@ await pg.waitForSelector('#app:not([hidden])', { timeout: 20000 });
 /* ── 1. signed in and empty: the dialog says so, plainly ─────────── */
 await pg.click('#btn-ai');
 await pg.waitForSelector('#ai-dialog[open]');
-ok(/no key on your account yet/i.test(await accNote(pg)), 'with nothing saved it says "no key on your account yet"');
-ok(await pg.locator('#ai-account [data-a="save"]').isVisible(), 'and offers "save to my account"');
-ok(!(await pg.locator('#ai-account [data-a="forget"]').count()), 'nothing to remove yet');
+/* the address and the key are on the model tab; the account line is on the key
+ * tab. Fill where the fields are, then walk to where the button is. */
+await pg.fill('#set-url', URL_);
+await pg.fill('#set-model', MODEL);
+await pg.fill('#set-key', KEY);
+await pg.click('[data-tab="key"]');
+ok(await until(async () => /no key on your account yet/i.test(await accNote(pg))),
+  'with nothing saved it says "no key on your account yet"');
+ok(await pg.locator('#set-acc [data-acc="save"]').isVisible(), 'and offers "save to my account"');
+ok(!(await pg.locator('#set-acc [data-acc="remove"]').count()), 'nothing to remove yet');
 
 /* ── 2. save to the account ──────────────────────────────────────── */
-await pg.fill('#ai-url', URL_);
-await pg.fill('#ai-model', MODEL);
-await pg.fill('#ai-key', KEY);
-await pg.click('#ai-account [data-a="save"]');
-ok(await until(async () => /on your account, and in this browser/i.test(await accMsg(pg))),
+await pg.click('#set-acc [data-acc="save"]');
+ok(await until(async () => /saved to your account, and in this browser/i.test(await accMsg(pg))),
   'saving says where the key went: the account and this browser');
 ok((await localKey(pg)) === KEY, 'and this browser has it in localStorage');
 
@@ -111,11 +119,13 @@ await pg.waitForSelector('#app:not([hidden])', { timeout: 20000 });
 ok((await localKey(pg)) === '', 'localStorage starts empty again (a new browser)');
 await pg.click('#btn-ai');
 await pg.waitForSelector('#ai-dialog[open]');
-ok(await until(async () => (await pg.inputValue('#ai-key')) === KEY),
+ok(await until(async () => (await pg.inputValue('#set-key')) === KEY),
   'opening settings adopts the account key by itself');
-ok(/on your account since/i.test(await accNote(pg)), 'and says since when');
+await pg.click('[data-tab="key"]');
+ok(await until(async () => /on your account/i.test(await accNote(pg))),
+  'and says the account holds it');
 ok((await localKey(pg)) === KEY, 'the adopted key is in this browser now');
-await pg.click('#ai-x');
+await pg.click('#ai-dialog .dialog-x');
 
 /* ── 4. another app, another origin, same account ───────────────── */
 const pgVr = await ctx.newPage();
@@ -126,7 +136,7 @@ ok((await pgVr.evaluate(() => localStorage.getItem('vpl.ai'))) === null ||
    (await localKey(pgVr)) === '', 'vr, a different origin, has no key yet');
 await pgVr.click('#btn-ai');
 await pgVr.waitForSelector('#ai-dialog[open]');
-ok(await until(async () => (await pgVr.inputValue('#ai-key')) === KEY),
+ok(await until(async () => (await pgVr.inputValue('#set-key')) === KEY),
   'vr adopts the same account key without a paste');
 ok((await localKey(pgVr)) === KEY, 'and keeps it for its own origin');
 await pgVr.close();
@@ -143,7 +153,9 @@ await ctxGuest.close();
 /* ── 6. remove from the account, keep the browser working ────────── */
 await pg.click('#btn-ai');
 await pg.waitForSelector('#ai-dialog[open]');
-await pg.click('#ai-account [data-a="forget"]');
+await pg.click('[data-tab="key"]');
+await pg.waitForSelector('#set-acc [data-acc="remove"]');
+await pg.click('#set-acc [data-acc="remove"]');
 ok(await until(async () => /gone from your account/i.test(await accMsg(pg))),
   'removing says the account is clear');
 const after = await rest(pg, 'vpl_ai?select=api_key');
@@ -152,9 +164,9 @@ ok((await localKey(pg)) === KEY, 'this browser keeps its key, as the sentence sa
 ok(/no key on your account yet/i.test(await accNote(pg)), 'and the dialog is back to "no key on your account yet"');
 
 /* ── 7. forgetting locally clears only this browser ──────────────── */
-await pg.click('#ai-forget');
+await pg.click('#ai-dialog [data-a="forget"]');
 ok(await until(async () => (await localKey(pg)) === ''), 'forget the key clears this browser');
-await pg.click('#ai-x');
+await pg.click('#ai-dialog .dialog-x');
 
 /* ── 8. the anon key alone opens nothing ───────────────────────── */
 const anon = await pg.evaluate(async () => {

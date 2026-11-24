@@ -8,8 +8,20 @@
  * Read-only. There is no POST, no key listing beyond this project and no way to
  * learn that some other project exists.
  */
-const SUPABASE = 'https://ebhrjstllsazywbxnbqt.supabase.co';
-const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaHJqc3RsbHNhenl3YnhuYnF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NTA0MDIsImV4cCI6MjExMDEyNjQwMn0.AskLuLd0E6bTWibu3VW_Jz04thLSjyWnj9DlCz-BSdY';
+/* Which project this answers for is a deployment's business, not the
+ * repository's: a stranger cloning the suite must not read our shares, and we
+ * must not have to edit code to move to another project. Both values are Pages
+ * secrets (VPL_SUPABASE_URL, VPL_SUPABASE_ANON); the anon key is public by
+ * design, the address is not a secret either — they are simply not ours. */
+const config = (env) => ({
+  url: env?.VPL_SUPABASE_URL || '',
+  anon: env?.VPL_SUPABASE_ANON || '',
+});
+
+const NOT_CONFIGURED = () => new Response(
+  JSON.stringify({ error: 'this deployment has no project: set VPL_SUPABASE_URL and VPL_SUPABASE_ANON' }),
+  { status: 500, headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' } },
+);
 
 const CORS = {
   'access-control-allow-origin': '*',
@@ -17,12 +29,12 @@ const CORS = {
   'access-control-allow-headers': 'content-type',
 };
 
-async function rpc(name, args) {
-  const res = await fetch(`${SUPABASE}/rest/v1/rpc/${name}`, {
+async function rpc(name, args, cfg) {
+  const res = await fetch(`${cfg.url}/rest/v1/rpc/${name}`, {
     method: 'POST',
     headers: {
-      apikey: ANON,
-      authorization: `Bearer ${ANON}`,
+      apikey: cfg.anon,
+      authorization: `Bearer ${cfg.anon}`,
       'content-type': 'application/json',
     },
     body: JSON.stringify(args),
@@ -35,11 +47,13 @@ export async function onRequestOptions() {
   return new Response(null, { status: 204, headers: CORS });
 }
 
-export async function onRequestGet({ params }) {
+export async function onRequestGet({ params, env }) {
+  const cfg = config(env);
+  if (!cfg.url || !cfg.anon) return NOT_CONFIGURED();
   const code = String(params.code || '');
   let data;
   try {
-    data = await rpc('vz_read_public', { p_code: code });
+    data = await rpc('vz_read_public', { p_code: code }, cfg);
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err.message || err) }), {
       status: 502, headers: { ...CORS, 'content-type': 'application/json' },

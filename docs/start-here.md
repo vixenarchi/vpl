@@ -12,25 +12,25 @@ apps that share one login, one database and one look. The success metric is
 per month. A new app is a folder of plain files, one table with a prefix, one
 Cloudflare Pages project.
 
-- **vn** — notes, at <https://vn.terg.hr> (tree, bins, sharing, agent chat)
-- **vi** — an idea funnel, at <https://vi.terg.hr>: context → ideate → explore →
+- **vn** — notes, at <https://vn.<your-domain>> (tree, bins, sharing, agent chat)
+- **vi** — an idea funnel, at <https://vi.<your-domain>>: context → ideate → explore →
   select one → simulate. See `docs/vi.md`.
-- **vr** — requirements, at <https://vr.terg.hr>: one document is one sheet of
+- **vr** — requirements, at <https://vr.<your-domain>>: one document is one sheet of
   rows, each a testable sentence, marked must / optional / wish, with proof and
   a glossary. See `docs/vr.md`.
-- **vz** — zed, a dictionary, at <https://vz.terg.hr>: a project is a box of
+- **vz** — zed, a dictionary, at <https://vz.<your-domain>>: a project is a box of
   keys, a value is any text, and a project can be published as a read-only
   service at `/p/<code>`. See `docs/vz.md`.
-- **vd** — documents, at <https://vd.terg.hr>: a job is a pile of inputs and one
+- **vd** — documents, at <https://vd.<your-domain>>: a job is a pile of inputs and one
   document you have to write from them, with the model behind one `generate`
   button. See `docs/vd.md`.
-- **vc** — compliance, at <https://vc.terg.hr>: standards and evidence in, a
+- **vc** — compliance, at <https://vc.<your-domain>>: standards and evidence in, a
   verdict per control out, counted above the report. See `docs/vc.md`.
-- **vp** — keys and codes, at <https://vp.terg.hr>: one model key saved on the
+- **vp** — keys and codes, at <https://vp.<your-domain>>: one model key saved on the
   account and adopted by every browser; a code is a slip with calls and an
   expiry, redeemed into a key that spends the issuer's model through
   `/vp`. See `docs/vp.md`.
-- **va** — architecture, at <https://va.terg.hr>: the pile in, one picture out
+- **va** — architecture, at <https://va.<your-domain>>: the pile in, one picture out
   (context, overview, terraform, or a reading of an environment that already
   exists), every answer ending in a **box list** that is only text. Its other
   half is the **agent**: a job is a row and a folder, an agent with its own
@@ -41,7 +41,7 @@ Cloudflare Pages project.
   `theme`), one row of buttons (`test`, `forget`, `save`), and the themes —
   `paper`, `ink`, and vi's `comic`, now available everywhere. See
   `docs/settings.md`.
-- **api** — the shared proxy at <https://api.terg.hr>: `/chat` (model calls),
+- **api** — the shared proxy at <https://api.<your-domain>>: `/chat` (model calls),
   `/search` (Tavily/Serper evidence) and `/vp` (the door that spends a code's
   issuer key). Model APIs send no CORS headers, so the call leaves from our own
   origin.
@@ -75,10 +75,13 @@ in `vi`.
   unification job for later (settings moved out of it and is done)
 - `docs/build-notes.md` — why v2 exists, the gotchas, where Google's redirect URL lives
 - `docs/specification.md` — the 0-architecture this is built against
-- `~/.config/vpl/accounts.md` — **outside the repo, mode 600**: project ref, app
-  keys, provider keys, accounts. Never print it, never copy it into a file that
-  git can see.
-- `~/.config/vpl/todo-user.md` — the dashboard steps only a human can do
+- `docs/configure.md` — every value you can set, what it defaults to, and the two
+  things everybody forgets (the proxy's origin list, Supabase's redirect urls)
+
+**Secrets live outside the repository**, in a 600 file of your own — a project
+ref, provider keys, test accounts. `tools/test-all.sh` reads the two account
+variables from `~/.config/vpl/test.env` if it exists. Nothing in this repository
+is a credential, and a suite with none prints what it wanted and exits 0.
 
 ## The rules that are not style choices
 
@@ -93,8 +96,8 @@ in `vi`.
    table. `vpl_prefix_check()` guards the convention.
 2. **Migrations are numbered and re-runnable.** A schema change is a new file in
    `supabase/migrations/`, pushed with
-   `cd /home/vergovic/vixen/supabase && npx supabase db push --remote`. Never edit
-   an applied migration.
+   `cd supabase && npx supabase db push --remote`. The file name must start with
+   its timestamp or `db push` skips it silently. Never edit an applied migration.
 3. **Row level security is the lock**, not the anon key: every table is owner-only
    unless a share row says otherwise.
 4. **No cross-app writes.** A parked idea becomes a note only by copy-paste.
@@ -153,8 +156,9 @@ would be a service that quietly serves half a configuration.
 ## Tests
 
 Playwright lives in `apps/vn/test/node_modules`; run everything from
-`apps/vn/test`. The account is `vpl-agent@terg.hr` (password in
-`~/.config/vpl/accounts.md`).
+`apps/vn/test`. The suites sign in as two accounts of your own project, from
+`VPL_EMAIL` / `VPL_PASS` and `VPL_GUEST_EMAIL` / `VPL_GUEST_PASS` (see
+`docs/configure.md`).
 
 ```bash
 VI_URL=http://127.0.0.1:8100 node vi-check.mjs       # funnel, 20 checks
@@ -217,7 +221,7 @@ Two things, both on the same pattern and neither a new architecture:
 
 ## What is verified, and how
 
-- Production: `vn.terg.hr`, `vi.terg.hr`, `api.terg.hr` all answer 200; the
+- Production: `vn.<your-domain>`, `vi.<your-domain>`, `api.<your-domain>` all answer 200; the
   deployed `app.js` is checked for the code that was just written.
 - Google sign-in: the button reaches Google with
   `redirect_uri=…supabase.co/auth/v1/callback` and the authorize call carries
@@ -226,7 +230,7 @@ Two things, both on the same pattern and neither a new architecture:
   thin), `nemotron-3.5-lightning` (good prose, careless arithmetic),
   `mistral-large-4-1t` (over a minute — unusable). Findings are in the `vn` note
   “vi · model field notes”, shared with the owner.
-- Search: Tavily and Serper both answer through `api.terg.hr/search`; a foreign
+- Search: Tavily and Serper both answer through `api.<your-domain>/search`; a foreign
   origin gets 403 and a missing key gets `{"error":"no key"}`.
 
 ## Gotchas that cost time before

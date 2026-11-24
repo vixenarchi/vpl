@@ -3,7 +3,7 @@
 The suite's last app, named for the last letter. **Zed is a dictionary**: a
 project is a box of keys, a key is a name, and a value is whatever fits in
 text — a password for a dev box, a setting, a glossary entry, a JSON blob, a
-phone number, a joke. At https://vz.terg.hr.
+phone number, a joke. At https://vz.<your-domain>.
 
 The one promise: *find the value by its name.* Everything else in the app is
 built around that sentence and nothing else is built at all.
@@ -38,7 +38,7 @@ serves it to the whole internet. The app never pretends otherwise.
 
 One account for the suite. An address signs in as typed but always compared in
 lower case; a bare name becomes `<name>@vpl.local`, the same rule as `vn`, `vi`
-and `vr`, so "Vladimir" and "vladimir@terg.hr" are different accounts and
+and `vr`, so "Vladimir" and "vladimir@<your-domain>" are different accounts and
 "Vladimir" twice is one. Two answers are written for people rather than copied
 from the API: *that address already has an account — sign in instead* and
 *that does not look like an address*.
@@ -124,7 +124,7 @@ scroll sideways — the test asserts it.
 ```bash
 PORT=8103 ./serve vz &
 cd apps/vn/test && node vz-check.mjs                  # local
-VZ_URL=https://vz.terg.hr node vz-check.mjs           # production
+VZ_URL=https://vz.<your-domain> node vz-check.mjs           # production
 ```
 
 It plays one person with a project (add, replace, edit, search, paginate, bin,

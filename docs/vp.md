@@ -1,6 +1,6 @@
 # vp · keys, codes and the door
 
-At https://vp.terg.hr (production: Pages project `vpl-vp`).
+At https://vp.<your-domain> (production: Pages project `vpl-vp`).
 
 Two halves that share one table:
 
@@ -8,7 +8,7 @@ Two halves that share one table:
    by every app, on every address, in every browser.
 2. **codes and the door** — a code is a slip: *N calls, valid until a date*.
    Redeeming it gives a person a key of their own (`vp_…`). Their apps use that
-   key against `https://api.terg.hr/vp`, which spends **the issuer's** provider
+   key against `https://api.<your-domain>/vp`, which spends **the issuer's** provider
    key, one credit per call.
 
 The sentence: *one key in your profile; every app spends it; a code you hand out
@@ -37,7 +37,7 @@ may read, and nobody else can read any of it.
 ## The door
 
 ```
-POST https://api.terg.hr/vp
+POST https://api.<your-domain>/vp
 Authorization: Bearer vp_…
 { model, messages, max_tokens?, temperature? }
 ```

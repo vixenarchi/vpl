@@ -5,7 +5,7 @@ The point is not the database or the model — it is that a person who has never
 read a lean book can look at the screen and know what to do next.
 
 `vi` is the second app of the suite: its own tables (`vi_`), its own domain
-(`vi.terg.hr`), the same signed-in person, the same shell palette.
+(`vi.<your-domain>`), the same signed-in person, the same shell palette.
 
 ## Why a funnel
 
@@ -200,7 +200,7 @@ free, no card) or Serper (2500). The rule this enforces: a claim about the
 market needs a source, and an assumption is written as `[assumption]`.
 
 - the key is the person's own, kept in their browser, as in `vn`
-- calls go through the suite's proxy (`/api/chat`, then `api.terg.hr`), because
+- calls go through the suite's proxy (`/api/chat`, then `api.<your-domain>`), because
   model APIs do not send CORS headers
 - every AI output is **added** to the stage text, never written over it
 
@@ -210,7 +210,7 @@ market needs a source, and an assumption is written as `[assumption]`.
 2. the model: formulate context, add ideas, explore, propose, simulate
 3. ~~the search: Tavily or Serper through `/api/search`, results as facts with
    sources in Exploration; the person brings their own key~~ done (`/search` on
-   api.terg.hr)
+   api.<your-domain>)
 4. ~~sharing: public link and per-email grants, `vi_shares`~~ done — see
    *Sharing a funnel* below
 5. import: parked idea → a note in `vn` through copy-paste markdown, never a
@@ -222,7 +222,7 @@ The unit is the whole funnel, not one stage: the stages only mean something in
 order, and half a funnel is a pile of sentences. Two ways in, both from the share
 button beside the title:
 
-- **a public link** — `vi.terg.hr/?s=<code>`, read-only, no account needed. The
+- **a public link** — `vi.<your-domain>/?s=<code>`, read-only, no account needed. The
   rows come from `vi_read_share(code)`, which is handed the code and returns
   nothing else; there is no listing and no account to make.
 - **one person** — an address and a role. `view` reads everything and touches

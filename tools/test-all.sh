@@ -98,7 +98,7 @@ for app in vn vi vr vz vd vc vp va; do
   if [ "$PROD" = "1" ]; then
     case "$app" in
       vn) url="${VN_PROD_URL:-https://vpl.pages.dev}" ;;
-      *) url="${PROD_URL_PREFIX:-https://vpl-}-$app.pages.dev" ;;
+      *) url="${PROD_URL_PREFIX:-https://vpl}-$app.pages.dev" ;;
     esac
     run "ux · $app" env VPL_PROD=1 APP_URL="$url" APP_NAME="$app" node ux-sniff.mjs
   else

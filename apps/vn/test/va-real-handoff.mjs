@@ -6,11 +6,11 @@ import { execFile, spawn } from 'node:child_process';
 import { readFileSync, existsSync, openSync } from 'node:fs';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import { OWNER, GUEST } from './_account.mjs';
 
 const run = promisify(execFile);
 const B = process.env.VA_URL || 'https://vpl-va.pages.dev';
 const ROOT = '/home/vergovic/vpl';
-const OWNER = { email: 'vpl-agent@terg.hr', pass: 'agent-vpl-2026!' };
 const AGENT = 'eva-agent@vpl.local';
 const STAMP = Math.random().toString(36).slice(2, 6);
 

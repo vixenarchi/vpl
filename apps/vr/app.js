@@ -527,7 +527,7 @@ function paintMeta(shown) {
 
   const when = new Date().toLocaleDateString();
   $('#print-meta').textContent = S.project
-    ? `${when} · ${S.project.title} · ${bits.join(' · ')} · vr.terg.hr`
+    ? `${when} · ${S.project.title} · ${bits.join(' · ')} · vr`
     : '';
 }
 
@@ -833,7 +833,10 @@ async function addTermFromForm() {
 }
 
 /* ── the model ────────────────────────────────────────────────────── */
-const SHARED_PROXY = 'https://api.terg.hr/chat';
+/* The shared door, if this deployment has one. `proxy` in config.local.js names
+ * it; with no value the app uses its own /api/chat and stops there. Nothing
+ * here has a default that points at somebody else's server. */
+const SHARED_PROXY = ((window.__VPL_CONFIG__ || {}).proxy || '').replace(/\/$/, '');
 const aiCfg = () => ai.readAi();
 const aiEndpoint = ai.aiEndpoint;
 
@@ -931,7 +934,7 @@ async function ask(messages) {
   let res = await fetch('/api/chat', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
-  if (res.status === 404 || res.status === 405) {
+  if ((res.status === 404 || res.status === 405) && SHARED_PROXY) {
     res = await fetch(SHARED_PROXY, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });

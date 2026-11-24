@@ -1,6 +1,6 @@
 # vr — requirements
 
-`vr` is at **https://vr.terg.hr**. One document is one sheet of rows. A row is
+`vr` is at **https://vr.<your-domain>**. One document is one sheet of rows. A row is
 one testable sentence with a name that does not change, a mark of how hard it
 is, and — when somebody asks — the proof that it is met.
 
@@ -194,7 +194,7 @@ says so in one green line; an empty report is also information.
 ## The model
 
 Three jobs, all through the suite's proxy (`/api/chat`, then
-`https://api.terg.hr/chat`), all with the key that lives in this browser:
+`https://api.<your-domain>/chat`), all with the key that lives in this browser:
 
 - **review with AI** — up to 40 rows (musts first), and the answer is read as
   `ref | field | value | why`. Fields it may touch: theme, kind, strength,
@@ -216,7 +216,7 @@ with a link to the settings, and it disappears the moment a key exists.
 
 The whole document, from the share button beside the title:
 
-- **a public link** — `vr.terg.hr/?s=<code>`, read-only, no account. The rows
+- **a public link** — `vr.<your-domain>/?s=<code>`, read-only, no account. The rows
   come from `vr_read_share(code)`, which returns the document, its rows and its
   glossary to that code and nothing else.
 - **one person** — an address and a role. `view` reads; `edit` writes text
@@ -244,7 +244,7 @@ disagree with its priorities" — take it, change it, argue later.
 names, strengths, proofs, numbers, clauses and the glossary. **Print** prints the
 document: the bar and the tools disappear, the brief opens itself for the
 paper, the title stops looking like an input, and a line under the title carries
-the date, the counts and `vr.terg.hr`.
+the date, the counts and `vr.<your-domain>`.
 
 ## What this is not
 

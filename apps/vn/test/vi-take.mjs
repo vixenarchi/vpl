@@ -11,6 +11,7 @@ import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join } from 'node:path';
+import { OWNER, GUEST } from './_account.mjs';
 
 const ROOT = new URL('../../vi', import.meta.url).pathname.replace(/\/$/, '');
 const PORT = 8096;
@@ -32,8 +33,7 @@ if (OWN_SERVER) {
 }
 
 const BASE = (process.env.VI_URL || `http://127.0.0.1:${PORT}`).replace(/\/$/, '') + '/';
-const OWNER = { email: 'vpl-agent@terg.hr', pass: 'agent-vpl-2026!' };
-const READER = { email: 'vpl-guest@terg.hr', pass: 'guest-vpl-2026!' };
+const READER = GUEST;
 const stamp = Date.now();
 const TITLE = 'take me ' + stamp;
 

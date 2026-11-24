@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { OWNER, GUEST } from './_account.mjs';
 const B = process.env.VI_URL || 'http://127.0.0.1:8100';
 const OUT = '/tmp/vi';
 const notes = [
@@ -17,8 +18,8 @@ pg.on('pageerror', (e) => console.log('PAGEERROR', e.message));
 await pg.goto(B, { waitUntil: 'networkidle' });
 await pg.screenshot({ path: `${OUT}-gate.png` });
 
-await pg.fill('#email', 'vpl-agent@terg.hr');
-await pg.fill('#pass', 'agent-vpl-2026!');
+await pg.fill('#email', OWNER.email);
+await pg.fill('#pass', OWNER.pass);
 await pg.click('#btn-login');
 await pg.waitForSelector('#app:not([hidden])', { timeout: 15000 });
 await pg.waitForTimeout(700);

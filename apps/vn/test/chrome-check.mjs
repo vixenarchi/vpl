@@ -8,10 +8,10 @@
  * The model answer is mocked, so this costs nothing and asserts the shape.
  */
 import { chromium } from 'playwright';
+import { OWNER, GUEST } from './_account.mjs';
 
 const B = process.env.APP_URL || 'http://127.0.0.1:8107';
 const NAME = process.env.APP_NAME || 'this app';
-const OWNER = { email: 'vpl-agent@terg.hr', pass: 'agent-vpl-2026!' };
 
 let pass = 0; let fail = 0;
 const ok = (c, what) => { if (c) { pass++; console.log('  ok   ' + what); } else { fail++; console.log('  FAIL ' + what); } };

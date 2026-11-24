@@ -11,8 +11,8 @@
  * disagreement is a measurement, not an opinion.
  */
 import { chromium } from 'playwright';
+import { OWNER, GUEST } from './_account.mjs';
 
-const OWNER = { email: 'vpl-agent@terg.hr', pass: 'agent-vpl-2026!' };
 const PHONE = { width: 390, height: 844 };
 const DESK = { width: 1280, height: 900 };
 

@@ -339,7 +339,7 @@ All of them are applied to project `vixen` (`ebhrjstllsazywbxnbqt`). One
 
 ## Still to do
 
-- R12 deploy to a `terg.hr` subdomain (`wrangler login` — needs Vixen). A
+- R12 deploy to a `<your-domain>` subdomain (`wrangler login` — needs Vixen). A
   public link only works from wherever the app is served; that is the next step
   before it is useful to anyone outside the LAN.
 - Sharing has no notification: the invited person finds the note in their list
@@ -493,19 +493,19 @@ Before the first deploy, sign in once:
 That opens a browser and needs nothing else — no token to paste, and Pages is
 free at this size.
 
-The site lives at **https://vn.terg.hr** (`vn` for vpl notes), served by the
+The site lives at **https://vn.<your-domain>** (`vn` for vpl notes), served by the
 Pages project `vpl` and its DNS record `vn → vpl-ae9.pages.dev`, proxied. The
 preview of any deployment is `https://<hash>.vpl-ae9.pages.dev`. Adding the
 custom domain was one API call; adding the CNAME needs the dashboard, because
 the wrangler login token may write Pages but not DNS:
 
-    terg.hr → DNS → Add record → CNAME, name `vn`, target `vpl-ae9.pages.dev`,
+    <your-domain> → DNS → Add record → CNAME, name `vn`, target `vpl-ae9.pages.dev`,
     proxy on
 
 Then these two, in this order:
 
 1. **Supabase -> Authentication -> URL Configuration**: set **Site URL** to
-   `https://vn.terg.hr` and **Redirect URLs** to `https://vn.terg.hr/**`. Until this
+   `https://vn.<your-domain>` and **Redirect URLs** to `https://vn.<your-domain>/**`. Until this
    is done, Google sign-in keeps sending people to `127.0.0.1:8788`, which on a
    phone is the phone itself.
 2. Then locally: `OAUTH_PORT=0 ./serve` — the temporary 8788 listener has done
@@ -532,11 +532,11 @@ where a login may return to.
 
 For this suite the intended configuration is:
 
-- **Site URL** — `https://vn.terg.hr`. The dashboard offers exactly one value and
+- **Site URL** — `https://vn.<your-domain>`. The dashboard offers exactly one value and
   that is the point: the app sends its own address with every sign-in, so the
   per-app addresses belong in the list below, not here
 - **Redirect URLs** — one entry per app, with the wildcard so query strings work:
-  `https://vn.terg.hr/**`, `https://vi.terg.hr/**`, and for local work
+  `https://vn.<your-domain>/**`, `https://vi.<your-domain>/**`, and for local work
   `http://127.0.0.1:8099/**` and `http://127.0.0.1:8100/**`
 - **Confirm email** — off, deliberately: the suite has no recovery address habit
   and a confirmation link is a second place to get stuck
@@ -547,10 +547,10 @@ can only redirect to an address on the list, so a round trip from `vi` with only
 again from `vi`, and it stays in `vi`.
 
 Checked on 21 Nov 2026 after the entries were added: clicking **continue with
-Google** on `vi.terg.hr` reaches Google's consent page with
+Google** on `vi.<your-domain>` reaches Google's consent page with
 `redirect_uri=https://ebhrjstllsazywbxnbqt.supabase.co/auth/v1/callback` and no
 `redirect_uri_mismatch`, and the authorize call carries
-`redirect_to=https://vi.terg.hr/` — the same for `vn`. What remains is a person
+`redirect_to=https://vi.<your-domain>/` — the same for `vn`. What remains is a person
 with a Google account finishing the round trip and watching the address bar.
 
 None of this is a repository change. It is a dashboard step, done once, and it is
@@ -600,7 +600,7 @@ One more, found the morning after on the real address and not before: the name
 of a document. `openProject` paints the sheet twice — once with the document,
 once again when its rows arrive — and `paintHead` wrote the stored name into the
 field every time. On localhost the rows land in 10 ms, before anybody can type;
-on `vr.terg.hr` they land late, and naming a fresh document looked like it worked
+on `vr.<your-domain>` they land late, and naming a fresh document looked like it worked
 while the debounced save then read the restored old value, found it equal to the
 stored one and did nothing. Nothing errored, nothing was lost visibly, and the
 document stayed "untitled spec". The field now follows the document only when the
@@ -859,7 +859,7 @@ Two bugs the build found, both worth remembering:
   rail offered a delete button on a job that was not yours. Now it does not.
 
 The local `./serve` already answers `/api/chat`, so a mock in a test has to
-intercept both `/api/chat` and `https://api.terg.hr/chat` — otherwise the test
+intercept both `/api/chat` and `https://api.<your-domain>/chat` — otherwise the test
 spends its key or fails with the proxy's own words. `**/chat` is the shorter
 route pattern.
 
@@ -939,7 +939,7 @@ provider host that is not on the same allowlist `chat.js` uses.
 
 **A path nobody asked for.** Apps build an endpoint by appending
 `/v1/chat/completions` to the base address a person pasted, so a vp key's base
-address — `https://api.terg.hr/vp` — arrives as `/vp/v1/chat/completions`.
+address — `https://api.<your-domain>/vp` — arrives as `/vp/v1/chat/completions`.
 `functions/vp/[[path]].js` exists for that one sentence, and for nothing else.
 
 **Two warnings that were worth adding.** The page says, before you make codes,
@@ -1189,3 +1189,35 @@ The public repository is the eight apps, the shared shell, the agent, the
 migrations and the tools. Everything in it must work for somebody who brings
 their own Supabase project and their own Cloudflare account, and who never talks
 to us.
+
+## 2026-11-24 (later) — the repository becomes something a stranger can install
+
+Three things were taken out of the code, and one thing was put in its place.
+
+**Out: our addresses as defaults.** `SHARED_PROXY`, `SHARED_SEARCH` and the `vp`
+`DOOR` were string constants pointing at `api.<our domain>`. Every app now reads
+them from `config.local.js` (`proxy`, `search`, `door`); with none, the app uses
+its own `/api/chat` and says so instead of quietly posting to somebody else's
+server. The shell (`dock.js`, `engine.js`, `settings.js`) does the same.
+
+**Out: our keys, from the places that had them.** `apps/vz/functions/p/*` carried
+the anon JWT and the project URL as constants; they are Pages secrets now
+(`VPL_SUPABASE_URL`, `VPL_SUPABASE_ANON`). `apps/api` reads `SUPABASE_URL` from a
+secret too. The three doors share one origin list, `apps/api/functions/_origins.js`
+— one file to edit, not three copies to drift apart.
+
+**Out: the passwords in the test suites.** Twenty-seven files signed in with a
+literal account. They now import `_account.mjs`, which reads `VPL_EMAIL` /
+`VPL_PASS` / the guest pair from the environment and, when they are missing,
+prints which two variables it wanted and exits 0. Nothing in the repository is a
+credential.
+
+**In: `docs/configure.md`** — every value, its default, and the two things
+everybody forgets (the proxy's origin list, Supabase's redirect urls) — and a
+README rewritten as "install from zero": Supabase project, `db push`, one config
+file, `./serve`, then `./deploy`.
+
+Two bugs came out of running the suites that had been quietly broken since the
+settings rewrite: the dialog painted its account line once at mount and never
+again (`open()` now repaints), and `key-check` was still asking for `#ai-url` /
+`#ai-key`, ids that no longer exist — a test that cannot find its own controls.

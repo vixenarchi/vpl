@@ -8,9 +8,9 @@
  * the drawing writes back is where a box sits.
  */
 import { chromium } from 'playwright';
+import { OWNER, GUEST } from './_account.mjs';
 
 const B = process.env.VA_URL || 'http://127.0.0.1:8107';
-const OWNER = { email: 'vpl-agent@terg.hr', pass: 'agent-vpl-2026!' };
 
 const GOOD = `# context
 

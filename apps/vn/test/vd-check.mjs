@@ -8,10 +8,9 @@ import { chromium } from 'playwright';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { OWNER, GUEST } from './_account.mjs';
 
 const B = process.env.VD_URL || 'http://127.0.0.1:8104';
-const OWNER = { email: 'vpl-agent@terg.hr', pass: 'agent-vpl-2026!' };
-const GUEST = { email: 'vpl-guest@terg.hr', pass: 'guest-vpl-2026!' };
 const STAMP = Math.random().toString(36).slice(2, 6);
 
 let pass = 0; let fail = 0;

@@ -58,5 +58,5 @@ every app suite, the front door and the ux floor in all nine — locally or, wit
   `aria-label` and text, and nothing else; a `<label for>` is a name too. Two new
   rules were added to `ux-sniff` that day: labels count, and **a link inside a
   sentence is text** (WCAG's own line) rather than a control that is too small.
-- **`www.terg.hr` now measures zero** under the same rule as the apps, which was
+- **`www.<your-domain>` now measures zero** under the same rule as the apps, which was
   the point of pointing the tool at it.

@@ -56,7 +56,10 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
 /* ── the component ───────────────────────────────────────────────────
  * mountSettings({ dialog, proxy, appName }) → { open, close, refresh }
  * The dialog is an empty <dialog id="ai-dialog"> in the page; this fills it. */
-export function mountSettings({ dialog, proxy = 'https://api.terg.hr/chat', onSaved } = {}) {
+export function mountSettings({ dialog, proxy, onSaved } = {}) {
+  /* the address a test call goes through: this deployment's `proxy`, if it has
+   * one. A test with nowhere to go says exactly that instead of hanging. */
+  proxy = proxy ?? ((window.__VPL_CONFIG__ || {}).proxy || '');
   if (!dialog) throw new Error('mountSettings needs the dialog element');
   let tab = 'model';
   let note = '';
@@ -289,7 +292,7 @@ export function mountSettings({ dialog, proxy = 'https://api.terg.hr/chat', onSa
       let res = await fetch('/api/chat', {
         method: 'POST', headers: { 'content-type': 'application/json' }, body,
       });
-      if (res.status === 404 || res.status === 405) {
+      if ((res.status === 404 || res.status === 405) && proxy) {
         res = await fetch(proxy, {
           method: 'POST', headers: { 'content-type': 'application/json' }, body,
         });
@@ -362,6 +365,10 @@ export function mountSettings({ dialog, proxy = 'https://api.terg.hr/chat', onSa
       setTab('model');
       say('');
       dialog.showModal();
+      /* who is signed in can have changed since this dialog was built: a page
+       * that was signed out at load and signed in a second later would show a
+       * stale "sign in and one key follows you" for the rest of the session. */
+      void paintAccount();
     },
     close: () => dialog.close(),
     /* an app may have something to say in this dialog ("no key yet — paste one

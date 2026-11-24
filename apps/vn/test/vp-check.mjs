@@ -9,11 +9,10 @@
  * vp-proxy.mjs. No credit is spent by this file.
  */
 import { chromium } from 'playwright';
+import { OWNER, GUEST } from './_account.mjs';
 
 const B = process.env.VP_URL || 'http://127.0.0.1:8106';
 const API = process.env.API_URL || 'https://api.terg.hr';
-const OWNER = { email: 'vpl-agent@terg.hr', pass: 'agent-vpl-2026!' };
-const GUEST = { email: 'vpl-guest@terg.hr', pass: 'guest-vpl-2026!' };
 const STAMP = Math.random().toString(36).slice(2, 6);
 
 let pass = 0; let fail = 0;
@@ -163,8 +162,16 @@ ok(pre.status === 204 && pre.headers.get('access-control-allow-origin') === 'htt
 
 /* ── revoking stops it ───────────────────────────────────────────── */
 await pg.click('#keys [data-kill="key"]');
-await pg.waitForTimeout(900);
-ok((await pg.textContent('#keys')).includes('revoked'), 'a revoked key reads "revoked"');
+/* a fixed wait is a guess about somebody else's machine: wait for the word */
+const revoked = async (page) => {
+  const t0 = Date.now();
+  while (Date.now() - t0 < 8000) {
+    if ((await page.textContent('#keys').catch(() => '')).includes('revoked')) return true;
+    await page.waitForTimeout(150);
+  }
+  return false;
+};
+ok(await revoked(pg), 'a revoked key reads "revoked"');
 await gp.reload({ waitUntil: 'networkidle' });
 await gp.waitForTimeout(1600);
 ok((await gp.textContent('#keys')).includes('revoked'), 'the guest sees it too, on their next visit');

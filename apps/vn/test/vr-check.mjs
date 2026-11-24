@@ -6,6 +6,7 @@
  * is needed: this is about the sheet, the keyboard, the colours and the gaps.
  */
 import { chromium } from 'playwright';
+import { OWNER, GUEST } from './_account.mjs';
 
 const B = process.env.VR_URL || 'http://127.0.0.1:8100';
 let pass = 0, fail = 0;
@@ -31,8 +32,8 @@ pg.on('dialog', (d) => d.accept(d.type() === 'prompt' ? 'the roof' : undefined))
 
 await pg.goto(B, { waitUntil: 'networkidle' });
 ok(await pg.locator('#gate').isVisible(), 'the gate is up before a session');
-await pg.fill('#email', 'vpl-agent@terg.hr');
-await pg.fill('#pass', 'agent-vpl-2026!');
+await pg.fill('#email', OWNER.email);
+await pg.fill('#pass', OWNER.pass);
 await pg.click('#btn-login');
 await pg.waitForSelector('#app:not([hidden])');
 await pg.waitForTimeout(1200);
@@ -235,8 +236,8 @@ const phone = await br.newContext({ viewport: { width: 390, height: 844 }, isMob
 const pp = await phone.newPage();
 pp.on('pageerror', (e) => errors.push('phone: ' + e.message));
 await pp.goto(B, { waitUntil: 'networkidle' });
-await pp.fill('#email', 'vpl-agent@terg.hr');
-await pp.fill('#pass', 'agent-vpl-2026!');
+await pp.fill('#email', OWNER.email);
+await pp.fill('#pass', OWNER.pass);
 await pp.click('#btn-login');
 await pp.waitForSelector('#app:not([hidden])');
 await pp.waitForTimeout(1600);

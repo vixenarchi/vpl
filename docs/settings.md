@@ -61,7 +61,7 @@ then `tools/stage.sh <app>` for each app and a deploy.
 ## test, forget, save
 
 - **test** is a real call: one short request through the app's own door
-  (`/api/chat`, falling back to `api.terg.hr/chat`), with the address, model and
+  (`/api/chat`, falling back to `api.<your-domain>/chat`), with the address, model and
   key that are in the form right now. It reports what the model said, or the
   provider's own words when it refuses — the OpenAI message for a bad key
   arrives verbatim: *Incorrect API key provided*. Anything less than a real
@@ -174,3 +174,14 @@ button next to **drop**:
 
 The other six apps pass no `onUse`, so their dock has no *use it* at all. That is
 the honest default: reading an answer is not the same as accepting it.
+
+## Two things the account line taught
+
+- **A dialog that painted itself once at mount is a dialog that lies.** vn's bar
+  opens settings after signing in, but the key tab's account line was written
+  when the page loaded — signed out — and never again. `open()` now repaints it.
+- **A suite that asks for ids that were renamed is a suite that stops checking
+  things.** The key suite still walked `#ai-url` / `#ai-key` long after the
+  dialog became `#set-url` / `#set-key`, so it reported nothing at all. A test
+  that cannot find its own controls should fail loudly; that is what the
+  `waitForSelector` timeouts finally did.

@@ -8,6 +8,7 @@
  */
 import { chromium } from 'playwright';
 import { writeFileSync } from 'node:fs';
+import { OWNER, GUEST } from './_account.mjs';
 
 const B = process.env.VI_URL || 'https://vi.terg.hr';
 const url = process.env.VPL_MODEL_URL;
@@ -27,8 +28,8 @@ await pg.evaluate(([u, k, m, sp, sk]) => {
   if (sp && sk) localStorage.setItem('vpl.search', JSON.stringify({ provider: sp, key: sk }));
 }, [url, key, model, process.env.VPL_SEARCH_PROVIDER || '', process.env.VPL_SEARCH_KEY || '']);
 await pg.reload({ waitUntil: 'networkidle' });
-await pg.fill('#email', 'vpl-agent@terg.hr');
-await pg.fill('#pass', 'agent-vpl-2026!');
+await pg.fill('#email', OWNER.email);
+await pg.fill('#pass', OWNER.pass);
 await pg.click('#btn-login');
 await pg.waitForSelector('#app:not([hidden])');
 await pg.waitForTimeout(1400);

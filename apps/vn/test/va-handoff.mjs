@@ -15,11 +15,11 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { promisify } from 'node:util';
+import { OWNER, GUEST } from './_account.mjs';
 
 const run = promisify(execFile);
 const B = process.env.VA_URL || 'http://127.0.0.1:8107';
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..', '..', '..');
-const OWNER = { email: 'vpl-agent@terg.hr', pass: 'agent-vpl-2026!' };
 const AGENT = 'eva-agent@vpl.local';
 const STAMP = Math.random().toString(36).slice(2, 6);
 

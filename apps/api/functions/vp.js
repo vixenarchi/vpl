@@ -15,6 +15,8 @@
  * only — no prompt, no answer, no address.
  */
 
+import { corsFor } from './_origins.js';
+
 const SUPABASE = 'https://ebhrjstllsazywbxnbqt.supabase.co';
 
 /* Same list as chat.js, minus nothing: a key holder may call these hosts. */
@@ -38,38 +40,6 @@ const ALLOWED = [
   'openai.azure.com',
   '.openai.azure.com',
 ];
-
-const ORIGINS = [
-  'https://vn.terg.hr',
-  'https://vi.terg.hr',
-  'https://vr.terg.hr',
-  'https://vd.terg.hr',
-  'https://vc.terg.hr',
-  'https://vz.terg.hr',
-  'https://vp.terg.hr',
-  'https://va.terg.hr',
-  'https://vg.terg.hr',
-  '.vpl-ae9.pages.dev',
-  '.vpl-vr.pages.dev',
-  '.vpl-vd.pages.dev',
-  '.vpl-vc.pages.dev',
-  '.vpl-vz.pages.dev',
-  'https://vpl-vp.pages.dev',
-  '.vpl-vp.pages.dev',
-];
-
-function corsFor(request) {
-  const origin = request.headers.get('Origin') || '';
-  /* No Origin at all means a server is calling, not a page: the key it holds is
-   * the credential, and CORS is not authentication. A browser always sends one,
-   * so a page from the wrong place is still refused below. */
-  if (!origin) return '';
-  let host = '';
-  try { host = new URL(origin).hostname.toLowerCase(); } catch { host = ''; }
-  const local = host === '127.0.0.1' || host === 'localhost' || host === '0.0.0.0';
-  const ok = local || ORIGINS.some((o) => (o.startsWith('.') ? host.endsWith(o) : origin === o));
-  return ok ? origin : '';
-}
 
 const headersFor = (request, extra, contentType) => {
   const headers = {

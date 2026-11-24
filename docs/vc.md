@@ -8,7 +8,7 @@ checklist, a paragraph of a law. *Dokazi* are what proves it — minutes, a
 configuration, a screenshot, a PDF. The model checks one against the other and
 writes a report whose every finding begins with `PASS`, `FAIL` or `UNKNOWN`.
 
-At <https://vc.terg.hr>. Tables: `vc_projects`, `vc_artifacts`, `vc_runs`,
+At <https://vc.<your-domain>>. Tables: `vc_projects`, `vc_artifacts`, `vc_runs`,
 `vc_outputs`, `vc_shares`. Files: bucket `vc-files`, 10 MB per file.
 
 ## Why a second app and not a template of vd
@@ -85,5 +85,5 @@ piles visible, no generate), a phone at 390 px, and cleanup.
 ```
 PORT=8105 OAUTH_PORT=0 ./serve vc
 VC_URL=http://127.0.0.1:8105 node vc-check.mjs
-VC_URL=https://vc.terg.hr node vc-check.mjs       # production
+VC_URL=https://vc.<your-domain> node vc-check.mjs       # production
 ```

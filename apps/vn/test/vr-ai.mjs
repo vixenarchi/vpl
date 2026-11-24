@@ -7,6 +7,7 @@
  * parsed as JSON, and the no-key hint tells the truth.
  */
 import { chromium } from 'playwright';
+import { OWNER, GUEST } from './_account.mjs';
 
 const B = process.env.VR_URL || 'http://127.0.0.1:8101';
 let pass = 0, fail = 0;
@@ -47,8 +48,8 @@ const br = await chromium.launch();
   const ctx = await br.newContext();
   const pg = await ctx.newPage();
   await pg.goto(B, { waitUntil: 'networkidle' });
-  await pg.fill('#email', 'vpl-agent@terg.hr');
-  await pg.fill('#pass', 'agent-vpl-2026!');
+  await pg.fill('#email', OWNER.email);
+  await pg.fill('#pass', OWNER.pass);
   await pg.click('#btn-login');
   await pg.waitForSelector('#app:not([hidden])');
   await pg.waitForTimeout(1500);
@@ -85,8 +86,8 @@ await pg.route('https://api.terg.hr/chat', async (r) => {
 });
 
 await pg.goto(B, { waitUntil: 'networkidle' });
-await pg.fill('#email', 'vpl-agent@terg.hr');
-await pg.fill('#pass', 'agent-vpl-2026!');
+await pg.fill('#email', OWNER.email);
+await pg.fill('#pass', OWNER.pass);
 await pg.click('#btn-login');
 await pg.waitForSelector('#app:not([hidden])');
 await pg.waitForTimeout(1500);
