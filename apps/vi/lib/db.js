@@ -34,7 +34,7 @@ function loadScript(src) {
 }
 
 const P = 'id,user_id,title,context,exploration,simulation,chosen_id,created_at,updated_at';
-const I = 'id,project_id,text,stage,color,reason,exploration,explored_at,position,created_at,updated_at';
+const I = 'id,project_id,text,stage,color,reason,exploration,explored_at,position,created_at,updated_at,deleted_at';
 
 /* ── auth ─────────────────────────────────────────────────────────── */
 export async function session() {
@@ -136,10 +136,13 @@ export async function deleteProject(id) {
 }
 
 /* ── ideas: one row is one sticky note ────────────────────────────── */
-export async function listIdeas(projectId) {
+/* A note that was deleted is not gone: it is in the bin, with its words, and it
+ * only leaves when somebody says "for good". `bin: true` reads that drawer. */
+export async function listIdeas(projectId, { bin = false } = {}) {
   const db = await client();
-  const { data, error } = await db.from('vi_ideas').select(I)
-    .eq('project_id', projectId).order('position', { ascending: true })
+  let q = db.from('vi_ideas').select(I).eq('project_id', projectId);
+  q = bin ? q.not('deleted_at', 'is', null) : q.is('deleted_at', null);
+  const { data, error } = await q.order('position', { ascending: true })
     .order('created_at', { ascending: true });
   if (error) throw error;
   return data;
@@ -174,9 +177,26 @@ export async function updateIdea(id, patch) {
   return data;
 }
 
+/* The bin is a timestamp, not a second table. */
+export async function binIdea(id) {
+  return updateIdea(id, { deleted_at: new Date().toISOString() });
+}
+
+export async function restoreIdea(id) {
+  return updateIdea(id, { deleted_at: null });
+}
+
+/* Deleting for good is the only place a note is removed by anything but its id. */
 export async function deleteIdea(id) {
   const db = await client();
   const { error } = await db.from('vi_ideas').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function emptyBin(projectId) {
+  const db = await client();
+  const { error } = await db.from('vi_ideas').delete()
+    .eq('project_id', projectId).not('deleted_at', 'is', null);
   if (error) throw error;
 }
 

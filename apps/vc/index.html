@@ -107,6 +107,14 @@
             <button id="btn-add-standard" class="ghost w-only" type="button">＋ standard</button>
           </div>
           <p class="side-note muted">the rules — a policy, a checklist, a law's paragraph.</p>
+          <div id="bin-banner" class="bin-banner" hidden>
+            <span class="bin-banner-title">recycle bin</span>
+            <span id="bin-banner-note" class="bin-banner-note">nothing in it</span>
+          </div>
+          <div id="bin-banner" class="bin-banner" hidden>
+            <span class="bin-banner-title">recycle bin</span>
+            <span id="bin-banner-note" class="bin-banner-note">nothing in it</span>
+          </div>
           <ul id="standards" class="artifacts"></ul>
           <p id="std-none" class="muted none-line" hidden>no rules yet — without them there is nothing to check against.</p>
 
@@ -121,6 +129,15 @@
           <ul id="evidence" class="artifacts"></ul>
           <p id="ev-none" class="muted none-line" hidden>no evidence yet. a report will be honest and useless.</p>
 
+          <div class="bin-foot">
+            <button id="btn-bin" class="bin-btn" type="button" aria-pressed="false"
+                    title="open the recycle bin">
+              <span class="bin-icon" aria-hidden="true">♲</span>
+              <span class="bin-label">recycle bin</span>
+              <span id="bin-count" class="bin-count"></span>
+            </button>
+            <button id="btn-bin-empty" class="bin-empty" type="button" hidden>empty all</button>
+          </div>
           <p id="art-msg" class="msg" aria-live="polite"></p>
           <input id="file-input" type="file" multiple hidden
                  accept=".pdf,.txt,.md,.markdown,.csv,.tsv,.json,.yaml,.yml,.xml,.html,.sql,.log,image/*,text/*">

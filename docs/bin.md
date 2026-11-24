@@ -1,0 +1,93 @@
+# The recycle bin
+
+Pressing ✕ never destroys words. In every app that can lose a row — vn, vi, vr,
+vz, vd, vc and va — the row goes to a place with a name, a number and a
+different look. Deleting for good is a second, separate act.
+
+One table column, one block of CSS, seven apps.
+
+## What the bin is
+
+- **`deleted_at timestamptz`** on the rows that can be lost: `vi_ideas`,
+  `vr_reqs`, `vd_artifacts`/`vd_outputs`, `vc_artifacts`/`vc_outputs`,
+  `va_artifacts`/`va_outputs`. Live means `deleted_at is null`; that is the
+  whole model. vn had this from the start; the rest caught up
+  (`20261210000000_bin_all.sql`, `…_bin_artifacts.sql`).
+- **Every list knows the difference.** `listX(projectId, { bin })` is one query
+  with `is null` or `not is null`. Nothing is copied to a second table, nothing
+  is archived, no id changes — so a restore puts the row back exactly where it
+  was, in the same order.
+- **A shared document never shows the bin.** The share functions
+  (`vr_read_share`, `vd_read_share`, `vc_read_share`, `va_read_share`)
+  skip binned rows, so a guest reads the same document the owner sees and
+  "removed" means one thing. (`20261210000200_bin_share_view.sql`,
+  `…_bin_share_view_engine.sql`.)
+- **Emptying is a verb, not a side effect.** `emptyBin` / `empty all` deletes
+  rows by id, and only for the owner. vn's per-note purge asks first and names
+  what it will take; the others are one press on a row that has already left
+  the page.
+
+## What it looks like
+
+One block in `packages/shell/tokens.css`, so the seven cannot drift:
+
+- **`.bin-banner`** — a bordered box above the list that is *not* the list:
+  a mono uppercase `.bin-banner-title` ("recycle bin") and a
+  `.bin-banner-note` that counts what is inside, in words —
+  "3 keys in the bin — restore one, or empty it for good".
+- **`.bin-btn`** — the button under the list. Resting it is a quiet ghost with a
+  count; **open it is filled with `--mark`** and its label changes to the way
+  back (`back to the wall`, `back to the sheet`, `back to the inputs`,
+  `back to notes`). A button whose word says "back" must go back — that was a
+  real bug: pressing it while the bin was open re-opened the bin.
+- **`.bin-mode`** — the list itself changes: tinted paper, a `--mark` strip down
+  the leading edge, and every row's tools visible (in the bin you are looking at
+  rows to act on, not to read).
+- **`.row-restore`** — `restore` is a word, not an icon, and it sits where the
+  ✕ sits in the live list.
+
+**Colour is never the only signal.** The open bin is a filled button *and* a
+banner with a count *and* a tinted pane with an edge — three of the four
+survive a black-and-white screenshot.
+
+vn keeps its own names (`.trash-banner`, `.bin-mode` on `.list`) because it got
+there first; vz keeps a bin *view* (`#binview`) rather than a mode, because a
+dictionary's sheet and its bin are two panes of one place. Both wear the same
+words and the same filled button.
+
+## The rules this cost us
+
+- **The bin is a mode, not an address.** In vn any route change — a note, the
+  list, a link somebody pasted — leaves the bin, and the bin's colours come off
+  in one place. A route that quietly set `showingTrash = false` used to leave
+  the tint and the edge on a list of live notes.
+- **`replaceState` fires no `hashchange`** — so the router's own record has to
+  be told too, or the next click on that same note is a route it believes it is
+  already on and nothing happens.
+- **Counts are relative in tests.** An account that has used an app has used its
+  bin. `bin-check.mjs` measures *this* row: the bin before, the bin after.
+- **A copy keeps each version's timestamp.** Copying a job inserted every row in
+  one statement, all with the same `now()`; "the newest document" then stopped
+  being a fact and the desk opened whichever came back first.
+- **A guest reads the newest version.** The share functions aggregated oldest
+  first while the desk listed newest first, so a reader opened the first draft.
+  (`20261210000400_share_newest.sql`.)
+
+## The test
+
+`apps/vn/test/bin-check.mjs`, one suite, seven apps:
+
+```bash
+cd apps/vn/test
+for a in vn:8102 vi:8100 vr:8101 vz:8103 vd:8104 vc:8105 va:8107; do
+  APP=${a%%:*} PORT=${a##*:} node bin-check.mjs
+done
+```
+
+Per app it asserts: ✕ takes the row off the list; the button carries the count;
+the bin holds it; the button says it is open (`aria-pressed`) **and** its word
+changes **and** it is filled; a banner names the place and counts what is in it;
+the list itself changes; restore takes it out and puts it back; delete-for-good
+removes it and it does not return; no page errors.
+
+`tools/test-all.sh` runs all seven as `vn · bin` … `va · bin`.

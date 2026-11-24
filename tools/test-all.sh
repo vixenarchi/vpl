@@ -95,6 +95,9 @@ run "vd · documents" env VD_URL="${VD_URL:-http://127.0.0.1:${PORT[vd]}}" node 
 run "vc · compliance" env VC_URL="${VC_URL:-http://127.0.0.1:${PORT[vc]}}" node vc-check.mjs
 run "vp · keys & codes" env VP_URL="${VP_URL:-http://127.0.0.1:${PORT[vp]}}" node vp-check.mjs
 run "va · desk + drawing + hand-off" node va-check.mjs
+for a in vn vi vr vz vd vc va; do
+  run "${a} · bin" env APP="${a}" PORT="${PORT[$a]}" node bin-check.mjs
+done
 run "va · canvas" node va-canvas.mjs
 run "va · hand-off" node va-handoff.mjs
 

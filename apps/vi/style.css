@@ -633,3 +633,14 @@ body.guest #projects { display: none; }
 .ai-acc-note, .ai-acc-msg { flex-basis: 100%; margin: 0; font-size: .8rem; opacity: .72; }
 .ai-acc-msg { opacity: .9; }
 .ai-acc-msg:empty { display: none; }
+
+/* ── the recycle bin, on the wall ──────────────────────────────────
+ * The shared .bin-* shapes (tokens.css) do the work; the wall is a grid of
+ * notes, so a binned note stays a note — it just says restore, and its ✕ is
+ * final. */
+.notes.bin-mode { padding: 0.35rem; border-radius: var(--radius); }
+.notes .in-bin { opacity: 0.92; }
+.notes .in-bin > span { text-decoration: line-through; text-decoration-thickness: 1px; }
+.notes .in-bin .row-restore { margin-left: auto; }
+.notes .in-bin .kill { margin-left: 0.15rem; }
+.bin-foot { margin-top: 0.4rem; }

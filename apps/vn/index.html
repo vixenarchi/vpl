@@ -80,9 +80,10 @@
         <input id="q" type="search" placeholder="filter… (Ctrl+K)" aria-label="filter notes">
       </div>
 
-      <p id="trash-banner" class="trash-banner" hidden>
-        <span>recycle bin</span> — restore a note, or delete it for good
-      </p>
+      <div id="trash-banner" class="trash-banner" hidden>
+        <span class="trash-banner-title">recycle bin</span>
+        <span id="trash-banner-note" class="trash-banner-note">nothing in it</span>
+      </div>
 
       <ul id="list-items" class="list-items" role="tree"></ul>
       <p id="list-empty" class="list-empty" hidden>no notes yet.</p>

@@ -35,7 +35,7 @@ function loadScript(src) {
 const P = 'id,user_id,title,brief,assumptions,scope,created_at,updated_at';
 const R = 'id,project_id,user_id,ref,kind,strength,theme,theme_id,category,title,statement,detail,'
         + 'asis,tobe,horizon,source,verification,metric,target,conditions,clause,status,pos,'
-        + 'file_path,file_name,file_size,file_mime,created_at,updated_at';
+        + 'file_path,file_name,file_size,file_mime,deleted_at,created_at,updated_at';
 const T = 'id,project_id,term,meaning,created_at';
 
 /* ── auth ─────────────────────────────────────────────────────────── */
@@ -314,13 +314,31 @@ export async function addVocab(projectId, axis, value, color = 'grey') {
 }
 
 /* ── rows ─────────────────────────────────────────────────────────── */
-export async function listReqs(projectId) {
+/* A deleted requirement keeps its words and its name in the bin: refs are never
+ * reused, so a row that comes back is still R12, not a new R12. */
+export async function listReqs(projectId, { bin = false } = {}) {
   const db = await client();
-  const { data, error } = await db.from('vr_reqs').select(R)
-    .eq('project_id', projectId).order('pos', { ascending: true })
+  let q = db.from('vr_reqs').select(R).eq('project_id', projectId);
+  q = bin ? q.not('deleted_at', 'is', null) : q.is('deleted_at', null);
+  const { data, error } = await q.order('pos', { ascending: true })
     .order('created_at', { ascending: true });
   if (error) throw error;
   return data;
+}
+
+export async function binReq(id) {
+  return updateReq(id, { deleted_at: new Date().toISOString() });
+}
+
+export async function restoreReq(id) {
+  return updateReq(id, { deleted_at: null });
+}
+
+export async function emptyBin(projectId) {
+  const db = await client();
+  const { error } = await db.from('vr_reqs').delete()
+    .eq('project_id', projectId).not('deleted_at', 'is', null);
+  if (error) throw error;
 }
 
 /* VR-001, VR-002… computed here so a batch of pasted rows gets names in one

@@ -57,6 +57,7 @@ const el = {
   viewNone: $('view-none'), viewNote: $('view-note'),
   noteStatus: $('note-status'), noteVis: $('note-vis'),
   binEmpty: $('btn-bin-empty'), trashBanner: $('trash-banner'),
+  trashBannerNote: $('trash-banner-note'),
   purge: $('purge'), purgeTitle: $('purge-title'), purgeText: $('purge-text'),
   purgeGo: $('purge-go'), purgeCancel: $('purge-cancel'), purgeX: $('purge-x'), btnChild: $('btn-child'), btnDel: $('btn-del'),
   btnShare: $('btn-share'), title: $('title'),
@@ -626,8 +627,15 @@ function route(opts = {}) {
 
   const noteMatch = hash.match(/^#\/n\/([0-9a-f-]{36})$/i);
 
-  if (noteMatch) {
+  /* The bin is a mode, not an address. Any route — a note, the list, a link
+   * pasted by somebody else — means the person has left it, so the bin's
+   * colours come off here, once, instead of in each branch below. */
+  if (S.showingTrash) {
     S.showingTrash = false;
+    paintTrashFrame();
+  }
+
+  if (noteMatch) {
     openNote(noteMatch[1]);
   } else {
     S.current = null;
@@ -858,7 +866,15 @@ function paintTrashCount() {
     : 'delete all ' + n + ' notes in the bin for good';
   el.binEmpty.setAttribute('aria-label', el.binEmpty.title);
   el.btnTrash.classList.toggle('active', S.showingTrash);
-  el.btnTrash.title = n ? `recycle bin (${n})` : 'recycle bin (empty)';
+  el.btnTrash.setAttribute('aria-pressed', String(S.showingTrash));
+  el.btnTrash.title = S.showingTrash
+    ? 'close the recycle bin and go back to the notes'
+    : n ? `open the recycle bin (${n})` : 'the recycle bin is empty';
+  el.btnTrash.setAttribute('aria-label', el.btnTrash.title);
+  el.trashBannerNote.textContent = n
+    ? `${n} note${n === 1 ? '' : 's'} in the bin — restore one, or delete it for good`
+    : 'nothing in it — a deleted note waits here';
+  el.trashLabel.textContent = S.showingTrash ? 'back to notes' : 'recycle bin';
 }
 
 function markListCurrent(id) {
@@ -867,14 +883,35 @@ function markListCurrent(id) {
   }
 }
 
-function toggleTrash() {
-  S.showingTrash = !S.showingTrash;
+/* The list's clothes are one decision, painted in one place: the tint, the
+ * mark down the edge, the banner, the placeholder and the button's word. A
+ * route that quietly set showingTrash = false used to leave the bin's colours
+ * on a list of live notes — so nothing sets it directly any more. */
+function paintTrashFrame() {
   el.list.classList.add('open');
   el.list.classList.toggle('trash-mode', S.showingTrash);
   el.trashBanner.hidden = !S.showingTrash;
   el.q.placeholder = S.showingTrash ? 'filter the bin…' : 'filter… (Ctrl+K)';
+  paintTrashCount();
+}
+
+function toggleTrash() {
+  const opening = !S.showingTrash;
+  /* Both directions end on the list — one shows the bin, the other shows the
+   * notes — so a note in the address leaves it. replaceState rather than an
+   * assignment: it fires no hashchange, so the bin does not have to fight the
+   * router for its own state. */
+  if (/^#\/n\//.test(location.hash)) {
+    history.replaceState(null, '', '#/');
+    /* replaceState fires no hashchange, so the router's own record has to be
+     * told too — otherwise the next click on that same note is a route the
+     * router believes it is already on, and nothing happens. */
+    S.route = '#/';
+  }
+  S.showingTrash = opening;
   el.q.value = '';
   S.filter = '';
+  paintTrashFrame();
   paintList();
   if (S.showingTrash) {
     el.viewNote.hidden = true;
@@ -1185,9 +1222,11 @@ function setBinTarget(dir) {
   else delete el.btnTrash.dataset.drop;
 
   el.btnTrash.classList.toggle('drop-active', !!dir);
+  /* the drag speaks through the label; when the drag ends the label returns to
+   * whatever the bin is — open or closed */
   el.trashLabel.textContent = dir === 'trash' ? 'move to bin'
     : dir === 'restore' ? 'restore from bin'
-    : 'recycle bin';
+    : S.showingTrash ? 'back to notes' : 'recycle bin';
 }
 
 function wireBinDrop() {

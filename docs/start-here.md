@@ -68,6 +68,8 @@ in `vi`.
   and the service-role key that comes with it
 - `docs/va.md` — solutioning and infrastructure: the box list that is the truth,
   the small canvas, and the job folder an agent pulls (never a command endpoint)
+- `docs/bin.md` — the recycle bin: one `deleted_at` column, one block of CSS and
+  seven apps; why a delete is undoable and emptying is a second act.
 - `docs/settings.md` — the one settings dialog: four tabs, test/forget/save, the
   themes, and the three auth bugs it uncovered (a JWT fragment, two tabs sharing
   a session, a logout that left a token behind)

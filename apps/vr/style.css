@@ -276,6 +276,9 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
 .extra-cell.empty { color: var(--ink-3); }
 .row-tools { display: flex; gap: 0.1rem; opacity: 0; }
 .sheet tbody tr:hover .row-tools, .sheet tbody tr.open .row-tools { opacity: 1; }
+/* in the bin the two actions are the only thing to do, so they are always on */
+.sheet tbody tr.in-bin .row-tools { opacity: 1; align-items: center; }
+.sheet tbody tr.in-bin .row-open { color: var(--ink-2); }
 .row-tools button {
   border: none; background: none; padding: 0.05rem 0.22rem; font-size: 0.8rem;
   color: var(--ink-3); border-radius: 3px;

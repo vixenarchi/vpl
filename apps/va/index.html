@@ -108,8 +108,21 @@
             <button id="btn-add-file" class="ghost w-only" type="button">＋ file</button>
           </div>
           <p class="side-note muted">documents, minutes, a diagram, an inventory — what the model reads.</p>
+          <div id="bin-banner" class="bin-banner" hidden>
+            <span class="bin-banner-title">recycle bin</span>
+            <span id="bin-banner-note" class="bin-banner-note">nothing in it</span>
+          </div>
           <ul id="artifacts" class="artifacts"></ul>
           <p id="art-none" class="muted" hidden>nothing to read yet. paste a text or bring a file.</p>
+          <div class="bin-foot">
+            <button id="btn-bin" class="bin-btn" type="button" aria-pressed="false"
+                    title="open the recycle bin">
+              <span class="bin-icon" aria-hidden="true">♲</span>
+              <span class="bin-label">recycle bin</span>
+              <span id="bin-count" class="bin-count"></span>
+            </button>
+            <button id="btn-bin-empty" class="bin-empty" type="button" hidden>empty all</button>
+          </div>
           <p id="art-msg" class="msg" aria-live="polite"></p>
           <input id="file-input" type="file" multiple hidden
                  accept=".pdf,.txt,.md,.markdown,.csv,.tsv,.json,.yaml,.yml,.xml,.html,.sql,.log,image/*,text/*">

@@ -304,6 +304,91 @@ dialog.settings .set-foot [data-a='forget'] { color: var(--danger); }
 .notice.col .notice-text { white-space: normal; overflow: visible; }
 @media print { .notice { display: none !important; } }
 
+/* ── the recycle bin: a place at the foot of the app's list ───────────
+ * Every app that can lose a row has the same three pieces, and one shape:
+ *
+ *   .bin-banner   inside the list, names the place and counts what is in it
+ *   .bin-foot     the row at the bottom, holding the button
+ *   .bin-btn      "recycle bin", with a count; filled when the bin is open
+ *   .bin-mode     on the list itself: tinted, with a mark strip down its edge
+ *
+ * An open bin must never be mistaken for a normal list. Four signals say so —
+ * the tint, the strip, the banner with a number in words, and the filled
+ * button — and none of them is colour alone.
+ */
+.bin-banner {
+  display: block;
+  margin: 0.5rem 0.5rem 0.3rem; padding: 0.4rem 0.55rem;
+  font-size: 0.74rem; line-height: 1.35; color: var(--ink-2);
+  background: var(--paper); border-radius: 6px;
+  border: 1px solid var(--mark);
+}
+.bin-banner-title {
+  display: block;
+  font-family: var(--sans); font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; font-size: 0.72rem; color: var(--mark);
+}
+.bin-banner-note { display: block; margin-top: 0.1rem; }
+.bin-mode {
+  background: var(--paper-3);
+  box-shadow: inset 3px 0 0 var(--mark);
+}
+.bin-foot {
+  display: flex; align-items: center; gap: 0.35rem; flex: 0 0 auto;
+  border-top: 1px solid var(--line); padding: 0.4rem;
+  background: var(--paper-2);
+}
+.bin-btn {
+  display: flex; align-items: center; gap: 0.45rem;
+  flex: 1 1 auto; min-width: 0; cursor: pointer;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--paper); color: var(--ink-2);
+  padding: 0.45rem 0.5rem;
+  font-family: var(--sans); font-size: 0.82rem; text-align: left;
+}
+.bin-btn:hover { background: var(--paper-3); color: var(--ink); border-color: var(--line-strong); }
+.bin-btn[aria-pressed='true'] {
+  background: var(--mark); color: var(--paper); border-color: var(--mark);
+  font-weight: 600;
+}
+.bin-btn[aria-pressed='true']:hover { background: var(--mark); color: var(--paper); }
+.bin-icon { flex: none; font-size: 0.98rem; line-height: 1; }
+.bin-label {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bin-count {
+  flex: none; font-variant-numeric: tabular-nums;
+  font-size: 0.72rem; color: var(--ink-3);
+  min-width: 1.1rem; text-align: right;
+}
+.bin-count:not(:empty) {
+  background: var(--paper-3); border-radius: 999px; padding: 0.05rem 0.4rem;
+}
+.bin-btn[aria-pressed='true'] .bin-count {
+  background: var(--paper); color: var(--mark); font-weight: 700;
+}
+.bin-empty {
+  margin-left: auto; flex: 0 0 auto; white-space: nowrap;
+  font-family: var(--sans); font-size: 0.68rem;
+  padding: 0.22rem 0.5rem; border-radius: 6px;
+  background: transparent; color: var(--ink-3);
+  border: 1px dashed var(--line-strong); cursor: pointer;
+}
+.bin-empty:hover, .bin-empty:focus-visible {
+  color: var(--ink); border-style: solid; background: var(--paper-3);
+}
+/* a binned row is read-only and says so: restore, or delete it for good */
+.row-restore {
+  border: 1px solid var(--mark); background: transparent; color: var(--mark);
+  border-radius: 6px; font-family: var(--sans); font-size: 0.72rem;
+  padding: 0.12rem 0.45rem; cursor: pointer; white-space: nowrap;
+}
+.row-restore:hover { background: var(--mark); color: var(--paper); }
+@media print {
+  .bin-foot, .bin-banner { display: none !important; }
+}
+
 /* ── the dock: a chat line at the bottom of every app ─────────────────
  * Top is who and where the settings are; bottom is the model. The dock is a
  * line until somebody writes in it, then a transcript, and it never covers the

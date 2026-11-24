@@ -34,7 +34,7 @@ function loadScript(src) {
 }
 
 const P = 'id,user_id,title,brief,template,created_at,updated_at';
-const A = 'id,project_id,user_id,kind,title,text,file_path,file_name,file_size,file_mime,pos,created_at,updated_at';
+const A = 'id,project_id,user_id,kind,title,text,file_path,file_name,file_size,file_mime,pos,deleted_at,created_at,updated_at';
 const R = 'id,project_id,user_id,template,model,notes,prompt,status,error,took_ms,created_at';
 const O = 'id,project_id,run_id,user_id,kind,title,body,pos,created_at,updated_at';
 const SH = 'id,project_id,owner_id,code,email,role,pending,created_at';
@@ -135,10 +135,13 @@ export async function deleteProject(id) {
 }
 
 /* ── inputs ───────────────────────────────────────────────────────── */
-export async function listArtifacts(projectId) {
+/* An input that was removed is in the bin, with its text — and a file's path
+ * stays valid, so a restore does not need the bucket again. */
+export async function listArtifacts(projectId, { bin = false } = {}) {
   const db = await client();
-  const { data, error } = await db.from('vc_artifacts').select(A)
-    .eq('project_id', projectId).order('pos').order('created_at');
+  let q = db.from('vc_artifacts').select(A).eq('project_id', projectId);
+  q = bin ? q.not('deleted_at', 'is', null) : q.is('deleted_at', null);
+  const { data, error } = await q.order('pos').order('created_at');
   if (error) throw error;
   return data;
 }
@@ -169,9 +172,25 @@ export async function updateArtifact(id, patch) {
   return data;
 }
 
+/* ✕ removes it from the job, not from the world: the text and the file stay. */
+export async function binArtifact(id) {
+  return updateArtifact(id, { deleted_at: new Date().toISOString() });
+}
+
+export async function restoreArtifact(id) {
+  return updateArtifact(id, { deleted_at: null });
+}
+
 export async function deleteArtifact(id) {
   const db = await client();
   const { error } = await db.from('vc_artifacts').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function emptyBin(projectId) {
+  const db = await client();
+  const { error } = await db.from('vc_artifacts').delete()
+    .eq('project_id', projectId).not('deleted_at', 'is', null);
   if (error) throw error;
 }
 
@@ -359,8 +378,13 @@ export async function copyToMe(src, artifacts, outputs) {
     if (e) throw e;
   }
 
+  /* A copy keeps each version's own timestamp. Without it every row of the copy
+   * is created in the same statement, all with the same now(), and "the newest
+   * document" stops being a fact — the desk would open whichever came back
+   * first. */
   const outs = (outputs || []).map((o) => ({
     user_id: s.user.id, project_id: p.id, kind: o.kind, title: o.title, body: o.body,
+    ...(o.created_at ? { created_at: o.created_at } : {}),
   }));
   for (let i = 0; i < outs.length; i += 25) {
     const { error: e } = await db.from('vc_outputs').insert(outs.slice(i, i + 25));

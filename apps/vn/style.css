@@ -164,23 +164,30 @@ button.google {
 }
 .list-head input:focus { border-color: var(--line); outline: none; }
 
-/* You should not have to remember that you are looking at the bin. The pane
- * itself changes colour and says so in words — colour alone is not a label. */
-.list.trash-mode { background: var(--paper-3); }
+/* You should not have to remember that you are looking at the bin. Four
+ * signals, none of them colour alone: the pane is tinted and carries a mark
+ * strip down its edge, a banner names the place and counts what is in it, the
+ * button below is filled in, and the empty pane says "the recycle bin" too. */
+.list.trash-mode {
+  background: var(--paper-3);
+  box-shadow: inset 3px 0 0 var(--mark);
+}
 .list.trash-mode .list-head { border-bottom-color: var(--line-strong); }
 .list.trash-mode .list-head input { background: var(--paper-2); }
 .trash-banner {
-  margin: 0.45rem 0.5rem 0.15rem; padding: 0.34rem 0.5rem;
-  font-size: 0.72rem; line-height: 1.35; color: var(--ink-2);
-  background: var(--paper-2); border-radius: 6px;
-  border-left: 3px solid var(--mark);
+  display: block;
+  margin: 0.5rem 0.5rem 0.3rem; padding: 0.4rem 0.55rem;
+  font-size: 0.74rem; line-height: 1.35; color: var(--ink-2);
+  background: var(--paper); border-radius: 6px;
+  border: 1px solid var(--mark);
 }
-.trash-banner span {
-  font-weight: 600; letter-spacing: 0.02em;
-  text-transform: uppercase; font-size: 0.68rem; color: var(--ink);
+.trash-banner .trash-banner-title {
+  display: block;
+  font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; font-size: 0.72rem; color: var(--mark);
 }
+.trash-banner .trash-banner-note { display: block; margin-top: 0.1rem; }
 .list.trash-mode .list-items { opacity: 0.96; }
-.list.trash-mode button.trash.active { background: var(--paper-2); }
 
 .list-items { list-style: none; margin: 0; padding: 0.25rem; overflow-y: auto; flex: 1; }
 .list-items li { margin: 0 0 1px; }
@@ -332,18 +339,36 @@ textarea.body:focus { outline: none; }
   padding: 0.4rem;
   background: var(--paper-2);
 }
+/* An open bin has to be obvious at a glance: the button under the list is
+ * filled with the accent, keeps its word, and shows how many are in there. */
 button.trash {
   display: flex; align-items: center; gap: 0.45rem;
-  flex: 1 1 auto; min-width: 0; border: 1px solid transparent;
-  background: transparent; border-radius: var(--radius);
+  flex: 1 1 auto; min-width: 0; cursor: pointer;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--paper); color: var(--ink-2);
   padding: 0.45rem 0.5rem;
-  color: var(--ink-2); font-size: 0.82rem;
-  text-align: left;
+  font-size: 0.82rem; text-align: left;
 }
-button.trash:hover { background: var(--paper-3); color: var(--ink); }
+button.trash:hover { background: var(--paper-3); color: var(--ink); border-color: var(--line-strong); }
 button.trash.active {
-  background: var(--paper-3); color: var(--ink);
-  border-color: var(--line-strong);
+  background: var(--mark); color: var(--paper); border-color: var(--mark);
+  font-weight: 600;
+}
+button.trash.active:hover { background: var(--mark); color: var(--paper); }
+.trash-icon { font-size: 0.98rem; line-height: 1; }
+.trash-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trash-count {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem; color: var(--ink-3);
+  min-width: 1.1rem; text-align: right;
+}
+.trash-count:not(:empty) {
+  background: var(--paper-3); border-radius: 999px;
+  padding: 0.05rem 0.4rem;
+}
+button.trash.active .trash-count {
+  background: var(--paper); color: var(--mark); font-weight: 700;
 }
 
 /* the bin can be emptied, but never by accident: the button is quiet, the
@@ -358,26 +383,16 @@ button.trash.active {
 .bin-empty:hover, .bin-empty:focus-visible {
   color: var(--ink); border-style: solid; background: var(--paper-3);
 }
-.list-items button.row-purge {
-  position: absolute; right: 0.15rem; top: 50%; transform: translateY(-50%);
-  z-index: 1; display: grid; place-items: center;
-  width: 1.35rem; height: 1.35rem; padding: 0; line-height: 1;
-  font-size: 0.7rem; border-radius: 6px;
-  background: transparent; color: var(--ink-3);
-  border: 1px solid transparent; cursor: pointer;
+
+/* the bin is a drop target in both directions; the label says which one */
+button.trash.drop-active,
+button.trash.drop-active:hover {
+  background: var(--paper-3);
+  color: var(--mark);
+  border-color: var(--mark);
+  box-shadow: inset 0 0 0 1px var(--mark);
 }
-.tree-row.has-purge > button[data-id] { padding-right: 1.9rem; }
-.row-purge:hover, .row-purge:focus-visible {
-  color: var(--ink); background: var(--paper-3); border-color: var(--line-strong);
-}
-.trash-icon { font-size: 0.98rem; line-height: 1; }
-.trash-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.trash-count {
-  font-variant-numeric: tabular-nums;
-  font-size: 0.72rem; color: var(--ink-3);
-  min-width: 1.1rem; text-align: right;
-}
-button.trash.active .trash-count { color: var(--mark); }
+button.trash.drop-active .trash-count { color: var(--mark); }
 
 /* a note in the bin is read-only; its action button becomes "restore" */
 button.restore { color: var(--mark); }
@@ -501,41 +516,6 @@ html.touch-dragging .list, html.touch-dragging .tree-row { user-select: none; -w
   font-size: 0.72rem; color: var(--ink-3); line-height: 1.3;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-
-/* the recycle-bin toggle gets a border so it reads as a separate place */
-button.trash {
-  display: flex; align-items: center; gap: 0.4rem;
-  width: 100%; background: none; cursor: pointer;
-  border: 1px solid transparent; border-radius: var(--radius);
-  padding: 0.45rem 0.5rem;
-  color: var(--ink-2); font-size: 0.82rem;
-  text-align: left;
-}
-button.trash:hover { background: var(--paper-3); color: var(--ink); }
-button.trash.active {
-  background: var(--paper-3); color: var(--ink);
-  border-color: var(--line-strong);
-}
-.trash-icon { font-size: 0.98rem; line-height: 1; }
-.trash-label { flex: 1; }
-.trash-count {
-  font-size: 0.72rem; color: var(--ink-3);
-  font-variant-numeric: tabular-nums;
-}
-.trash-count:not(:empty) {
-  background: var(--paper-3); border-radius: 999px;
-  padding: 0.05rem 0.4rem;
-}
-
-/* the bin is a drop target in both directions; the label says which one */
-button.trash.drop-active,
-button.trash.drop-active:hover {
-  background: var(--paper-3);
-  color: var(--mark);
-  border-color: var(--mark);
-  box-shadow: inset 0 0 0 1px var(--mark);
-}
-button.trash.drop-active .trash-count { color: var(--mark); }
 
 /* ── modes ────────────────────────────────────────────────────────── */
 .modes {

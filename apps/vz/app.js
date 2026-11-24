@@ -198,9 +198,26 @@ function renderRail() {
   }
   $('#proj-none').hidden = S.projects.length > 0;
   $('#btn-new').hidden = !!S.guest;
+  paintProjectsBin();
+}
+
+/* The bin button says what it is and where it goes, in words and in colour:
+ * filled when the bin is open, with the count in it. */
+function paintProjectsBin() {
   const count = S.bin.length;
   $('#bin-rail').hidden = !S.project || !!S.guest;
   $('#bin-count').textContent = count ? String(count) : '';
+  const btn = $('#btn-bin');
+  if (btn) {
+    const open = !$('#binview').hidden;
+    btn.setAttribute('aria-pressed', String(open));
+    $('.bin-label', btn).textContent = open ? 'back to the sheet' : 'recycle bin';
+    btn.title = open ? 'close the recycle bin and go back to the sheet'
+      : count ? `open the recycle bin (${count})` : 'the recycle bin is empty';
+    $('#bin-banner-note').textContent = count
+      ? `${count} key${count === 1 ? '' : 's'} in the bin — restore one, or empty it for good`
+      : 'nothing in it — a removed key waits here';
+  }
 }
 
 $('#proj-list').addEventListener('click', async (e) => {
@@ -801,6 +818,7 @@ function renderBin() {
   $('#btn-empty').hidden = S.role !== 'owner' || !S.bin.length;
   $('#btn-bin').classList.add('on');
   $('#bin-count').textContent = S.bin.length ? String(S.bin.length) : '';
+  paintProjectsBin();
   msg($('#bin-msg'), '');
 }
 
@@ -810,12 +828,18 @@ function when(iso) {
   return d.toLocaleDateString(undefined, { day: '2-digit', month: 'short' });
 }
 
-$('#btn-bin').onclick = openBin;
+/* One button, both directions: while the bin is open it reads "back to the
+ * sheet", so pressing it must go back rather than open the same bin again. */
+$('#btn-bin').onclick = () => {
+  if (!$('#binview').hidden) { $('#btn-bin-back').click(); return; }
+  openBin();
+};
 $('#btn-bin-back').onclick = () => {
   $('#btn-bin').classList.remove('on');
   $('#binview').hidden = true;
   $('#spec').hidden = false;
   renderSheet();
+  paintProjectsBin();
 };
 
 $('#bin-list').addEventListener('click', async (e) => {
@@ -956,9 +980,18 @@ wireSettings();
 /* A dictionary is a list of pairs; the model gets the open one and a slice of
  * the rest, so "what do we call this elsewhere" is answerable. */
 function dockContext() {
-  if (!S.project) return '';
+  if (!S.project) {
+    return {
+      text: 'vpl · vz, a dictionary. No project is open. One project is one '
+        + 'dictionary of keys and values: the key is the identity, the value is plain text.',
+      selection: '',
+    };
+  }
   const open = S.pairs.find((r) => r.id === S.openId);
-  const parts = [`Dictionary: ${S.project.name || S.project.title || 'untitled'}`];
+  const parts = [
+    'vpl · vz, a dictionary: the key is the identity, the value is plain text.',
+    `Dictionary: ${S.project.name || S.project.title || 'untitled'}`,
+  ];
   if (open) parts.push(`Open pair:\n${open.key}: ${open.value || '(no value yet)'}`);
   const near = S.pairs.slice(0, 30).map((r) => `${r.key}: ${String(r.value || '').slice(0, 80)}`);
   if (near.length) parts.push('In the sheet:\n' + near.join('\n'));

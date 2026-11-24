@@ -196,8 +196,21 @@
           <button class="primary" type="submit">add</button>
           <button id="notes-ai" class="ghost w-only" type="button" title="let the model add a few">add with AI</button>
         </form>
+        <div id="bin-banner" class="bin-banner" hidden>
+          <span class="bin-banner-title">recycle bin</span>
+          <span id="bin-banner-note" class="bin-banner-note">nothing in it</span>
+        </div>
         <ul id="notes" class="notes"></ul>
         <p id="notes-none" class="notes-none muted">nothing on the wall yet.</p>
+        <div class="bin-foot">
+          <button id="btn-bin" class="bin-btn" type="button" aria-pressed="false"
+                  title="open the recycle bin">
+            <span class="bin-icon" aria-hidden="true">♲</span>
+            <span class="bin-label">recycle bin</span>
+            <span id="bin-count" class="bin-count"></span>
+          </button>
+          <button id="btn-bin-empty" class="bin-empty" type="button" hidden>empty all</button>
+        </div>
         <div class="panel-foot">
           <span id="notes-msg" class="msg"></span>
           <button class="ghost next" data-next="exploration" type="button">next stop: explore →</button>

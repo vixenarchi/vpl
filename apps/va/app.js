@@ -29,6 +29,8 @@ const S = {
   projects: [],
   project: null,
   artifacts: [],
+  bin: [],             // inputs in the recycle bin
+  binMode: false,
   outputs: [],
   jobs: [],
   role: null,          // owner | edit | view | null
@@ -288,6 +290,7 @@ async function openJob(id) {
   if (!S.project) return renderWelcome();
   localStorage.setItem('va.last', id);
   S.artifacts = await db.listArtifacts(id);
+  S.bin = await db.listArtifacts(id, { bin: true }).catch(() => []);
   S.outputs = await db.listOutputs(id);
   S.jobs = await db.listJobs(id).catch(() => []);
   S.role = await db.roleOn(S.project);
@@ -374,6 +377,15 @@ $('#template').addEventListener('change', async () => {
 function renderArtifacts() {
   const list = $('#artifacts');
   list.innerHTML = '';
+  list.classList.toggle('bin-mode', S.binMode);
+  if (S.binMode) {
+    for (const a of S.bin) list.insertAdjacentHTML('beforeend', binRowHTML(a));
+    $('#art-none').hidden = S.bin.length > 0;
+    $('#art-none').textContent = S.bin.length ? '' : 'the recycle bin is empty — a removed input waits here';
+    $('#art-count').textContent = S.bin.length ? String(S.bin.length) : '';
+    paintBin();
+    return;
+  }
   for (const a of S.artifacts) {
     const li = document.createElement('li');
     li.className = 'art';
@@ -391,7 +403,84 @@ function renderArtifacts() {
     list.append(li);
   }
   $('#art-none').hidden = S.artifacts.length > 0;
+  $('#art-none').textContent = 'nothing to read yet. paste a text or bring a file.';
   $('#art-count').textContent = S.artifacts.length ? `${S.artifacts.length}` : '';
+  paintBin();
+}
+
+/* ── the recycle bin ───────────────────────────────────────────────
+ * Four signals, none of them colour alone: the banner names the place and
+ * counts it, each list is tinted with a mark strip, the button under the lists
+ * is filled, and every row says *restore* instead of the usual tools. */
+function paintBin() {
+  const n = S.bin.length;
+  const btn = $('#btn-bin');
+  btn.setAttribute('aria-pressed', String(S.binMode));
+  btn.title = S.binMode ? 'close the recycle bin and go back to the inputs'
+    : n ? `open the recycle bin (${n})` : 'the recycle bin is empty';
+  $('.bin-label', btn).textContent = S.binMode ? 'back to the inputs' : 'recycle bin';
+  $('#bin-count').textContent = n ? String(n) : '';
+  $('#bin-banner').hidden = !S.binMode;
+  $('#bin-banner-note').textContent = n
+    ? `${n} input${n === 1 ? '' : 's'} in the bin — restore one, or delete it for good`
+    : 'nothing in it — a removed input waits here';
+  $('#btn-bin-empty').hidden = !S.binMode || !n;
+}
+
+function binRowHTML(a) {
+  const n = engine.countWords(a.text);
+  const line = a.file_name
+    ? `${a.file_name} · ${fmtSize(a.file_size)}`
+    : n ? `${n.toLocaleString()} words` : 'no text';
+  return `<li class="art in-bin" data-id="${a.id}">
+      <span class="kind">${esc(a.kind)}</span>
+      <span class="what"><span class="name">${esc(a.title || 'untitled input')}</span>
+        <span class="line">${esc(line)}</span></span>
+      <span class="tools">
+        <button class="row-restore" type="button" data-back title="put it back">restore</button>
+        <button class="del" type="button" data-purge title="delete it for good">✕</button>
+      </span>
+    </li>`;
+}
+
+async function toggleBin() {
+  if (!S.project) return;
+  S.binMode = !S.binMode;
+  if (S.binMode) {
+    try { S.bin = await db.listArtifacts(S.project.id, { bin: true }); } catch { S.bin = []; }
+  }
+  renderArtifacts();
+  paintBin();
+}
+
+async function restoreInput(a) {
+  try {
+    await db.restoreArtifact(a.id);
+    S.bin = S.bin.filter((x) => x.id !== a.id);
+    S.artifacts = [...S.artifacts, { ...a, deleted_at: null }];
+    renderArtifacts();
+    paintSpec();
+    toast('“' + (a.title || 'the input') + '” is back');
+  } catch (err) { toast('could not restore it: ' + err.message); }
+}
+
+async function purgeInput(a) {
+  try {
+    await db.deleteArtifact(a.id);
+    S.bin = S.bin.filter((x) => x.id !== a.id);
+    renderArtifacts();
+  } catch (err) { toast('could not delete it: ' + err.message); }
+}
+
+async function emptyBin() {
+  if (!S.bin.length) return;
+  const n = S.bin.length;
+  try {
+    await db.emptyBin(S.project.id);
+    S.bin = [];
+    renderArtifacts();
+    toast(`${n} input${n === 1 ? '' : 's'} deleted for good`);
+  } catch (err) { toast(err.message); }
 }
 
 function fmtSize(n) {
@@ -404,15 +493,22 @@ function fmtSize(n) {
 $('#artifacts').addEventListener('click', async (e) => {
   const li = e.target.closest('.art');
   if (!li) return;
-  const a = S.artifacts.find((x) => x.id === li.dataset.id);
+  const a = S.binMode
+    ? S.bin.find((x) => x.id === li.dataset.id)
+    : S.artifacts.find((x) => x.id === li.dataset.id);
   if (!a) return;
 
+  if (e.target.closest('[data-back]')) return restoreInput(a);
+  if (e.target.closest('[data-purge]')) return purgeInput(a);
+
   if (e.target.closest('.del')) {
-    if (!confirm(`remove “${a.title || 'this input'}” from this job?`)) return;
-    await db.deleteArtifact(a.id);
+    /* ✕ removes it from the job, not from the world: the words go to the bin */
+    await db.binArtifact(a.id);
     S.artifacts = S.artifacts.filter((x) => x.id !== a.id);
+    S.bin = [{ ...a, deleted_at: new Date().toISOString() }, ...S.bin];
     renderArtifacts();
     paintSpec();
+    toast('“' + (a.title || 'the input') + '” is in the recycle bin');
     return;
   }
   if (e.target.closest('.dl')) {
@@ -441,6 +537,9 @@ function openArtifact(a) {
   $('#art-dialog').showModal();
   setTimeout(() => (a ? $('#art-text') : $('#art-title')).focus(), 60);
 }
+
+$('#btn-bin').onclick = toggleBin;
+$('#btn-bin-empty').onclick = emptyBin;
 
 $('#btn-add-text').onclick = () => openArtifact(null);
 $('#art-x').onclick = () => $('#art-dialog').close();
@@ -474,9 +573,10 @@ $('#art-save').onclick = async () => {
 $('#art-del').onclick = async () => {
   const d = S.artDraft;
   if (!d?.id) return;
-  if (!confirm(`remove “${d.title || 'this input'}” from this job?`)) return;
   try {
-    await db.deleteArtifact(d.id);
+    await db.binArtifact(d.id);
+    const gone = S.artifacts.find((x) => x.id === d.id);
+    if (gone) S.bin = [{ ...gone, deleted_at: new Date().toISOString() }, ...S.bin];
     S.artifacts = S.artifacts.filter((x) => x.id !== d.id);
     $('#art-dialog').close();
     renderArtifacts();

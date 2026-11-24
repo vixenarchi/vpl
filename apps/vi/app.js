@@ -29,6 +29,8 @@ const S = {
   project: null,
   ideas: [],
   stage: 'ideation',
+  bin: [],         // notes in the recycle bin — the same rows, deleted
+  showingBin: false,
   pick: null,      // idea id being explored
   facts: {},       // idea id → the search results this session saw
   busy: false,
@@ -166,7 +168,10 @@ function wireChrome() {
   $$('.band').forEach((b) => (b.onclick = () => setStage(b.dataset.stage)));
   $$('[data-next]').forEach((b) => (b.onclick = () => setStage(b.dataset.next)));
 
-  $('#note-form').addEventListener('submit', (e) => { e.preventDefault(); addNote(); });
+  $('#btn-bin').onclick = toggleBin;
+$('#btn-bin-empty').onclick = emptyBin;
+
+$('#note-form').addEventListener('submit', (e) => { e.preventDefault(); addNote(); });
   $('#notes-ai').onclick = notesWithAi;
   $('#ctx-save').onclick = saveContext;
   $('#ctx-formulate').onclick = formulateContext;
@@ -306,6 +311,7 @@ function defaultStage() {
 /* ── ideas ────────────────────────────────────────────────────────── */
 async function loadIdeas() {
   S.ideas = await db.listIdeas(S.project.id);
+  S.bin = canWrite() ? await db.listIdeas(S.project.id, { bin: true }).catch(() => []) : [];
   S.pick = (S.ideas.find((i) => i.id === (S.pick || ''))
     || S.ideas.find((i) => i.stage === 'selected')
     || S.ideas.find((i) => i.exploration)
@@ -528,21 +534,91 @@ async function formulateContext() {
 function paintNotes() {
   const ul = $('#notes');
   ul.innerHTML = '';
-  const list = working();
+  ul.classList.toggle('bin-mode', S.showingBin);
+  const list = S.showingBin ? S.bin : working();
+  paintBin();
   list.forEach((n, i) => {
     const li = document.createElement('li');
     li.className = 'note';
     li.dataset.color = n.color || COLORS[i % COLORS.length];
     li.style.setProperty('--tilt', TILT[i % TILT.length]);
+    if (S.showingBin) {
+      li.classList.add('in-bin');
+      li.innerHTML = `<span>${esc(n.text)}</span>
+        <button class="row-restore" type="button" title="put it back on the wall">restore</button>
+        <button class="kill" type="button" title="delete it for good">✕</button>`;
+      li.querySelector('.row-restore').onclick = () => restoreNote(n);
+      li.querySelector('.kill').onclick = () => purgeNote(n);
+      ul.append(li);
+      return;
+    }
     li.innerHTML = `<span>${esc(n.text)}</span>
       ${n.stage === 'selected' ? '<span class="note-flag">chosen</span>' : ''}
       <button class="go" type="button" title="explore this one">explore</button>
-      <button class="kill o-only" type="button" title="remove this note">✕</button>`;
+      <button class="kill o-only" type="button" title="move this note to the recycle bin">✕</button>`;
     li.querySelector('.kill').onclick = () => killNote(n);
     li.querySelector('.go').onclick = () => { S.pick = n.id; setStage('exploration'); paintExplore(); };
     ul.append(li);
   });
   $('#notes-none').hidden = list.length > 0;
+  $('#notes-none').textContent = S.showingBin
+    ? (S.bin.length ? '' : 'the recycle bin is empty — a deleted note waits here')
+    : 'nothing on the wall yet.';
+}
+
+/* The bin is one button under the wall: it opens, it says how many are inside,
+ * and while it is open the wall is a different place in four ways at once. */
+function paintBin() {
+  const btn = $('#btn-bin');
+  if (!btn) return;
+  const n = S.bin.length;
+  btn.setAttribute('aria-pressed', String(S.showingBin));
+  btn.classList.toggle('bin-on', S.showingBin);
+  btn.title = S.showingBin ? 'close the recycle bin and go back to the wall'
+    : n ? `open the recycle bin (${n})` : 'the recycle bin is empty';
+  $('.bin-label', btn).textContent = S.showingBin ? 'back to the wall' : 'recycle bin';
+  $('#bin-count').textContent = n ? String(n) : '';
+  $('#bin-banner').hidden = !S.showingBin;
+  $('#bin-banner-note').textContent = n
+    ? `${n} note${n === 1 ? '' : 's'} in the bin — restore one, or delete it for good`
+    : 'nothing in it — a deleted note waits here';
+  $('#btn-bin-empty').hidden = !S.showingBin || !n;
+}
+
+function toggleBin() {
+  if (!canWrite()) return;
+  S.showingBin = !S.showingBin;
+  S.stage = 'ideation';
+  paintAll();
+}
+
+async function restoreNote(n) {
+  try {
+    await db.restoreIdea(n.id);
+    S.ideas.push({ ...n, deleted_at: null });
+    S.bin = S.bin.filter((x) => x.id !== n.id);
+    paintAll();
+    say($('#notes-msg'), `“${n.text.slice(0, 24)}…” is back on the wall`, 'ok');
+  } catch (e) { say($('#notes-msg'), e.message, 'bad'); }
+}
+
+async function purgeNote(n) {
+  try {
+    await db.deleteIdea(n.id);
+    S.bin = S.bin.filter((x) => x.id !== n.id);
+    paintAll();
+  } catch (e) { say($('#notes-msg'), e.message, 'bad'); }
+}
+
+async function emptyBin() {
+  if (!S.bin.length) return;
+  const n = S.bin.length;
+  try {
+    await db.emptyBin(S.project.id);
+    S.bin = [];
+    paintAll();
+    say($('#notes-msg'), `${n} note${n === 1 ? '' : 's'} deleted for good`, 'ok');
+  } catch (e) { say($('#notes-msg'), e.message, 'bad'); }
 }
 
 async function addNote() {
@@ -562,13 +638,17 @@ async function addNote() {
   } catch (e) { say(msg, e.message, 'bad'); }
 }
 
+/* ✕ is not "delete": the note goes to the bin, with its words, and the message
+ * says where it went — a person should never wonder what just happened. */
 async function killNote(n) {
-  if (!isOwner()) return;
+  if (!canWrite()) return;
   try {
-    await db.deleteIdea(n.id);
+    await db.binIdea(n.id);
     S.ideas = S.ideas.filter((x) => x.id !== n.id);
+    S.bin = [{ ...n, deleted_at: new Date().toISOString() }, ...S.bin];
     if (S.pick === n.id) S.pick = null;
     paintAll();
+    say($('#notes-msg'), `“${n.text.slice(0, 24)}…” is in the recycle bin`, 'ok');
   } catch (e) { say($('#notes-msg'), e.message, 'bad'); }
 }
 
@@ -1215,9 +1295,20 @@ async function useFromDock(text) {
 /* What the model is given: the wall, and the idea in front of you. Nothing
  * scraped from the page — a card is text, and this app knows which one. */
 function dockContext() {
-  if (!S.project) return '';
+  /* With no wall open the dock still gets a place to stand: what this app is.
+   * An assistant handed an empty string can only ask a question back. */
+  if (!S.project) {
+    return {
+      text: 'vpl · vi, an idea funnel. No wall is open. A wall is a pile of short '
+        + 'notes; one is picked, then explored into something worth building.',
+      selection: '',
+    };
+  }
   const pick = S.ideas.find((i) => i.id === S.pick);
-  const parts = [`Project: ${S.project.name || S.project.title || 'untitled'}`];
+  const parts = [
+    'vpl · vi, an idea funnel: short notes on a wall, one picked and explored.',
+    `Project: ${S.project.name || S.project.title || 'untitled'}`,
+  ];
   if (pick) parts.push(`The idea in front of you: ${pick.text}`);
   const wall = S.ideas.slice(0, 40).map((i) => '- ' + String(i.text || '').replace(/\s+/g, ' ').trim());
   if (wall.length) parts.push('On the wall:\n' + wall.join('\n'));

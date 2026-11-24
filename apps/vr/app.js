@@ -29,6 +29,8 @@ const S = {
   projects: [],
   project: null,
   reqs: [],
+  bin: [],          // rows in the recycle bin
+  binMode: false,
   terms: [],
   role: 'owner',     // owner | edit | view
   guest: null,       // a public link: no session, no writes
@@ -312,6 +314,10 @@ function inTheme(r) {
 
 function listed() {
   const q = S.q.trim().toLowerCase();
+  if (S.binMode) {
+    return S.bin.filter((r) => !q
+      || [r.statement, r.title, r.ref, r.theme].some((v) => (v || '').toLowerCase().includes(q)));
+  }
   return S.reqs.filter((r) => {
     if (!inTheme(r)) return false;
     if (!q) return true;
@@ -341,6 +347,8 @@ function paintSheet() {
   const start = (S.page - 1) * S.per;
   $('#rows').innerHTML = rows.slice(start, start + S.per).map(rowHTML).join('');
   $('#sheet').dataset.theme = S.themeId ? '1' : '0';
+  $('#sheet').classList.toggle('bin-mode', S.binMode);
+  paintBin();
   paintSort();
   paintPager(rows.length, pages);
   paintMeta(rows.length);
@@ -350,6 +358,12 @@ function paintSheet() {
   /* an empty theme is a place too, and it has to say so */
   const none = $('#sheet-none');
   none.hidden = rows.length > 0;
+  if (S.binMode) {
+    none.textContent = S.bin.length
+      ? 'nothing matches that.'
+      : 'the recycle bin is empty — a deleted row waits here.';
+    return;
+  }
   if (!S.reqs.length) none.textContent = 'no rows yet. the first one goes in the box above.';
   else if (S.q) none.textContent = 'nothing matches that.';
   else if (S.themeId) none.textContent = 'nothing here yet — type below, it goes into ' + themePath(S.themeId) + '.';
@@ -367,6 +381,19 @@ function chipHTML(axis, value, extra = '') {
  * writes what has to be true and clicks how hard it is and where it stands. */
 function rowHTML(r) {
   const text = (r.statement || r.title || '').trim();
+  if (S.binMode) {
+    return `
+    <tr data-id="${r.id}" data-ref="${esc(r.ref || '')}" class="in-bin">
+      <td class="c-req"><div class="req-open">${esc(text) || '<span class="muted">no sentence</span>'}</div></td>
+      <td class="c-strength">${esc(r.strength || '')}</td>
+      <td class="c-status">${esc(r.status || '')}</td>
+      <td class="c-theme">${esc(themePath(r.theme_id) || r.theme) || '<span class="muted">—</span>'}</td>
+      <td class="c-tools"><div class="row-tools">
+        <button type="button" class="row-restore" data-back="${r.id}" title="put it back on the sheet">restore</button>
+        <button type="button" data-purge="${r.id}" title="delete it for good" aria-label="delete for good">✕</button>
+      </div></td>
+    </tr>`;
+  }
   const open = S.open === r.id;
   return `
     <tr data-id="${r.id}" data-ref="${esc(r.ref || '')}" class="${open ? 'open' : ''}">
@@ -736,17 +763,80 @@ async function moveRow(id, dir) {
   }
 }
 
+/* ✕ is not "delete": the row goes to the bin with its name and its sentence. */
 async function deleteRow(id) {
-  if (!isOwner()) return;
+  if (!canWrite()) return;
   const r = S.reqs.find((x) => x.id === id);
   if (!r) return;
-  if (!confirm(`Delete ${r.ref}? The name is not reused.`)) return;
   try {
-    await db.deleteReq(id);
+    await db.binReq(id);
     S.reqs = S.reqs.filter((x) => x.id !== id);
+    S.bin = [{ ...r, deleted_at: new Date().toISOString() }, ...S.bin];
     if (S.open === id) S.open = null;
     paintSheet();
-  } catch (e) { console.error(e); }
+    flash(`${r.ref} is in the recycle bin`);
+  } catch (e) { console.error(e); flash('could not move it: ' + e.message); }
+}
+
+async function restoreRow(id) {
+  const r = S.bin.find((x) => x.id === id);
+  if (!r || !canWrite()) return;
+  try {
+    await db.restoreReq(id);
+    S.bin = S.bin.filter((x) => x.id !== id);
+    S.reqs = [...S.reqs, { ...r, deleted_at: null }].sort((a, b) => (a.pos ?? 0) - (b.pos ?? 0));
+    paintSheet();
+    flash(`${r.ref} is back on the sheet`);
+  } catch (e) { flash('could not restore it: ' + e.message); }
+}
+
+async function purgeRow(id) {
+  const r = S.bin.find((x) => x.id === id);
+  if (!r || !canWrite()) return;
+  if (!confirm(`Delete ${r.ref} for good? The name is not reused.`)) return;
+  try {
+    await db.deleteReq(id);
+    S.bin = S.bin.filter((x) => x.id !== id);
+    paintSheet();
+  } catch (e) { flash('could not delete it: ' + e.message); }
+}
+
+function paintBin() {
+  const btn = $('#btn-bin');
+  const n = S.bin.length;
+  btn.setAttribute('aria-pressed', String(S.binMode));
+  btn.title = S.binMode ? 'close the recycle bin and go back to the sheet'
+    : n ? `open the recycle bin (${n})` : 'the recycle bin is empty';
+  btn.querySelector('.bin-label').textContent = S.binMode ? 'back to the sheet' : 'recycle bin';
+  $('#bin-count').textContent = n ? String(n) : '';
+  $('#bin-banner').hidden = !S.binMode;
+  $('#bin-banner-note').textContent = n
+    ? `${n} row${n === 1 ? '' : 's'} in the bin — restore one, or delete it for good`
+    : 'nothing in it — a deleted row waits here';
+  $('#btn-bin-empty').hidden = !S.binMode || !n;
+}
+
+async function emptyBin() {
+  if (!S.bin.length) return;
+  const n = S.bin.length;
+  if (!confirm(`Delete ${n} row${n === 1 ? '' : 's'} for good?`)) return;
+  try {
+    await db.emptyBin(S.project.id);
+    S.bin = [];
+    paintSheet();
+    flash(`${n} row${n === 1 ? '' : 's'} deleted for good`);
+  } catch (e) { flash(e.message); }
+}
+
+async function toggleBin() {
+  if (!S.project) return;
+  S.binMode = !S.binMode;
+  S.open = null;
+  S.page = 1;
+  if (S.binMode) {
+    try { S.bin = await db.listReqs(S.project.id, { bin: true }); } catch { S.bin = []; }
+  }
+  paintSheet();
 }
 
 /* ── the brief ────────────────────────────────────────────────────── */
@@ -1168,7 +1258,10 @@ async function suggestTerms() {
 /* ── paste from a spreadsheet ─────────────────────────────────────── */
 function wirePaste() {
   const dlg = $('#paste-dialog');
-  $('#btn-paste').onclick = () => { $('#paste-text').value = ''; say($('#paste-msg'), ''); dlg.showModal(); };
+  $('#btn-bin').onclick = toggleBin;
+$('#btn-bin-empty').onclick = emptyBin;
+
+$('#btn-paste').onclick = () => { $('#paste-text').value = ''; say($('#paste-msg'), ''); dlg.showModal(); };
   $('#paste-x').onclick = () => dlg.close();
   $('#paste-x2').onclick = () => dlg.close();
   $('#paste-text').addEventListener('input', () => {
@@ -1453,6 +1546,11 @@ function wireChrome() {
       return;
     }
     const id = tr.dataset.id;
+    const back = e.target.closest('button[data-back]');
+    if (back) return restoreRow(id);
+    const purge = e.target.closest('button[data-purge]');
+    if (purge) return purgeRow(id);
+    if (S.binMode) return;
     if (e.target.closest('.c-strength .chip-value')) return cycleStrength(id);
     if (e.target.closest('.c-status .chip-value')) return cycleStatus(id);
     if (e.target.closest('.req-open')) { S.open = S.open === id ? null : id; return paintSheet(); }

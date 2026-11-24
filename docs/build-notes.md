@@ -1269,3 +1269,61 @@ Run it dry to see what it would do, `sudo ./tools/swap-tune.sh --apply` to do it
 The lesson, again in the same shape as the rest of this file: swap tells you
 what happened, not what is happening. Read `/proc/meminfo`, `ps` and the swap
 file together before changing a number.
+
+## 2026-11 · the bin that only vn had
+
+The complaint was exact: "the recycle bin exists in vn and nowhere else". It was
+true, and it had been true since vi. Deletes in the other six apps were
+`delete()`, and `delete()` has no undo — a person who pressed ✕ on a requirement
+lost the paragraph they had typed. Nothing in the suite was more expensive per
+pixel.
+
+So the bin became a column, not a feature: `deleted_at timestamptz` on the
+seven tables that can lose a row, `listX(projectId, { bin })` as one query with
+`is null` or `not is null`, and one block of CSS in `tokens.css` for the
+banner, the filled button, the tinted pane and the `restore` word. vn already
+had it; vz already had a bin *view*; the rest were built to the same shape
+(`docs/bin.md`).
+
+The first version was too quiet. In vn the open bin was a slightly different
+shade of the same paper, which is a signal that only reads if you already know.
+Now it is four signals at once — a filled button, a banner with a count in
+words, a tinted pane and a `--mark` strip down the edge — and three of them
+survive a black-and-white screenshot. The label on the button also stopped
+saying "recycle bin — close" (it truncated in a 240 px rail) and started saying
+where it goes: *back to notes*.
+
+What the work turned up, in the order it bit:
+
+- **`vr_reqs` uses `pos`, not `position`.** The migration failed on the first
+  push; a partial index named a column that does not exist.
+- **The share functions did not know about the bin.** A guest could read a
+  requirement the owner had set aside. Two migrations redefined all four
+  (`vr`, `vd`, `vc`, `va`) with `deleted_at is null`.
+- **A shared document showed the first draft.** The share functions aggregated
+  outputs oldest-first while the desk lists newest-first, so a reader opened the
+  version nobody is working on. Latent for months; the bin work made it visible
+  because the copy flow re-ordered the versions.
+- **A copy flattened every version into one instant.** `copyToMe` inserted all
+  outputs in one statement, all with the same `now()`. "The newest document" is
+  a fact only if the timestamps differ, so a copy now keeps each version's own.
+- **The bin is a mode, not an address.** vn's router reset `showingTrash` but
+  left the tint and the edge behind — a list of live notes wearing the bin's
+  clothes. One `paintTrashFrame()` now owns all four signals, and any route
+  change goes through it.
+- **`replaceState` fires no `hashchange`.** Telling the URL and not the router
+  turned the next click on that same note into a no-op, because the router
+  believed it was already there.
+- **A button that says "back" must go back.** vz's bin button still called
+  `openBin` while it read "back to the sheet", so pressing it re-opened the bin.
+- **vd/vc/va each carried two copies of the bin markup** and vd and va had two
+  `paintBin` declarations. The second copy was invisible until `#btn-bin`
+  resolved to two elements and the test said so.
+- **vc's dock brief had a `$` missing** — `'the document on the desk ({o.kind})'`
+  went to the model literally, quotes and all.
+
+The test is `bin-check.mjs`, one file, seven apps, and it is deliberately about
+signals rather than internals: `aria-pressed` **and** a changed word **and** a
+computed background that is not the paper's **and** a banner with a number in
+it. A bin that is only a different shade passes none of those, which is the
+point.

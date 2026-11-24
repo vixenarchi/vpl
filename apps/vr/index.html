@@ -133,6 +133,11 @@
         </div>
       </div>
 
+      <div id="bin-banner" class="bin-banner" hidden>
+        <span class="bin-banner-title">recycle bin</span>
+        <span id="bin-banner-note" class="bin-banner-note">nothing in it</span>
+      </div>
+
       <table id="sheet" class="sheet">
         <thead>
           <tr>
@@ -154,6 +159,15 @@
           </tr>
         </tfoot>
       </table>
+      <div class="bin-foot">
+        <button id="btn-bin" class="bin-btn" type="button" aria-pressed="false"
+                title="open the recycle bin">
+          <span class="bin-icon" aria-hidden="true">♲</span>
+          <span class="bin-label">recycle bin</span>
+          <span id="bin-count" class="bin-count"></span>
+        </button>
+        <button id="btn-bin-empty" class="bin-empty" type="button" hidden>empty all</button>
+      </div>
       <div class="pager-line">
         <span class="grow"></span>
         <span id="sheet-none" class="muted" hidden>no rows yet. the first one goes in the box above.</span>
