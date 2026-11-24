@@ -1221,3 +1221,25 @@ Two bugs came out of running the suites that had been quietly broken since the
 settings rewrite: the dialog painted its account line once at mount and never
 again (`open()` now repaints), and `key-check` was still asking for `#ai-url` /
 `#ai-key`, ids that no longer exist — a test that cannot find its own controls.
+
+## 2026-11-24 (later still) — sharing reaches a person, not an address you remembered
+
+A note was written and shared with an address that has an account, the note
+said *shared*, and the assistant never saw it: the grant named a different
+account from the one being used. Nothing was broken in the database —
+`vn_share_role` returned `edit` for that reader, and the note opened in a real
+browser signed in as them — but the person had no way to notice that the
+address they typed was somebody else.
+
+Two small things, so that it is noticeable:
+
+- **The address box offers the addresses you have already shared with.** It is
+  a `<datalist>` filled from the grants you own, so the second share to the same
+  person is a pick, not a spelling test.
+- **A listed person shows their name when their account has one** (the
+  `vn_account_hint` function was already there). An address that is not the
+  person you meant now looks like a name you do not recognise.
+
+And one more bug of the "tests go quiet" family: the first attempt used `esc()`,
+which vn does not have (it is `escapeHtml`), so `paintShare` threw and the whole
+share list stayed empty. The suite caught it in one run, which is what it is for.

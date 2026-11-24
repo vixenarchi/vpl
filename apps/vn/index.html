@@ -356,8 +356,10 @@
     <h3>people</h3>
     <form id="share-add" class="share-add">
       <input id="share-email" type="text" inputmode="email" spellcheck="false"
-             autocapitalize="off" autocomplete="off" aria-label="a person's email, or their name"
+             autocapitalize="off" autocomplete="off" list="share-people"
+             aria-label="a person's email, or their name"
              placeholder="their email, or a name on this app">
+      <datalist id="share-people"></datalist>
       <select id="share-role" aria-label="permission">
         <option value="view">can view</option>
         <option value="edit">can edit</option>

@@ -1730,6 +1730,21 @@ function paintShare() {
   el.shareLinkRow.hidden = !pub;
   el.shareLink.value = pub ? shareUrl(pub.code) : '';
 
+  /* the addresses you have shared with before, offered as you type. Sharing is
+   * an address you must remember exactly, and remembering '@vpl.local' or not
+   * is the difference between reaching somebody and reaching nobody. */
+  const known = [...new Set(S.shares.filter((g) => g.owner_id === myId() && g.email)
+    .map((g) => g.email.toLowerCase()))].sort();
+  const dl = $('share-people');
+  if (dl) {
+    dl.innerHTML = '';
+    for (const e of known) {
+      const o = document.createElement('option');
+      o.value = e;
+      dl.append(o);
+    }
+  }
+
   el.shareList.innerHTML = '';
   if (!people.length) {
     const li = document.createElement('li');
@@ -1774,6 +1789,18 @@ function paintShare() {
         paintShare();
       }
     });
+
+    /* who is that address? an account with a name answers, and the answer is
+     * the whole difference between "shared" and "shared with the right person" */
+    if (!g.pending && g.email) {
+      db.accountHint(g.email).then((hint) => {
+        if (!hint?.found || !hint.name) return;
+        const name = document.createElement('span');
+        name.className = 'share-name';
+        name.textContent = hint.name;
+        who.append(' ', name);
+      }).catch(() => { /* a name is a kindness, not a requirement */ });
+    }
 
     const rm = document.createElement('button');
     rm.type = 'button';

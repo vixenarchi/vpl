@@ -788,6 +788,7 @@ kbd {
   display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;
   font-size: 0.85rem; padding: 0.15rem 0;
 }
+.share-name { color: var(--ink-3); font-size: 0.86em; }
 .share-who { flex: 1 1 9rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .share-role { font-size: 0.78rem; flex: 0 0 auto; min-width: 6.4rem; }
 .share-remove { padding: 0.05rem 0.45rem; font-size: 0.95rem; line-height: 1.2; }

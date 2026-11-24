@@ -150,6 +150,11 @@ for (const [email, role] of [[viewer, 'view'], [editor, 'edit']]) {
   await op.waitForFunction((e) => document.getElementById('share-list').textContent.includes(e),
     email, { timeout: 10000 });
 }
+/* the address box offers the addresses you have already used: sharing is an
+ * address you must remember exactly, and remembering it wrong reaches nobody */
+const offered = await op.$$eval('#share-people option', (os) => os.map((o) => o.value));
+check('the addresses just used are offered next time', offered.length >= 2, JSON.stringify(offered));
+
 const people = await op.$$eval('.share-person', (els) => els.map((e) => e.textContent.trim()));
 check('both people are listed with a role', people.length === 2, JSON.stringify(people));
 await op.click('#share-close');
