@@ -178,7 +178,6 @@ node chrome-check.mjs                               # bar, name, gear, dock, 24
 ./tools/test-chrome.sh                              # all eight apps
 VPL_PROD=1 ./tools/test-chrome.sh                   # the same against the deployments
 node ux-sniff.mjs                                   # tap targets, tiny type, sideways scroll, 0
-PORT=8108 OAUTH_PORT=0 ./serve www; node www-check.mjs   # the front door, 58 checks
 
 ../../tools/test-all.sh                            # all of it, one command
 VPL_PROD=1 ../../tools/test-all.sh                 # all of it, against the deployments
@@ -212,15 +211,6 @@ Two things, both on the same pattern and neither a new architecture:
   holds a sheet, vz holds a dictionary, vd holds a desk, vc holds a verdict
   strip, vp holds a drawer of slips. An app whose sentence is a paragraph will
   be a paragraph of interface.
-- **`www.terg.hr`, the front door.** Not an app: a static site with no table,
-  no login and no dashboard, pushed like everything else. Three product lines
-  (vpl, eva, consulting), the organization and its imprint, marketing copy, an
-  FAQ with a contact form that sends an e-mail, a blog of markdown posts and a
-  short news list. It is the only place that knows the whole family — every app
-  stays independent and never links to a sibling from its own screen. The scope,
-  the boundaries and the order of work are in `docs/site.md`.
-
-Until then the addresses are the front door.
 
 `vn` has its own checks: `e2e.mjs`, `dnd-check.mjs`, `tree-check.mjs`,
 `share-check.mjs`, `touch-check.mjs`, `mode-check.mjs`.

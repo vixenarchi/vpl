@@ -1,9 +1,0 @@
-Contact: mailto:security@terg.hr
-Expires: 2027-06-01T00:00:00.000Z
-Preferred-Languages: en, hr
-Canonical: https://www.terg.hr/.well-known/security.txt
-Policy: https://www.terg.hr/privacy.html
-
-# If you found a way in, write. There is no bounty programme and no server to
-# bring down: the applications are static pages over one database, and the
-# interesting surface is the shared proxy at api.terg.hr.

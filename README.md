@@ -48,11 +48,9 @@ No servers, no bundler, no build step, no monthly bill.
 - **An assistant in the top bar.** It answers into the note. The key is yours,
   kept in your browser, and settings can test it before you save it.
 
-Not built yet: a few more apps by the same recipe, and **www.terg.hr** — a
-static site with no table behind it: the three product lines (vpl, eva,
-consulting), the organization, support with a contact form, a blog and news.
-Each app stays independent; only that site knows the whole family. Scope and
-boundaries: `docs/site.md`.
+Not built yet: a few more apps by the same recipe. The suite keeps no front
+door of its own — the addresses are the front door, and each app stays
+independent.
 
 ## What it deliberately does not do
 
@@ -240,14 +238,8 @@ fails on a page. So the call leaves from an origin of ours:
   ending in a box list that is plain text — and the same list drawn, with three
   views and a drag that writes `x, y` back into the text.
 
-- **`apps/www`** — the front door: what Terg is, the eight applications with
-  their addresses, the six rules the suite keeps, and one address to write to.
-  Static, no analytics, no cookies, `default-src 'self'`. Deploys with
-  `./deploy www`.
-
 - **`./tools/test-all.sh`** — everything in one command: syntax, chrome in all
-  eight, settings, every app's suite, the front door and the ux floor in all
-  nine. `VPL_PROD=1` runs the same set against the deployments. The sign-in a
+  eight, settings, every app's suite, and the ux floor in all eight. `VPL_PROD=1` runs the same set against the deployments. The sign-in a
   suite uses lives in `~/.config/vpl/test.env`, never in the repo.
 
 - **`agent/`** — va's other half: a job directory in, `out/report.md` and
@@ -290,8 +282,6 @@ apps/vd/                  documents: a desk of inputs and one output
 apps/vc/                  compliance: rules and proofs, a verdict strip
 apps/va/                  architecture: the pile in, the box list out (as text and
                           as a drawing), and an agent with its own account
-apps/www/                 the front door at www.terg.hr: static, no database,
-                          no cookies, the suite's palette and eight addresses
 apps/api/                 the shared proxy (one function, one page)
 packages/shell/tokens.css palette, type scale, page foundation — copied into
                           each app's vendor/ by tools/stage.sh

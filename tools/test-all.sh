@@ -13,7 +13,7 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 
 PROD=${VPL_PROD:-0}
-PORTS=(vn=8102 vi=8100 vr=8101 vz=8103 vd=8104 vc=8105 vp=8106 va=8107 www=8108)
+PORTS=(vn=8102 vi=8100 vr=8101 vz=8103 vd=8104 vc=8105 vp=8106 va=8107)
 declare -A PORT
 for p in "${PORTS[@]}"; do PORT[${p%%=*}]=${p#*=}; done
 
@@ -26,7 +26,7 @@ trap cleanup EXIT
 [ -f "$HOME/.config/vpl/test.env" ] && set -a && . "$HOME/.config/vpl/test.env" && set +a
 
 if [ "$PROD" != "1" ]; then
-  for app in vn vi vr vz vd vc vp va www; do
+  for app in vn vi vr vz vd vc vp va; do
     if ! curl -sf -o /dev/null "http://127.0.0.1:${PORT[$app]}/"; then
       PORT="${PORT[$app]}" OAUTH_PORT=0 ./serve "$app" >"/tmp/test-all-$app.log" 2>&1 &
       started+=($!)
@@ -63,7 +63,7 @@ run() {                       # run "<label>" <command…>
 
 # ── 1. every file parses ────────────────────────────────────────────
 syntax=0
-for f in apps/*/app.js packages/shell/*.js apps/*/lib/*.js apps/www/site.js; do
+for f in apps/*/app.js packages/shell/*.js apps/*/lib/*.js; do
   node --check "$f" || { echo "syntax: $f"; syntax=1; }
 done
 [ "$syntax" = 0 ] && { echo "syntax: every script parses"; pass=$((pass+1)); } || { echo "syntax: FAILED"; fail=$((fail+1)); failed+=("syntax"); }
@@ -93,20 +93,12 @@ run "va · desk + drawing + hand-off" node va-check.mjs
 run "va · canvas" node va-canvas.mjs
 run "va · hand-off" node va-handoff.mjs
 
-# ── 4. the front door ───────────────────────────────────────────────
-if [ "$PROD" = "1" ]; then
-  run "www" env WWW_URL=https://vpl-www.pages.dev node www-check.mjs
-else
-  run "www" node www-check.mjs
-fi
-
-# ── 5. the floor under every control, in all nine ───────────────────
-for app in vn vi vr vz vd vc vp va www; do
+# ── 4. the floor under every control, in all eight ───────────────────
+for app in vn vi vr vz vd vc vp va; do
   if [ "$PROD" = "1" ]; then
     case "$app" in
-      vn) url="https://vn.terg.hr" ;;
-      www) url="https://vpl-www.pages.dev" ;;
-      *) url="https://vpl-$app.pages.dev" ;;
+      vn) url="${VN_PROD_URL:-https://vpl.pages.dev}" ;;
+      *) url="${PROD_URL_PREFIX:-https://vpl-}-$app.pages.dev" ;;
     esac
     run "ux · $app" env VPL_PROD=1 APP_URL="$url" APP_NAME="$app" node ux-sniff.mjs
   else

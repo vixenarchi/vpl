@@ -1176,3 +1176,16 @@ the deployments, and it is what found the last round of real problems:
   test could see.
 
 Both runs are green: **23 groups, 0 failed**, local and `VPL_PROD=1`.
+
+## 2026-11-24 — the site left the repo
+
+`apps/www` was built here, deployed, and then moved out: it is not part of the
+suite a stranger clones. It lives with the rest of our own infrastructure (the
+site, the release checklist, the project settings) and it will be replaced by
+`w3` — the application that generates such a site with the same engine — rather
+than by hand-written HTML. `www-check.mjs` and `og-card.mjs` went with it.
+
+The public repository is the eight apps, the shared shell, the agent, the
+migrations and the tools. Everything in it must work for somebody who brings
+their own Supabase project and their own Cloudflare account, and who never talks
+to us.
