@@ -74,7 +74,7 @@ const el = {
   tabs: [...document.querySelectorAll('.tab')],
   paneWrite: $('pane-write'), paneView: $('pane-view'),
   toolbar: $('toolbar'), editable: $('editable'),
-  src: $('btn-src'), marks: $('btn-marks'), mdSource: $('md-source'),
+  src: $('btn-src'), mdSource: $('md-source'),
   rendered: $('rendered'),
 
   help: $('help'), helpClose: $('help-close'),
@@ -88,7 +88,8 @@ const S = {
   current: null,
   mode: 'write',        // write | view
   src: false,           // write surface: rich (false) or the markdown itself (true)
-  marks: false,         // · a space, ¶ the end of a line
+  dockRange: null,      // the words the dock's *replace* will change
+  lastSelection: null,  // { range, text, noteId } — the last words selected in the note
   dirty: false,
   saving: false,
   saveTimer: null,
@@ -451,7 +452,6 @@ function wire() {
     const b = e.target.closest('button');
     if (!b) return;
     if (b === el.src) { e.preventDefault(); toggleSource(); return; }
-    if (b === el.marks) { e.preventDefault(); toggleMarks(); return; }
     /* bold on a textarea is not a thing */
     if (el.toolbar.classList.contains('on-source')) return;
     runCommand(b.dataset.cmd, b.dataset.arg);
@@ -467,6 +467,18 @@ function wire() {
   el.editable.addEventListener('input', onEdit);
   el.title.addEventListener('input', onEdit);
   el.mdSource.addEventListener('input', onSourceEdit);
+
+  /* remember the selection while it exists, not when it is asked for */
+  document.addEventListener('selectionchange', () => {
+    if (!S.current || S.mode !== 'write' || S.src) return;
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount || sel.isCollapsed) return;
+    const r = sel.getRangeAt(0);
+    if (!el.editable.contains(r.commonAncestorContainer)) return;
+    const text = r.toString();
+    if (!text.trim()) return;
+    S.lastSelection = { range: r.cloneRange(), text, noteId: S.current.id };
+  });
 
   /* A paste from a word processor arrives as html full of fonts and colours
    * that markdown cannot hold: the browser shows them, the next render drops
@@ -1383,29 +1395,8 @@ async function openNote(id) {
  * The note is stored as markdown; the rich surface is one view of it. The
  * second view is the text itself — which is also how you see the hidden
  * formatting, and the only honest way to type the parts the toolbar cannot
- * reach (tables, `::: box`, fences). Marks are the word processor's ¶:
- * · a space, ¶ the end of a line, ° a hard space. They exist only on screen;
- * the body is stripped back to plain text on the way in. */
-const MARK_SPACE = '\u00b7';
-const MARK_LINE = '\u00b6';
-const MARK_HARD = '\u00b0';
-
-function withMarks(t) {
-  return t
-    .replace(/\u00a0/g, MARK_HARD)
-    .replace(/ /g, MARK_SPACE)
-    .replace(/\n/g, MARK_LINE + '\n');
-}
-
-function withoutMarks(t) {
-  return t.replace(/\r/g, '')
-    .split('\n')
-    .map((line) => (line.endsWith(MARK_LINE) ? line.slice(0, -MARK_LINE.length) : line))
-    .join('\n')
-    .replace(new RegExp(MARK_SPACE, 'g'), ' ')
-    .replace(new RegExp(MARK_HARD, 'g'), '\u00a0');
-}
-
+ * reach (tables, `::: box`, fences). N and M, not "normal" and "markdown":
+ * two letters on one button, and the pressed one is dark. */
 function paintWrite() {
   if (!S.current) return;
   const useSrc = !!S.src;
@@ -1414,17 +1405,24 @@ function paintWrite() {
   el.mdSource.hidden = !useSrc;
   el.toolbar.classList.toggle('on-source', useSrc);
 
-  el.src.textContent = useSrc ? 'MD' : 'N';
+  /* one scrollbar per surface: while the markdown is showing, the page column
+   * stops scrolling and the text does its own — two nested scrollbars in the
+   * same place is a thing you cannot drag with any confidence */
+  el.paneWrite.classList.toggle('on-source', useSrc);
+  const main = el.editable.closest('.main');
+  if (main) {
+    main.classList.toggle('on-source', useSrc);
+    if (useSrc) main.scrollTop = 0;
+  }
+
+  el.src.textContent = useSrc ? 'M' : 'N';
   el.src.setAttribute('aria-pressed', String(useSrc));
   el.src.title = useSrc
     ? 'back to ordinary text (Ctrl+M)'
     : 'the markdown this note is stored as (Ctrl+M)';
 
-  el.marks.setAttribute('aria-pressed', String(!!S.marks));
-  el.marks.classList.toggle('on', !!S.marks);
-
   const body = S.current.body || '';
-  if (useSrc) el.mdSource.value = S.marks ? withMarks(body) : body;
+  if (useSrc) el.mdSource.value = body;
   else el.editable.innerHTML = mdToHtml(body);
 }
 
@@ -1432,7 +1430,7 @@ function paintWrite() {
 function takeSurface() {
   if (!S.current) return;
   if (S.mode !== 'write') return;
-  if (S.src) S.current.body = withoutMarks(el.mdSource.value);
+  if (S.src) S.current.body = el.mdSource.value.replace(/\r/g, '');
   else S.current.body = htmlToMd(el.editable);
 }
 
@@ -1442,22 +1440,8 @@ function toggleSource() {
 
   takeSurface();
   S.src = !S.src;
-  if (!S.src) S.marks = false;
   paintWrite();
   (S.src ? el.mdSource : el.editable).focus();
-  updateStatus();
-}
-
-function toggleMarks() {
-  if (!S.current || !canEdit(S.current)) return;
-  if (S.mode !== 'write') setMode('write');
-
-  takeSurface();
-  if (!S.src) S.src = true;
-  S.marks = !S.marks;
-  paintWrite();
-  el.mdSource.focus();
-  if (S.marks) toast('marks on: · a space, ¶ the end of a line. They are not saved.');
   updateStatus();
 }
 
@@ -1594,8 +1578,7 @@ function onEdit() {
 /* typing in the markdown view: the body is the text, marks stripped */
 function onSourceEdit() {
   if (!canEdit(S.current)) return;
-  const text = el.mdSource.value;
-  S.current.body = S.marks ? withoutMarks(text) : text;
+  S.current.body = el.mdSource.value.replace(/\r/g, '');
   afterEdit();
 }
 
@@ -2903,24 +2886,64 @@ function wireSettings() {
 
 wireSettings();
 
-/* *use it* means "put these words in the note I am looking at", at the caret,
- * through the same autosave as typing. Nothing else is decided for you. */
+/* What the dock is allowed to know: the note, and the words the person had
+ * selected when they asked. The selection is kept as a range, because by the
+ * time an answer arrives the caret may be in the dock. */
+function dockContext() {
+  if (!S.current) return '';
+  const body = S.current.body || '';
+  const text = (S.current.title ? '# ' + S.current.title + '\n\n' : '') + body;
+
+  /* The words somebody selected in the note, remembered from the moment they
+   * selected them. Reading the live selection here would be too late: to ask a
+   * question you have to click the dock's input, and that click ends the
+   * selection. A remembered range is the only way *replace* can mean what it
+   * says. */
+  S.dockRange = null;
+  let selection = '';
+  const kept = S.lastSelection;
+  if (kept && kept.noteId === S.current.id && el.editable.contains(kept.range.commonAncestorContainer)) {
+    const now = kept.range.toString();
+    /* the note may have moved under the range since; a stale one would replace
+     * the wrong words, so it has to still read the same */
+    if (now.trim() && now === kept.text) {
+      selection = kept.text;
+      S.dockRange = kept.range.cloneRange();
+    }
+  }
+  return { text, selection };
+}
+
+/* *replace selection* puts the answer exactly where the selected words were;
+ * *use it* puts it at the caret, or at the end when there is no caret. Either
+ * way it goes through the same autosave as typing, and nothing else is decided
+ * for you. */
 function useFromDock(text) {
   if (!S.current || !canEdit(S.current)) return 'open a note you can edit first';
   if (S.mode !== 'write') setMode('write');
+  if (S.src) { S.src = false; paintWrite(); }
   el.editable.focus();
 
-  /* put it where the caret is if there is one; at the end if there is not */
-  const inside = el.editable.contains(document.getSelection()?.anchorNode || null);
-  if (!inside) {
-    const r = document.createRange();
-    r.selectNodeContents(el.editable);
-    r.collapse(false);
+  const replacing = S.dockRange && el.editable.contains(S.dockRange.commonAncestorContainer);
+  if (replacing) {
     const sel = window.getSelection();
     sel.removeAllRanges();
-    sel.addRange(r);
+    sel.addRange(S.dockRange);
+  } else {
+    const inside = el.editable.contains(document.getSelection()?.anchorNode || null);
+    if (!inside) {
+      const r = document.createRange();
+      r.selectNodeContents(el.editable);
+      r.collapse(false);
+      const sel2 = window.getSelection();
+      sel2.removeAllRanges();
+      sel2.addRange(r);
+    }
   }
-  const added = document.execCommand('insertText', false, '\n' + text + '\n');
+  S.dockRange = null;
+  S.lastSelection = null;
+
+  const added = document.execCommand('insertText', false, replacing ? text : '\n' + text + '\n');
   if (!added) {
     const p = document.createElement('p');
     p.textContent = text;
@@ -2933,5 +2956,6 @@ function useFromDock(text) {
 const DOCK = mountDock({
   app: 'vn',
   openSettings: () => SET && SET.open(),
+  context: dockContext,
   onUse: useFromDock,
 });

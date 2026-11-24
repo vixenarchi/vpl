@@ -37,22 +37,21 @@ between two paragraphs. So the two are written differently:
 Before this, every save collapsed runs of `\n` and dropped empty paragraphs:
 "it eats my Enters" was exactly that bug.
 
-## N / MD, and ¶
+## N / M
 
-At the right end of the formatting bar (`left` end on a phone, where a wrapped
+At the right end of the formatting bar (the left end on a phone, where a wrapped
 toolbar cannot hide it):
 
-- **N / MD** — the writing surface as rich text, or as the markdown that is
-  actually stored. Pressed, the button inverts (ink on paper) and the surface
-  becomes a monospace textarea. That is also how the hidden formatting is seen,
-  and the only honest way to type what the toolbar cannot reach (`::: box`,
-  fences, tables). `Ctrl+M`.
-- **¶** — shows the marks the way a word processor does: `·` a space, `¶` the
-  end of a line, `°` a hard space. Marks exist only on screen; the body is
-  stripped back on the way in, so a note can never be saved with a pilcrow in
-  it.
+- **N** — the surface is rich text.
+- **M** — the surface is the markdown that is actually stored: a monospace
+  textarea, editable, autosaved like everything else. Pressed, the button
+  inverts (ink on paper). That is also how the hidden formatting is seen, and
+  the only honest way to type what the toolbar cannot reach (`::: box`, fences,
+  tables). `Ctrl+M`.
 
-Both live off the same body: switching costs nothing and saves nothing.
+Only one thing scrolls at a time. While the markdown is showing, the page column
+stops scrolling and the text does its own: two nested scrollbars in the same
+place is a thing you cannot drag with any confidence.
 
 ## A paste is cleaned at the door
 
@@ -66,7 +65,41 @@ insert — removed. What you see immediately after a paste is what will be saved
 
 ## Tests
 
-`apps/vn/test/md-check.mjs` (26) — bare addresses stay text, the two surfaces
-share their measurements, blank lines survive a save and a reload, N/MD and ¶
-work and save nothing of themselves, a rich paste keeps words and loses
-colours, and the settings switch is the `◐` icon again.
+`apps/vn/test/md-check.mjs` (23) — bare addresses stay text, the two surfaces
+share their measurements, blank lines survive a save and a reload, N/M works and
+saves nothing of itself, a rich paste keeps words and loses colours, and the
+settings switch is the `◐` icon again.
+
+`apps/vn/test/dock-check.mjs` (20) — the dock knows the note, is told to answer
+with the changed text only, offers *replace selection* when words are selected
+and *use it* when they are not, keeps a short memory, and never grows the page
+upward.
+
+## The dock
+
+The chat line at the bottom of every app is one component
+(`packages/shell/dock.js`) copied into each app. It keeps three rules:
+
+- **It is given the work, not a scrape of the page.** An app passes
+  `context: () => ({ text, selection })`. vn passes the title and the body, plus
+  the words the person selected — remembered the moment they were selected,
+  because asking a question means clicking the dock's input, and that click
+  ends the selection.
+- **A change is answered with the changed text only.** The system prompt says
+  so: rewrite, shorten, fix, translate, continue → answer with the new text and
+  nothing else, because that answer goes into a document. A question is still a
+  question.
+- **Nothing lands on its own.** Two verbs, and the label says which:
+  *replace selection* when there was a selection (the answer takes its place),
+  *use it* when there was not (the answer goes in at the caret). *drop* throws
+  it away. It keeps the last two exchanges so "shorter still" has a subject.
+
+The transcript is a **layer**, not a growing column: about three rows, capped
+and scrolled inside itself, sitting exactly on top of the line. Before this it
+stretched the app's column upward, and the work area walked off the screen.
+
+The settings dialog is the same size on every tab: the four panels share one
+grid cell, the tallest sets the height, and the hidden ones are invisible rather
+than removed. (`hidden` cannot be used — the tokens make it
+`display: none !important`, and a tab that leaves the layout is a dialog that
+resizes under the finger.)

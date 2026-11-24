@@ -602,8 +602,11 @@ button.trash.drop-active .trash-count { color: var(--mark); }
 .toolbar.on-source button[data-cmd]:hover { background: none; }
 
 /* the markdown itself, for reading and for typing what the bar cannot do */
+.pane.on-source { overflow: hidden; }
+.main.on-source { overflow: hidden; }
 .md-source {
-  flex: 1; width: 100%; box-sizing: border-box;
+  flex: 1; min-height: 0; width: 100%; box-sizing: border-box;
+  overflow-y: auto;
   font-family: var(--mono); font-size: 0.86rem; line-height: 1.6;
   color: var(--ink); background: none; border: none; outline: none;
   resize: none; padding: 0 0 30vh; tab-size: 2;

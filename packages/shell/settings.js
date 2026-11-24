@@ -81,6 +81,7 @@ export function mountSettings({ dialog, proxy, onSaved } = {}) {
       <button type="button" role="tab" data-tab="theme">theme</button>
     </div>
 
+    <div class="set-panels">
     <section class="set-panel" data-panel="model">
       <div class="set-row">
         <label for="set-provider">provider</label>
@@ -134,6 +135,7 @@ export function mountSettings({ dialog, proxy, onSaved } = {}) {
       </div>
       <p class="set-note">a theme is a palette; it changes colour, never a button's meaning.</p>
     </section>
+    </div>
 
     <p class="set-msg" aria-live="polite"></p>
     <div class="set-foot">
@@ -158,8 +160,16 @@ export function mountSettings({ dialog, proxy, onSaved } = {}) {
     dialog.querySelectorAll('[data-tab]').forEach((b) => {
       b.setAttribute('aria-selected', String(b.dataset.tab === tab));
     });
+    /* Every panel keeps its place and its height, and the one that is not
+     * showing is made invisible instead of removed: a dialog that resized
+     * itself on every tab weighed the settings, not the setting. */
     dialog.querySelectorAll('[data-panel]').forEach((p) => {
-      p.hidden = p.dataset.panel !== tab;
+      const active = p.dataset.panel === tab;
+      /* not the `hidden` attribute: that one is `display: none !important` in
+       * the tokens, and a tab that leaves the layout is a dialog that resizes */
+      p.classList.toggle('off', !active);
+      p.setAttribute('aria-hidden', String(!active));
+      if ('inert' in p) p.inert = !active;
     });
     if (tab === 'key') paintAccount();
     if (tab === 'theme') paintThemes();

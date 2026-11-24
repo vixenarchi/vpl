@@ -81,6 +81,7 @@ cd apps/vn/test
 if [ -n "${VPL_EMAIL:-}" ] && [ -n "${VPL_PASS:-}" ]; then
   run "vn · mode" env PORT="${PORT[vn]}" node mode-check.mjs
   run "vn · markdown" env PORT="${PORT[vn]}" node md-check.mjs
+  run "vn · dock" env PORT="${PORT[vn]}" node dock-check.mjs
 else
   echo "\n\033[1mvn · mode\033[0m\n  skipped: no VPL_EMAIL/VPL_PASS (see ~/.config/vpl/test.env)"
 fi

@@ -176,7 +176,7 @@ const src = await page.evaluate(() => ({
   bg: getComputedStyle(document.getElementById('btn-src')).backgroundColor,
   fg: getComputedStyle(document.getElementById('btn-src')).color,
 }));
-check(src.label === 'MD' && src.pressed === 'true', 'pressing it turns the button into MD');
+check(src.label === 'M' && src.pressed === 'true', 'pressing it turns the button into M');
 check(src.visible && src.richHidden, 'the markdown surface replaces the rich one');
 check(/\[terg\]\(https:\/\/terg\.hr\)/.test(src.value), 'it shows the markdown that is stored',
   src.value.slice(0, 60));
@@ -186,41 +186,16 @@ await page.click('#md-source');
 await page.keyboard.press('Control+End');
 await page.type('#md-source', '\n\n## dodano u izvoru');
 await page.waitForTimeout(1200);
-await page.click('#btn-src');
+const stored = await page.evaluate(() => document.getElementById('md-source').value);
+check(/## dodano u izvoru/.test(stored), 'what is typed in the source is the note');
+check(!/[¶·]/.test(stored), 'no mark of any kind is saved into the note');
+
+await page.click('#btn-src');                // back to rich text
 await page.waitForTimeout(500);
 const asHeading = await page.evaluate(() =>
   [...document.querySelectorAll('#editable h2')].map((h) => h.textContent));
 check(asHeading.includes('dodano u izvoru'),
   'markdown typed in the source is a heading in the rich surface', JSON.stringify(asHeading));
-
-/* ── ¶ ────────────────────────────────────────────────────────────── */
-await page.click('#btn-marks');
-await page.waitForTimeout(400);
-const marks = await page.evaluate(() => ({
-  value: document.getElementById('md-source').value,
-  pressed: document.getElementById('btn-marks').getAttribute('aria-pressed'),
-  label: document.getElementById('btn-src').textContent.trim(),
-}));
-check(marks.pressed === 'true', '¶ says it is on');
-check(marks.label === 'MD', '¶ brings the source with it');
-check(/¶\n/.test(marks.value) && /·/.test(marks.value),
-  'the marks are visible: · for a space, ¶ for the end of a line');
-
-/* typing while the marks are on must not save them */
-await page.click('#md-source');
-await page.keyboard.press('Control+End');
-await page.type('#md-source', '··još');
-await page.waitForTimeout(1200);
-
-await page.click('#btn-marks');              // off
-await page.waitForTimeout(300);
-const saved = await page.evaluate(() => document.getElementById('md-source').value);
-check(!/¶/.test(saved) && !/·/.test(saved), 'no mark is saved into the note',
-  saved.split('\n').filter((l) => /[¶·]/.test(l)).join(' | '));
-check(/još/.test(saved.replace(/ /g, '')), 'the words typed with the marks on are kept');
-
-await page.click('#btn-src');                // back to rich text
-await page.waitForTimeout(400);
 
 /* ── a paste is cleaned at the door ───────────────────────────────── */
 await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
