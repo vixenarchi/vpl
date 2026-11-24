@@ -73,6 +73,12 @@ export async function render(md, el) {
 
   marked.setOptions({ gfm: true, breaks: true, headerIds: false, mangle: false });
 
+  /* A url in ordinary text is ordinary text. GFM turns http://… and www.… into
+   * links on sight, which is how "this is text" became "this is a link" when
+   * you pressed view: nothing was marked, the renderer marked it. A link is
+   * something a person makes ([words](address)) and nothing else. */
+  marked.use({ tokenizer: { url() { return undefined; } } });
+
   const raw = withBoxes(md || '', marked);
   el.innerHTML = purify.sanitize(raw, { ADD_ATTR: ['target', 'rel'] });
 
@@ -83,6 +89,86 @@ export async function render(md, el) {
       a.rel = 'noopener noreferrer';
     }
   }
+}
+
+/* ── pasted html → the html the editor can keep ──────────────────────
+ * A paste from a word processor carries fonts, colours, tables and spans that
+ * markdown cannot hold. Left alone, the browser shows them for a while and the
+ * next look at the note drops them — the "formatting disappears" complaint.
+ * So a paste is cleaned at the door: keep the tags the editor understands,
+ * strip every attribute except a link's address, and let the words through
+ * untouched. What you see after a paste is what will be saved. */
+const KEEP = {
+  P: 'p', DIV: 'p', BR: 'br', STRONG: 'strong', B: 'strong', EM: 'em', I: 'em',
+  S: 's', DEL: 's', STRIKE: 's', CODE: 'code', PRE: 'pre', A: 'a',
+  H1: 'h1', H2: 'h2', H3: 'h3', H4: 'h4', UL: 'ul', OL: 'ol', LI: 'li',
+  BLOCKQUOTE: 'blockquote', HR: 'hr',
+};
+
+export async function cleanHtml(html) {
+  const { purify } = await libs();
+  /* style is allowed through the sanitiser only so the emphasis it carries
+   * (font-weight, font-style) can be turned into real tags below; every style
+   * attribute is removed again before the html is handed back. */
+  const safe = purify.sanitize(String(html || ''), {
+    ALLOWED_TAGS: [...Object.keys(KEEP).map((t) => t.toLowerCase()), 'span', 'font', 'u'],
+    ALLOWED_ATTR: ['href', 'style'],
+  });
+  const box = document.createElement('div');
+  box.innerHTML = safe;
+
+  /* rewrite to the editor's own alphabet; anything unknown keeps its words */
+  const walk = (node) => {
+    const kids = [...node.childNodes];
+    for (const child of kids) {
+      if (child.nodeType === 3) continue;
+      if (child.nodeType !== 1) { child.remove(); continue; }
+      walk(child);
+
+      /* a word processor says "bold" with a style, not with <b> */
+      const style = (child.getAttribute('style') || '').toLowerCase();
+      if (/font-weight:\s*(bold|bolder|[5-9]00)/.test(style)) {
+        const strong = document.createElement('strong');
+        strong.append(...child.childNodes);
+        child.replaceWith(strong);
+        continue;
+      }
+      if (/font-style:\s*italic/.test(style)) {
+        const em = document.createElement('em');
+        em.append(...child.childNodes);
+        child.replaceWith(em);
+        continue;
+      }
+      if (/text-decoration[^;]*line-through/.test(style)) {
+        const s = document.createElement('s');
+        s.append(...child.childNodes);
+        child.replaceWith(s);
+        continue;
+      }
+
+      const want = KEEP[child.tagName];
+      if (!want) {
+        const text = document.createTextNode(child.textContent || '');
+        child.replaceWith(text);
+        continue;
+      }
+      const next = document.createElement(want);
+      if (want === 'a') {
+        const href = child.getAttribute('href') || '';
+        if (!/^https?:/i.test(href) && !href.startsWith('#')) {
+          child.replaceWith(...child.childNodes);
+          continue;
+        }
+        next.setAttribute('href', href);
+      }
+      next.append(...child.childNodes);
+      child.replaceWith(next);
+    }
+  };
+  walk(box);
+  /* nothing that arrives from outside keeps a colour, a font or a size */
+  for (const el of box.querySelectorAll('*')) el.removeAttribute?.('style');
+  return box.innerHTML;
 }
 
 /* A one-line hint of the body for the list (R8). */

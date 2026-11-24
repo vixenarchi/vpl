@@ -135,7 +135,18 @@ export function mdToHtml(md) {
       continue;
     }
 
-    /* blank */
+    /* A blank line is the separator between two blocks — htmlToMd writes it
+     * and mdToHtml reads it, so it must not become a paragraph of its own
+     * (that was the bug: every save multiplied the gaps).
+     *
+     * An empty paragraph is a different thing and needs a different mark: a
+     * line holding one non-breaking space. Markdown cannot say "blank line
+     * here" in any other way that is not also the separator. */
+    if (/^\u00a0$/.test(line)) {
+      out.push('<p><br></p>');
+      i++;
+      continue;
+    }
     if (!line.trim()) {
       i++;
       continue;
@@ -256,15 +267,19 @@ export function htmlToMd(root) {
       continue;
     }
 
-    /* paragraph or stray div */
+    /* paragraph or stray div — an empty one is a blank line, kept as a line
+     * holding a single non-breaking space (see mdToHtml) */
     const t = walkInline(node).trim();
-    if (t) out.push(t);
+    out.push(t || '\u00a0');
   }
 
   return out;
   };
 
-  return blocks(root).join('\n\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+  /* No "\n{3,} → \n\n" here: that rule was the bug that ate the blank lines.
+   * Every block is separated by one blank line, and an empty paragraph is a
+   * block of its own, so a run of them is a run of blank lines. */
+  return blocks(root).join('\n\n').replace(/^\n+/, '').replace(/\n+$/, '') + '\n';
 }
 
 /* Wraps the selection in a box, or unwraps a box the caret already sits in. */

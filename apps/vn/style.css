@@ -279,20 +279,26 @@ textarea.body {
 }
 textarea.body:focus { outline: none; }
 
+/* One set of measurements for both surfaces. The rendered view used to carry
+ * its own — serif headings, 1.7 line height, 0.7em paragraph margins — and the
+ * result was that a note grew lines and gaps when you pressed view. The same
+ * text must occupy the same shape whether you are typing it or reading it. */
 .rendered {
-  font-family: var(--serif); font-size: 1.02rem; line-height: 1.7;
+  font-family: var(--serif); font-size: 1.05rem; line-height: 1.55;
   /* a long run of characters with no space — a pasted url, an id — must break
    * rather than push the page sideways on a phone */
   overflow-wrap: anywhere;
 }
-.rendered h1, .rendered h2, .rendered h3 {
-  font-family: var(--serif); font-weight: 600; line-height: 1.3;
-  margin: 1.6em 0 0.5em;
+.rendered h1, .rendered h2, .rendered h3, .rendered h4 {
+  font-family: var(--sans); font-weight: 600; line-height: 1.25;
+  margin: 0.9em 0 0.15em;
 }
-.rendered h1 { font-size: 1.5rem; }
-.rendered h2 { font-size: 1.25rem; }
-.rendered h3 { font-size: 1.08rem; }
-.rendered p { margin: 0.7em 0; }
+.rendered h1 { font-size: 1.6rem; }
+.rendered h2 { font-size: 1.32rem; }
+.rendered h3 { font-size: 1.14rem; }
+.rendered h4 { font-size: 1rem; }
+/* no paragraph margin: a blank line is a blank line, typed and seen alike */
+.rendered p { margin: 0; }
 .rendered a { color: var(--mark); text-underline-offset: 2px; }
 .rendered ul, .rendered ol { padding-left: 1.3em; }
 .rendered li { margin: 0.2em 0; }
@@ -579,6 +585,31 @@ button.trash.drop-active .trash-count { color: var(--mark); }
   margin: 0 0.25rem;
 }
 
+/* N / MD and ¶ — the two switches that live at the right end of the bar.
+ * Pressed, the button goes dark with paper text: the state is the colour. */
+.tb-src-sep { margin-left: auto; }
+.toolbar .tb-src, .toolbar .tb-marks {
+  font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.02em;
+  min-width: 2.1rem; min-height: 1.7rem; padding: 0 0.4rem;
+  border: 1px solid var(--line); background: var(--paper-2); color: var(--ink-2);
+}
+.toolbar .tb-src[aria-pressed='true'],
+.toolbar .tb-marks[aria-pressed='true'] {
+  background: var(--ink); color: var(--paper); border-color: var(--ink);
+}
+.toolbar .tb-marks { font-size: 0.95rem; }
+.toolbar.on-source button[data-cmd] { opacity: 0.35; }
+.toolbar.on-source button[data-cmd]:hover { background: none; }
+
+/* the markdown itself, for reading and for typing what the bar cannot do */
+.md-source {
+  flex: 1; width: 100%; box-sizing: border-box;
+  font-family: var(--mono); font-size: 0.86rem; line-height: 1.6;
+  color: var(--ink); background: none; border: none; outline: none;
+  resize: none; padding: 0 0 30vh; tab-size: 2;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+
 /* The writing surface: full width, serif, generous line height. */
 .editable {
   flex: 1;
@@ -657,8 +688,9 @@ button.trash.drop-active .trash-count { color: var(--mark); }
   white-space: pre-wrap; word-break: break-word;
 }
 
-/* ── view pane ────────────────────────────────────────────────────── */
-.rendered { font-family: var(--serif); font-size: 1.05rem; line-height: 1.75; }
+/* ── view pane ──────────────────────────────────────────────────────
+ * The measurements live in one place, above, next to the writing surface —
+ * a second copy here is how the view grew a taller line than the editor. */
 .rendered:focus { outline: none; }
 
 /* ── the light/dark corner ───────────────────────────────────────────
@@ -1049,15 +1081,16 @@ kbd {
   /* On a phone the formatting row cannot fit, so it scrolls sideways. The
    * buttons must not shrink to make room — shrinking is what pushed the last
    * control off the edge and made it untappable. */
-  .toolbar {
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  .toolbar::-webkit-scrollbar { display: none; }
-  .toolbar button { flex: 0 0 auto; }
+  /* On a phone the formatting row cannot fit. Wrapping beats scrolling here:
+   * a control you have to scroll sideways to find is a control that is not
+   * there — the two switches at the end (N/MD and ¶) were off the screen edge
+   * entirely. The wide separator becomes the line break, so they sit on their
+   * own row, at the left, where a thumb finds them. */
+  .toolbar { flex-wrap: wrap; overflow-x: visible; row-gap: 0.25rem; }
+  .toolbar button { flex: 0 0 auto; min-height: 1.9rem; }
   .tb-sep { flex: 0 0 auto; }
+  .tb-src-sep { flex: 0 0 100%; height: 0; margin: 0; border: none; }
+  .toolbar .tb-src, .toolbar .tb-marks { min-height: 1.9rem; }
 
   .bar > .icon { padding: 0.25rem; min-width: 2.4rem; min-height: 2.4rem; }
   .bar-gap-a { display: none; }

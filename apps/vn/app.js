@@ -8,7 +8,7 @@
  */
 
 import * as db from './lib/supabase.js';
-import { render as renderMd, hint } from './lib/markdown.js';
+import { render as renderMd, hint, cleanHtml } from './lib/markdown.js';
 import { mdToHtml, htmlToMd, wrapInBox } from './lib/editor.js';
 import * as ai from './vendor/ai.js';
 import * as settings from './vendor/settings.js';
@@ -74,6 +74,7 @@ const el = {
   tabs: [...document.querySelectorAll('.tab')],
   paneWrite: $('pane-write'), paneView: $('pane-view'),
   toolbar: $('toolbar'), editable: $('editable'),
+  src: $('btn-src'), marks: $('btn-marks'), mdSource: $('md-source'),
   rendered: $('rendered'),
 
   help: $('help'), helpClose: $('help-close'),
@@ -86,6 +87,8 @@ const S = {
   trash: [],
   current: null,
   mode: 'write',        // write | view
+  src: false,           // write surface: rich (false) or the markdown itself (true)
+  marks: false,         // · a space, ¶ the end of a line
   dirty: false,
   saving: false,
   saveTimer: null,
@@ -447,6 +450,10 @@ function wire() {
   el.toolbar.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
+    if (b === el.src) { e.preventDefault(); toggleSource(); return; }
+    if (b === el.marks) { e.preventDefault(); toggleMarks(); return; }
+    /* bold on a textarea is not a thing */
+    if (el.toolbar.classList.contains('on-source')) return;
     runCommand(b.dataset.cmd, b.dataset.arg);
   });
 
@@ -459,6 +466,26 @@ function wire() {
 
   el.editable.addEventListener('input', onEdit);
   el.title.addEventListener('input', onEdit);
+  el.mdSource.addEventListener('input', onSourceEdit);
+
+  /* A paste from a word processor arrives as html full of fonts and colours
+   * that markdown cannot hold: the browser shows them, the next render drops
+   * them, and the formatting "disappears on its own". Clean it at the door. */
+  el.editable.addEventListener('paste', async (e) => {
+    const html = e.clipboardData?.getData('text/html');
+    if (!html) return;                     // plain text: let the browser insert it
+    e.preventDefault();
+    try {
+      const clean = await cleanHtml(html);
+      document.execCommand('insertHTML', false, clean);
+      /* Chrome re-applies the computed font size as an inline style on the way
+       * in; markdown holds none of that, so it goes now rather than on the
+       * next render, when it would look like the formatting had fallen off. */
+      for (const n of el.editable.querySelectorAll('[style]')) n.removeAttribute('style');
+    } catch {
+      document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
+    }
+  });
 
   el.btnDel.addEventListener('click', trashCurrent);
   el.binEmpty.addEventListener('click', () => askPurge('all'));
@@ -493,6 +520,7 @@ function onKey(e) {
   if (e.key === 'Escape') {
     if (el.help.open) { el.help.close(); return; }
     if (S.current && e.target === el.editable) { el.editable.blur(); return; }
+    if (S.current && e.target === el.mdSource) { el.mdSource.blur(); return; }
   }
 
   /* Help is Ctrl+/. A bare "?" was a trap: every question typed into the
@@ -517,6 +545,9 @@ function onKey(e) {
       case '2': if (S.current) { e.preventDefault(); setMode('view'); } return;
       case 'e':
         if (S.current) { e.preventDefault(); cycleMode(); }
+        return;
+      case 'm':
+        if (S.current) { e.preventDefault(); toggleSource(); }
         return;
       case '\\':
         e.preventDefault();
@@ -1322,7 +1353,7 @@ async function openNote(id) {
   el.viewNote.hidden = false;
   el.title.value = S.current.title || '';
   el.title.readOnly = !editable;
-  el.editable.innerHTML = mdToHtml(S.current.body || '');
+  paintWrite();
 
   el.btnDel.textContent = inBin ? 'restore' : 'delete';
   el.btnDel.classList.toggle('restore', inBin);
@@ -1348,6 +1379,88 @@ async function openNote(id) {
   updateStatus();
 }
 
+/* ── the write surface: rich text, or the markdown underneath ───────
+ * The note is stored as markdown; the rich surface is one view of it. The
+ * second view is the text itself — which is also how you see the hidden
+ * formatting, and the only honest way to type the parts the toolbar cannot
+ * reach (tables, `::: box`, fences). Marks are the word processor's ¶:
+ * · a space, ¶ the end of a line, ° a hard space. They exist only on screen;
+ * the body is stripped back to plain text on the way in. */
+const MARK_SPACE = '\u00b7';
+const MARK_LINE = '\u00b6';
+const MARK_HARD = '\u00b0';
+
+function withMarks(t) {
+  return t
+    .replace(/\u00a0/g, MARK_HARD)
+    .replace(/ /g, MARK_SPACE)
+    .replace(/\n/g, MARK_LINE + '\n');
+}
+
+function withoutMarks(t) {
+  return t.replace(/\r/g, '')
+    .split('\n')
+    .map((line) => (line.endsWith(MARK_LINE) ? line.slice(0, -MARK_LINE.length) : line))
+    .join('\n')
+    .replace(new RegExp(MARK_SPACE, 'g'), ' ')
+    .replace(new RegExp(MARK_HARD, 'g'), '\u00a0');
+}
+
+function paintWrite() {
+  if (!S.current) return;
+  const useSrc = !!S.src;
+
+  el.editable.hidden = useSrc;
+  el.mdSource.hidden = !useSrc;
+  el.toolbar.classList.toggle('on-source', useSrc);
+
+  el.src.textContent = useSrc ? 'MD' : 'N';
+  el.src.setAttribute('aria-pressed', String(useSrc));
+  el.src.title = useSrc
+    ? 'back to ordinary text (Ctrl+M)'
+    : 'the markdown this note is stored as (Ctrl+M)';
+
+  el.marks.setAttribute('aria-pressed', String(!!S.marks));
+  el.marks.classList.toggle('on', !!S.marks);
+
+  const body = S.current.body || '';
+  if (useSrc) el.mdSource.value = S.marks ? withMarks(body) : body;
+  else el.editable.innerHTML = mdToHtml(body);
+}
+
+/* The surface on screen is the truth before we leave it. */
+function takeSurface() {
+  if (!S.current) return;
+  if (S.mode !== 'write') return;
+  if (S.src) S.current.body = withoutMarks(el.mdSource.value);
+  else S.current.body = htmlToMd(el.editable);
+}
+
+function toggleSource() {
+  if (!S.current || !canEdit(S.current)) return;
+  if (S.mode !== 'write') { setMode('write'); return; }
+
+  takeSurface();
+  S.src = !S.src;
+  if (!S.src) S.marks = false;
+  paintWrite();
+  (S.src ? el.mdSource : el.editable).focus();
+  updateStatus();
+}
+
+function toggleMarks() {
+  if (!S.current || !canEdit(S.current)) return;
+  if (S.mode !== 'write') setMode('write');
+
+  takeSurface();
+  if (!S.src) S.src = true;
+  S.marks = !S.marks;
+  paintWrite();
+  el.mdSource.focus();
+  if (S.marks) toast('marks on: · a space, ¶ the end of a line. They are not saved.');
+  updateStatus();
+}
+
 /* ── modes ────────────────────────────────────────────────────────── */
 
 function setMode(mode, opts = {}) {
@@ -1370,8 +1483,8 @@ function setMode(mode, opts = {}) {
   el.paneView.hidden = mode !== 'view';
 
   if (mode === 'write') {
-    el.editable.innerHTML = mdToHtml(S.current.body || '');
-    el.editable.focus();
+    paintWrite();
+    (S.src ? el.mdSource : el.editable).focus();
   } else {
     paintView(S.current);
   }
@@ -1455,12 +1568,7 @@ function toggleCode() {
   onEdit();
 }
 
-function onEdit() {
-  if (!canEdit(S.current)) return;
-
-  S.current.title = el.title.value;
-  if (S.mode === 'write') S.current.body = htmlToMd(el.editable);
-
+function afterEdit() {
   S.dirty = true;
 
   const row = S.notes.find((n) => n.id === S.current.id);
@@ -1472,6 +1580,23 @@ function onEdit() {
 
   scheduleSave();
   updateStatus();
+}
+
+function onEdit() {
+  if (!canEdit(S.current)) return;
+
+  S.current.title = el.title.value;
+  if (S.mode === 'write' && !S.src) S.current.body = htmlToMd(el.editable);
+
+  afterEdit();
+}
+
+/* typing in the markdown view: the body is the text, marks stripped */
+function onSourceEdit() {
+  if (!canEdit(S.current)) return;
+  const text = el.mdSource.value;
+  S.current.body = S.marks ? withoutMarks(text) : text;
+  afterEdit();
 }
 
 /* Guards against a slow render overwriting a newer one when the user moves

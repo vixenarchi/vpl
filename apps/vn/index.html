@@ -148,11 +148,24 @@
             <button data-cmd="createLink" title="link (Ctrl+K in text)">link</button>
             <button data-cmd="unlink" title="remove link">unlink</button>
             <button data-cmd="removeFormat" title="clear formatting">⌫</button>
+            <span class="tb-sep tb-src-sep"></span>
+            <!-- N / MD: the same words, two ways of seeing them. Pressed, the
+                 button is dark and the surface is the markdown that is actually
+                 stored — that is also how you see the hidden formatting. -->
+            <button id="btn-src" class="tb-src" type="button" aria-pressed="false"
+                    title="normal text, or the markdown underneath (Ctrl+M)">N</button>
+            <!-- ¶: · for a space, ¶ for the end of a line, ° for a hard space -->
+            <button id="btn-marks" class="tb-marks" type="button" aria-pressed="false"
+                    title="show the marks: · a space, ¶ the end of a line">¶</button>
           </div>
 
           <div id="editable" class="editable" contenteditable="true" spellcheck="true"
                role="textbox" aria-multiline="true" aria-label="note body"
                data-placeholder="write. bold is Ctrl+B."></div>
+          <!-- the same body, as the markdown that is stored -->
+          <textarea id="md-source" class="md-source" spellcheck="true" hidden
+                    aria-label="the markdown this note is stored as"
+                    placeholder="the markdown this note is stored as"></textarea>
         </div>
 
         <!-- VIEW: rendered -->

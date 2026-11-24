@@ -69,8 +69,8 @@ export function mountSettings({ dialog, proxy, onSaved } = {}) {
   dialog.innerHTML = `
     <div class="set-head">
       <h2>settings</h2>
-      <button class="set-mode" type="button" data-a="mode"
-              title="switch between normal and dark (the palette tab has three)">dark</button>
+      <button class="set-mode" type="button" data-a="mode" aria-label="dark or normal"
+              title="dark or normal — one press (the theme tab has all three)">◐</button>
       <button class="dialog-x" type="button" data-a="close" aria-label="close">✕</button>
     </div>
 
@@ -180,11 +180,16 @@ export function mountSettings({ dialog, proxy, onSaved } = {}) {
     say(currentTheme() === 'dark' ? 'ink, for a dark room.' : 'paper, the default.');
   }
 
-  /* the button says what pressing it gives you, not what is on now */
+  /* The icon is the same ◐ the bar used to carry: half-filled is "there is a
+   * dark side", and pressing it walks between them. The palette tab underneath
+   * is where the three named themes live. */
   function paintMode() {
     const b = $('[data-a=mode]');
     if (!b) return;
-    b.textContent = currentTheme() === 'light' ? 'dark' : 'normal';
+    const dark = currentTheme() !== 'light';
+    b.textContent = dark ? '☀' : '◐';
+    b.setAttribute('aria-pressed', String(dark));
+    b.title = dark ? 'back to paper' : 'ink, for a dark room';
   }
 
   function paintThemes() {

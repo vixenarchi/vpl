@@ -286,3 +286,10 @@ Two things, both on the same pattern and neither a new architecture:
 - No links from a `vr` row to a test case yet (`verification` is a sentence).
 - No central settings app: the shared file is `packages/shell/ai.js`, the keys are
   per browser per address.
+
+## The writing surface
+
+vn stores markdown and shows it two ways. Read `docs/editor.md` before changing
+anything about blank lines, links or paste: text stays text, both surfaces share
+one set of measurements, an empty paragraph has its own mark, and a paste is
+cleaned at the door.

@@ -77,7 +77,9 @@ async function makeAccount(email) {
   const p = await newPage();
   await signIn(p, email);
   await p.click('#btn-out');
-  await p.waitForSelector('#btn-eye', { timeout: 20000 });
+  /* the gate is one card in every app now: wait for the form, not for a
+   * show-password eye that the shared gate does not carry */
+  await p.waitForSelector('#gate-form', { state: 'visible', timeout: 20000 });
   await p.close();
 }
 
