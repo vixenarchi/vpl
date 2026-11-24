@@ -117,12 +117,34 @@ if (!/done/.test(workerOut)) console.log(workerOut.slice(-800));
 /* ── the answer comes back to be kept or dropped ───────────────── */
 await pg.reload({ waitUntil: 'networkidle' });
 await pg.waitForTimeout(1500);
+/* the desk reopens whatever was last on screen; other runs may have left a
+ * project there, so walk back to ours by name rather than trusting the order */
+ok(await until(async () => (await pg.locator('#proj-list .proj-row', { hasText: 'va-handoff ' + STAMP }).count()) === 1),
+  'our job is in the rail after a reload');
+if (!(await pg.locator('#proj-list .proj-row.on', { hasText: STAMP }).count())) {
+  await pg.locator('#proj-list .proj-row', { hasText: 'va-handoff ' + STAMP }).locator('.pick').click();
+  await pg.waitForTimeout(1200);
+}
 ok(await until(async () => (await pg.textContent('#jobs')).includes('answered')), 'the desk shows it as answered');
 ok((await pg.textContent('#jobs')).includes('boxes.yaml'), 'and names the file the agent wrote');
+ok((await pg.textContent('#jobs')).includes('a list the desk can draw'),
+  'and says, before you keep it, that the list is drawable');
 await pg.click('#jobs .job [data-act="keep"]');
-ok(await until(async () => (await pg.inputValue('#out-body')).includes('Person')), 'keeping it puts the answer on the desk');
-ok((await pg.inputValue('#out-body')).includes('[assumption]'), 'the agent\'s own words are kept, assumptions and all');
+ok(await until(async () => (await pg.locator('#out-versions option').count()) === 2),
+  'keeping it puts two papers on the desk: the report and the list');
 ok(await until(async () => (await pg.locator('#artifacts .art').count()) === 2), 'its file joins the pile');
+
+/* ── the reverse pull: the list the agent read comes back as a drawing ── */
+ok((await pg.textContent('#out-versions')).includes('boxes.yaml'), 'the list is named after the file the agent wrote');
+ok(await until(async () => !(await pg.locator('#draw').isHidden())), 'and the desk draws it without being asked');
+ok(await until(async () => (await pg.locator('#draw-svg .box').count()) >= 2), 'two boxes, as the file said');
+ok((await pg.textContent('#draw-count')).includes('arrows'), 'and counts the arrows');
+ok((await pg.inputValue('#out-body')).includes('boxes:'), 'the answer is the yaml itself, editable as always');
+/* the report is still there, assumptions and all — walk back to it */
+await pg.selectOption('#out-versions', { index: 1 });
+await pg.waitForTimeout(500);
+ok((await pg.inputValue('#out-body')).includes('[assumption]'),
+  'and the agent\'s own words are kept, assumptions and all');
 await pg.reload({ waitUntil: 'networkidle' });
 await pg.waitForTimeout(1400);
 ok((await pg.locator('#artifacts .art').count()) === 2, 'the pile survives the reload');

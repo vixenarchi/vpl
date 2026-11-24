@@ -113,7 +113,11 @@ ${BOXES}
 
 Never guess an address, a region or a version that is not in the inputs. A
 component whose purpose is unclear keeps its inventory name and gets
-\`note: purpose unknown\`.`,
+\`note: purpose unknown\`.
+
+Then write that same list once more, and nothing else, as a file named
+\`deployment.yaml\` under \`out/files/\`. It is the same list as the block above,
+not a second opinion — the desk draws the file, so the two must agree.`,
     system: 'You read inventories of real systems and say what is there, what is risky and what is missing. You do not tidy, rename or guess.',
   },
 ];

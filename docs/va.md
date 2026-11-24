@@ -293,8 +293,48 @@ the kind of thing only a click finds.
 1. ~~**The deck**~~ — done.
 2. ~~**The box list and the canvas**~~ — done. See *Built: the drawing* below.
 3. ~~**The hand-off**~~ — done.
-4. **Only if it earns it** — the reverse pull, done by the agent, shown as a
-   report and a drawing.
+4. ~~**The reverse pull**~~ — done, and it earned it: a job that reads a real
+   environment comes back with a list, and the list opens as a drawing. See
+   *Built: the reverse pull* below.
+
+## Built: the reverse pull (slice 4)
+
+The agent reads an inventory — a `tfstate`, a `kubectl` dump, a cloud export —
+and answers with a list of boxes. **Keeping the job keeps the paper and the
+picture**, and the picture needed no new machinery at all:
+
+- **The list is a file, and a file is not an answer.** The agent writes
+  `out/files/deployment.yaml`; the desk, on *keep*, reads any returned `.yaml`
+  whose text parses as boxes, and writes it as an ordinary answer of kind
+  `code` titled `deployment.yaml — <when>`. The canvas already draws the
+  answer it is looking at, so **no diagram table, no second kind of truth, no
+  new button** — and the list is editable text like everything else.
+- **The file stays on the pile as evidence.** It is kept twice on purpose: once
+  as the thing that was returned, once as the thing being drawn. The report
+  stays as the third paper. A person can walk between them in the versions
+  menu, which now shows **titles** — two reports from two evenings should not be
+  told apart by a word count.
+- **Saying so before the press.** The job card marks a returned `.yaml` with
+  *a list the desk can draw*, so *keep* is not a surprise: the drawing appears
+  because the file said it would.
+- **The template asks for it.** `report` now says: write the same list once
+  more, and nothing else, to `out/files/deployment.yaml` — "not a second
+  opinion; the desk draws the file, so the two must agree."
+- **An unreadable file loses nothing.** If the download fails or the text does
+  not parse, the report is still kept — one unreadable file is not a reason to
+  lose the answer.
+
+**Two bugs found by walking it.** The desk had been building download paths as
+`<job>/out/<name>` since slice 3, while the worker uploads to
+`<job>/out/files/<name>` — nothing had ever *read* a returned file, so nothing
+noticed. And the hand-off suite was choosing the open project by list order, so
+leftover projects from earlier runs made it check the wrong desk; it now walks
+to its own project by name.
+
+`apps/vn/test/va-handoff.mjs` is **21/21** locally and against
+`https://va.terg.hr`: the job, the claim, the answer, two papers, the drawing
+with two boxes and an arrow, the report's `[assumption]` marks intact, the pile
+after a reload, and zero console errors.
 
 ## Built: the agent, and where it runs
 

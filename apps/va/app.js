@@ -549,8 +549,10 @@ function paintOutput() {
   body.readOnly = S.role === 'view';
 
   versions.hidden = S.outputs.length < 2;
+  /* an answer is a paper, and a paper has a name: two reports from two evenings
+   * should not be told apart by a word count alone */
   versions.innerHTML = S.outputs.map((x, i) => {
-    const label = i === 0 ? 'just now' : engine.when(x.created_at);
+    const label = x.title || (i === 0 ? 'just now' : engine.when(x.created_at));
     return `<option value="${x.id}">${esc(label)} · ${engine.countWords(x.body)} words</option>`;
   }).join('');
   versions.value = o.id;
@@ -770,7 +772,9 @@ function paintJobs() {
           : '<p class="job-wait muted">the desk checks again by itself</p>'));
     if (j.status === 'done' && files.length) {
       li.insertAdjacentHTML('beforeend', '<ul class="job-files">'
-        + files.map((f) => `<li><span>${esc(f.name)}</span></li>`).join('') + '</ul>');
+        + files.map((f) => `<li><span>${esc(f.name)}</span>`
+          + (/\.ya?ml$/i.test(f.name) ? '<em class="job-draw">a list the desk can draw</em>' : '')
+          + '</li>').join('') + '</ul>');
     }
     li.querySelectorAll('[data-act]').forEach((b) => {
       b.onclick = () => (b.dataset.act === 'keep' ? keepJob(j) : dropJob(j));
@@ -779,18 +783,49 @@ function paintJobs() {
   }
 }
 
+/* The reverse pull, in its smallest form. An agent that read a real environment
+ * comes back with a list of boxes; a list of boxes is a drawing. So keeping the
+ * job keeps the report *and*, if one of the files is a list, the list as an
+ * answer of its own — the canvas reads answers, so nothing new is stored and no
+ * second kind of truth appears. If the file cannot be read, the report is still
+ * kept: one unreadable file is not a reason to lose the answer. */
+async function listFromJob(j) {
+  const files = (Array.isArray(j.files) ? j.files : []);
+  for (const f of files) {
+    if (!/\.ya?ml$/i.test(f.name)) continue;
+    try {
+      const text = await db.jobText(j.path + '/out/files/' + f.name);
+      if (parseDocument(text).boxes.length) return { name: f.name, text };
+    } catch { /* fall through to the next file */ }
+  }
+  return null;
+}
+
 async function keepJob(j) {
   const title = (templateById(j.template)?.label || j.template) + ' — ' + jobWhen(j);
   try {
     const body = (j.report || '').trim() || '[the agent said nothing]';
     const out = await db.addOutput(S.project.id, { kind: 'report', title, body });
     S.outputs.unshift(out);
-    S.current = out.id;
+
+    /* a list came back? then the person gets the picture with the paper */
+    const pulled = await listFromJob(j);
+    let drawn = null;
+    if (pulled) {
+      drawn = await db.addOutput(S.project.id, {
+        kind: 'code', title: pulled.name + ' — ' + jobWhen(j), body: pulled.text,
+      });
+      S.outputs.unshift(drawn);
+    }
+
+    S.current = drawn ? drawn.id : out.id;
     paintOutput();
+    if (drawn) { S.drawing = true; S.view = 'all'; paintOutput(); }
+
     const files = (Array.isArray(j.files) ? j.files : []);
     for (const [i, f] of files.entries()) {
       const a = await db.addArtifact(S.project.id, {
-        kind: 'file', title: f.name, text: '', file_path: j.path + '/out/' + f.name,
+        kind: 'file', title: f.name, text: '', file_path: j.path + '/out/files/' + f.name,
         file_name: f.name, file_size: f.size || 0, file_mime: '', pos: 90 + i,
       });
       S.artifacts.push(a);
@@ -798,7 +833,8 @@ async function keepJob(j) {
     await db.updateJob(j.id, { status: 'done' });
     renderArtifacts();
     paintSpec();
-    toast(files.length ? 'kept, with ' + files.length + ' file(s) on the pile' : 'kept as a new answer');
+    if (drawn) toast('kept — the report, the file on the pile, and a drawing of the list');
+    else toast(files.length ? 'kept, with ' + files.length + ' file(s) on the pile' : 'kept as a new answer');
   } catch (err) { toast('could not keep it: ' + err.message); }
 }
 

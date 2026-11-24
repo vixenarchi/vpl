@@ -398,6 +398,8 @@ body[data-guest='1'] .brief { pointer-events: none; }
 .job-files { list-style: none; margin: 0.35rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .job-files li { font-size: 0.74rem; font-family: var(--mono); color: var(--ink-2);
   border: 1px solid var(--line); border-radius: 5px; padding: 0.1rem 0.35rem; }
+.job-draw { font-style: normal; font-family: var(--sans); color: var(--ink-3); }
+.job-draw::before { content: ' · '; }
 @media print { .handoff, .jobs { display: none !important; } }
 
 /* the key of record: three buttons under the key field (shell/ai.js) */
