@@ -1153,3 +1153,26 @@ labels at 9.6px. The fix is one block in `tokens.css` (a floor under every
 tappable thing, a floor under five-grade type) plus wrapping tool rows on a phone,
 because the bigger controls then pushed the last button off the edge. It ends at
 zero, and the floor is now a test rather than a habit.
+
+## 2026-11-23 (later) — the front door, and a gate that measures it
+
+`apps/www` exists and is deployed: what Terg is, the eight applications with
+their addresses, six rules, an faq of the ten questions people actually ask,
+privacy, an imprint that marks its own gaps, and the same page in Croatian.
+Static, no cookies, no third-party request, `default-src 'self'`, and the same
+palette as the apps (copied by `tools/stage.sh www`).
+
+`./tools/test-all.sh` now runs the whole thing in one command, locally or against
+the deployments, and it is what found the last round of real problems:
+
+- `vi`'s parked reason field was **28 px** — nobody would see that on a desk.
+- `ux-sniff` reported a correctly labelled field as unlabelled; it now knows
+  `label[for]`, `aria-labelledby` and `title`, and it draws WCAG's line: a link
+  inside a sentence is text, a button or a standing link is a control.
+- `deploy` shipped from a fixed file list, so the site's `site.js` and subpages
+  became HTML 404s — which the browser reports as *"module script with MIME type
+  text/html"*, naming the symptom and not the cause. An app is now **its files**.
+- A dot-directory was never copied, so `security.txt` was a 404 only the published
+  test could see.
+
+Both runs are green: **23 groups, 0 failed**, local and `VPL_PROD=1`.
