@@ -1243,3 +1243,29 @@ Two small things, so that it is noticeable:
 And one more bug of the "tests go quiet" family: the first attempt used `esc()`,
 which vn does not have (it is `escapeHtml`), so `paintShare` threw and the whole
 share list stayed empty. The suite caught it in one run, which is what it is for.
+
+## 2026-11 · the box that swapped
+
+The host sat at 16 GB of 20 GB used and 3.6 GB of a 4 GB swap file, with
+`vm.swappiness` at 60 — Ubuntu's default, which lets the kernel evict working
+memory to disk while it keeps page cache, because "cold cache" looks cheaper
+than "hot page". That is a policy choice, and the wrong one for a machine that
+is one developer's desktop and one small suite's build box.
+
+`tools/swap-tune.sh` does the two steps and refuses the second when it cannot be
+taken back:
+
+- `vm.swappiness=10`, written to `/etc/sysctl.d/60-vpl-swap.conf` so it survives
+  a reboot. Swap should answer pressure, not idleness.
+- `swapoff -a && swapon -a`, only when `MemAvailable` exceeds what is in swap by
+  1.5 GB — bringing 3.6 GB back with 4.2 GB free leaves no margin, and an OOM
+  kill during a reload is a self-inflicted wound.
+- it names the biggest residents and does **not** stop them. On this machine the
+  answer was a single Firefox content process at 9.4 GB, and a browser tab is a
+  person's decision, not a script's.
+
+Run it dry to see what it would do, `sudo ./tools/swap-tune.sh --apply` to do it.
+
+The lesson, again in the same shape as the rest of this file: swap tells you
+what happened, not what is happening. Read `/proc/meminfo`, `ps` and the swap
+file together before changing a number.
