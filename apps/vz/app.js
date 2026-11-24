@@ -981,4 +981,4 @@ const DOCK = mountDock({
   context: dockContext,
   onUse: useFromDock,
 });
-mountNotice({ app: 'vz', host: '#spec' });
+mountNotice({ app: 'vz', column: '#spec' });

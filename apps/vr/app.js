@@ -1687,4 +1687,4 @@ const DOCK = mountDock({
   context: dockContext,
   onUse: useFromDock,
 });
-mountNotice({ app: 'vr', host: '#spec' });
+mountNotice({ app: 'vr', column: '#spec' });

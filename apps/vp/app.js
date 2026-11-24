@@ -346,8 +346,10 @@ wireSettings();
 const DOCK = mountDock({
   app: 'vp',
   openSettings: () => SET && SET.open(),
-  context: () => (S.codes?.length || S.ledger?.length
-    ? 'Codes:\n' + (S.codes || []).map((c) => `- ${c.label || 'a code'} · ${c.kind || ''} · ${c.status || ''}`).join('\n')
+  context: () => ((S.codes || []).length
+    ? 'Codes in the drawer:\n' + S.codes.map((c) =>
+        `- ${c.label || 'a code'} · ${c.credits} calls · `
+        + (c.revoked ? 'revoked' : c.redeemed_by ? 'taken' : 'waiting')).join('\n')
     : ''),
 });
-mountNotice({ app: 'vp', host: '.desk' });
+mountNotice({ app: 'vp', column: '.desk' });

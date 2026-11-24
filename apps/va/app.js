@@ -1144,5 +1144,4 @@ const DOCK = mountDock({
   context: dockContext,
   onUse: useFromDock,
 });
-mountNotice({ app: 'va', host: '#spec' });
-mountNotice({ app: 'va', host: '#welcome' });
+mountNotice({ app: 'va', column: ['#spec', '#welcome'] });

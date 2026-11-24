@@ -4,8 +4,8 @@
  * us appears inside one of our apps.
  *
  * Rules it keeps:
- *   - it is a box with an edge, centred over the work, never a bar that shifts
- *     the layout;
+ *   - it is a box with an edge in the middle of the bar, between ＋ and who —
+ *     chrome, not work, so it costs the person no sheet and shifts nothing;
  *   - colour is never the only signal: every tone carries its word;
  *   - a person can put it away, and nothing comes back that they put away —
  *     the same id stays dismissed in that browser;
@@ -65,82 +65,145 @@ export function liveNotices(app, now = Date.now()) {
   return NOTICES.filter((n) => alive(n, app, now));
 }
 
-/* mountNotice({ app, host, every = 9000 })
- * `host` is the element the notice sits in — the app's work column, so the box
- * is centred over the work and not over the bar. */
-export function mountNotice({ app, host, every = 9000 } = {}) {
-  const box = typeof host === 'string' ? document.querySelector(host) : host;
+/* A phone's bar is the tightest row in the app: between ＋ and the name there
+ * is room for about ten characters, and a sentence cut to "test sy…" is worse
+ * than none. So below this width the notice goes to the top of the work column,
+ * where the sentence fits whole. */
+const NARROW = '(max-width: 52rem)';
+
+function barSlot() {
+  return document.querySelector('.bar .grow');
+}
+
+/* Where the boxes go. A bar is one slot; a phone may need more, because vd, vc
+ * and va keep the work area and the welcome screen as siblings and swap between
+ * them — mounting into both means the announcement is on the screen whichever
+ * one is showing, and putting it away puts away every copy. */
+function hostsFor({ host, column } = {}) {
+  const el = (x) => (typeof x === 'string' ? document.querySelector(x) : x);
+  if (host) { const one = el(host); return one ? [one] : []; }
+  const narrow = window.matchMedia?.(NARROW).matches;
+  if (!narrow) { const bar = barSlot(); return bar ? [bar] : []; }
+  const cols = (Array.isArray(column) ? column : [column]).map(el).filter(Boolean);
+  return cols.length ? cols : [barSlot()].filter(Boolean);
+}
+
+/* The whole app is hidden until somebody is signed in, so the mount waits for
+ * the bar to appear once before choosing — the only reason a notice is ever
+ * late. */
+function whenVisible(box, fn) {
+  if (box.getClientRects().length) { fn(); return; }
+  const obs = new MutationObserver(() => {
+    if (!box.getClientRects().length) return;
+    obs.disconnect();
+    fn();
+  });
+  obs.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['hidden', 'class'] });
+  setTimeout(() => obs.disconnect(), 60000);
+}
+
+/* mountNotice({ app, column, host, every = 9000 })
+ * On a wide screen the notice lives in the bar, in the slot the bar leaves free
+ * between ＋ and the person's name — chrome, not work, so the sheet keeps every
+ * row. On a phone it sits at the top of `column` (or each of `columns`), where
+ * the sentence is not cut. `host` pins it somewhere, for a test. */
+export function mountNotice(opts = {}) {
+  const { app, column, host, every = 9000 } = opts;
+  if (!host && !barSlot()?.getClientRects().length) {
+    const bar = barSlot();
+    if (bar) { whenVisible(bar, () => mountNotice(opts)); return null; }
+  }
+  const hosts = hostsFor({ host, column });
   const list = liveNotices(app);
-  if (!box || !list.length) return null;
-
-  const el = document.createElement('section');
-  el.className = 'notice';
-  el.setAttribute('role', 'status');
-  el.dataset.tone = list[0].tone || 'notice';
-
-  const word = document.createElement('span');
-  word.className = 'notice-tone';
-  const text = document.createElement('p');
-  text.className = 'notice-text';
-  const x = document.createElement('button');
-  x.type = 'button';
-  x.className = 'notice-x';
-  x.setAttribute('aria-label', 'put this notice away');
-  x.textContent = '✕';
-  el.append(word, text, x);
-  el.dataset.id = list[0].id;
-  box.prepend(el);
+  if (!hosts.length || !list.length) return null;
 
   let i = 0;
   let timer = null;
   let paused = false;
 
+  /* one box per host, all showing the same sentence at the same time */
+  const boxes = hosts.map((into) => {
+    const el = document.createElement('section');
+    el.className = 'notice';
+    el.setAttribute('role', 'status');
+    el.dataset.tone = list[0].tone || 'notice';
+    el.dataset.id = list[0].id;
+
+    const word = document.createElement('span');
+    word.className = 'notice-tone';
+    const text = document.createElement('p');
+    text.className = 'notice-text';
+    const x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'notice-x';
+    x.setAttribute('aria-label', 'put this notice away');
+    x.textContent = '✕';
+    el.append(word, text, x);
+
+    /* outside the bar it needs its own margins and it may wrap: a column is wide
+     * and tall, and a sentence there does not have to be cut */
+    if (!into.closest('.bar')) el.classList.add('col');
+    into.prepend(el);
+
+    el.addEventListener('mouseenter', () => { paused = true; });
+    el.addEventListener('mouseleave', () => { paused = false; });
+    el.addEventListener('focusin', () => { paused = true; });
+    el.addEventListener('focusout', () => { paused = false; });
+    x.addEventListener('click', () => close());
+
+    return { el, word, text };
+  });
+  const els = boxes.map((b) => b.el);
+
   const paint = (n) => {
-    el.dataset.tone = n.tone || 'notice';
-    word.textContent = TONE_WORD[n.tone] || TONE_WORD.notice;
-    text.replaceChildren();
-    if (n.href) {
-      const a = document.createElement('a');
-      a.href = n.href;
-      a.textContent = n.text;
-      text.append(a);
-    } else {
-      text.textContent = n.text;
+    for (const b of boxes) {
+      b.el.dataset.tone = n.tone || 'notice';
+      b.word.textContent = TONE_WORD[n.tone] || TONE_WORD.notice;
+      b.text.replaceChildren();
+      if (n.href) {
+        const a = document.createElement('a');
+        a.href = n.href;
+        a.textContent = n.text;
+        b.text.append(a);
+      } else {
+        b.text.textContent = n.text;
+      }
     }
   };
 
   const show = (k, fade) => {
     i = ((k % list.length) + list.length) % list.length;
-    if (!fade) { paint(list[i]); return; }
-    /* a short cross-fade, and none of it if the person asked for less motion */
     const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (still) { paint(list[i]); return; }
-    el.classList.add('swap');
-    setTimeout(() => { paint(list[i]); el.classList.remove('swap'); }, 180);
+    if (!fade || still) { paint(list[i]); return; }
+    /* a short cross-fade, and none of it if the person asked for less motion */
+    for (const el of els) el.classList.add('swap');
+    setTimeout(() => { paint(list[i]); for (const el of els) el.classList.remove('swap'); }, 180);
   };
 
   const tick = () => {
     if (paused || list.length < 2) return;
     show(i + 1, true);
   };
-
-  const start = () => { if (list.length > 1) timer = setInterval(tick, every); };
+  const start = () => { if (list.length > 1 && !timer) timer = setInterval(tick, every); };
   const stop = () => { if (timer) clearInterval(timer); timer = null; };
 
-  el.addEventListener('mouseenter', () => { paused = true; });
-  el.addEventListener('mouseleave', () => { paused = false; });
-  el.addEventListener('focusin', () => { paused = true; });
-  el.addEventListener('focusout', () => { paused = false; });
-
-  const close = () => {
-    putAway(list[i].id);
+  function close() {
+    const id = list[i].id;
     stop();
-    /* the same notice may be mounted in more than one column (a job's work
-     * area and the welcome screen are siblings) — putting it away puts it away */
-    for (const other of document.querySelectorAll('.notice[data-id="' + list[i].id + '"]')) other.remove();
-    if (liveNotices(app).length) mountNotice({ app, host: box, every });
+    putAway(id);
+    for (const other of document.querySelectorAll('.notice[data-id="' + id + '"]')) other.remove();
+    if (liveNotices(app).length) mountNotice(opts);
+  }
+
+  /* the bar and the column swap places once, at a width, not continuously */
+  const mq = window.matchMedia?.(NARROW);
+  const replace = () => {
+    if (hostsFor({ host, column }).some((h) => h.contains(els[0]))) return;
+    stop();
+    for (const el of els) el.remove();
+    mountNotice(opts);
   };
-  x.addEventListener('click', close);
+  mq?.addEventListener?.('change', replace);
 
   show(0, false);
   start();
@@ -150,6 +213,7 @@ export function mountNotice({ app, host, every = 9000 } = {}) {
     next: () => show(i + 1, true),
     get count() { return list.length; },
     get current() { return list[i]; },
-    el,
+    el: els[0],
+    els,
   };
 }

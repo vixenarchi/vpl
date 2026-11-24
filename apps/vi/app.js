@@ -1233,4 +1233,4 @@ const DOCK = mountDock({
   context: dockContext,
   onUse: useFromDock,
 });
-mountNotice({ app: 'vi', host: '#funnel' });
+mountNotice({ app: 'vi', column: '#funnel' });

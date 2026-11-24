@@ -2960,4 +2960,4 @@ const DOCK = mountDock({
   context: dockContext,
   onUse: useFromDock,
 });
-mountNotice({ app: 'vn', host: '#main' });
+mountNotice({ app: 'vn', column: '#main' });

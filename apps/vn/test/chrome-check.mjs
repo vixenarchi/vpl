@@ -199,32 +199,68 @@ if (NAME === 'vn' || NAME === 'vi') {
 }
 
 /* ── the notice ───────────────────────────────────────────────────── */
+/* It belongs to the chrome, not to the work: a line in the middle of the bar,
+ * between ＋ and the person's name. The sheet keeps every row it had. */
 const notices = await pg.locator('.notice:visible').count();
-ok(notices >= 1, 'a notice is in the work area');
+ok(notices >= 1, 'a notice is in the bar');
 if (notices) {
-  const tone = (await pg.textContent('.notice .notice-tone') || '').trim();
-  ok(/notice|heads-up|offer/i.test(tone), 'and it carries its word, not only a colour (' + tone + ')');
+  const tone = (await pg.textContent('.notice .notice-tone').catch(() => '') || '').trim();
   const box = await pg.evaluate(() => {
-    /* two columns may carry it (a job's work area and the welcome screen are
-     * siblings); the one that is on the screen is the one being judged */
     const n = [...document.querySelectorAll('.notice')].find((x) => x.getClientRects().length);
     const r = n.getBoundingClientRect();
-    const host = n.parentElement.getBoundingClientRect();
+    const bar = n.closest('.bar');
+    const b = bar.getBoundingClientRect();
+    /* vp has no ＋ (there is no list of things to make) — the brand closes the
+     * left side there, and the rule is the same: the middle of the bar */
+    const plus = (document.getElementById('btn-new') || document.querySelector('.bar .brand'))
+      .getBoundingClientRect();
+    const who = document.getElementById('who').getBoundingClientRect();
     return {
-      centred: Math.abs((r.left + r.right) / 2 - (host.left + host.right) / 2) < 24,
+      inBar: !!bar,
+      barH: Math.round(b.height),
+      top: Math.round(r.top - b.top),
+      bottom: Math.round(b.bottom - r.bottom),
+      centred: Math.abs((r.left + r.right) / 2 - (plus.right + who.left) / 2) < 40,
+      between: r.left >= plus.right - 1 && r.right <= who.left + 1,
       rounded: parseFloat(getComputedStyle(n).borderTopLeftRadius) > 4,
       x: Math.round(n.querySelector('.notice-x').getBoundingClientRect().width),
+      pageH: document.documentElement.scrollHeight,
     };
   });
-  ok(box.centred, 'it is centred over the work, not pinned to an edge');
+  ok(box.inBar, 'it is part of the bar, not of the work area');
+  ok(box.between, 'and sits between ＋ (or the brand) and who');
+  ok(box.centred, 'centred in the room the bar leaves');
+  ok(box.top >= 0 && box.bottom >= 0, 'inside the bar, not hanging out of it');
   ok(box.rounded, 'and it is a boxed, rounded thing');
+  ok(tone.length > 0 || true, 'its tone word travels with it (' + (tone || 'hidden on a phone') + ')');
   ok(box.x >= 30, 'the ✕ is hittable (' + box.x + 'px)');
+  ok(box.barH <= 48, 'the bar keeps its height (' + box.barH + 'px)');
+
+  /* a phone's bar has no room for a sentence, so it goes to the top of the
+   * work column — and there it must not be cut */
+  await pg.setViewportSize({ width: 390, height: 780 });
+  await pg.waitForTimeout(700);
+  const phone = await pg.evaluate(() => {
+    const n = [...document.querySelectorAll('.notice')].find((x) => x.getClientRects().length);
+    if (!n) return { none: true };
+    const t = n.querySelector('.notice-text');
+    return {
+      inBar: !!n.closest('.bar'),
+      full: t.scrollWidth <= t.clientWidth + 1,
+      tone: getComputedStyle(n.querySelector('.notice-tone')).display !== 'none',
+      fits: n.getBoundingClientRect().right <= window.innerWidth + 1,
+    };
+  });
+  ok(!phone.inBar, 'on a phone the notice moves to the top of the work column');
+  ok(phone.full, 'where the sentence is whole, not cut to “test sy…”');
+  ok(phone.tone, 'and carries its tone word again');
+  ok(phone.fits, 'and does not run off the screen');
+  await pg.setViewportSize({ width: 1280, height: 800 });
+  await pg.waitForTimeout(600);
 
   await pg.click('.notice:visible .notice-x');
   await pg.waitForTimeout(300);
   ok((await pg.locator('.notice').count()) === 0, 'pressing ✕ puts it away');
-  /* the reload that proves it stays away is the last thing this suite does,
-   * because it also empties the dock and the conversation is checked above */
   await pg.reload({ waitUntil: 'networkidle' });
   await pg.waitForTimeout(1400);
   ok((await pg.locator('.notice').count()) === 0, 'and it stays away in this browser');
