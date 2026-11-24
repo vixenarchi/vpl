@@ -184,8 +184,52 @@ if (NAME === 'vn' || NAME === 'vi') {
       ok(grown === cards + 1, 'pressing it pins one more idea (' + cards + ' → ' + grown + ')');
     }
   }
+} else if (NAME === 'vp') {
+  /* vp has no document: a code, a key and a ledger */
+  ok(useIt === 0, 'vp has nowhere to put words, so it offers no *use it*');
 } else {
-  ok(useIt === 0, 'nothing in the dock lands anywhere without a person pressing a button');
+  /* every app with a document offers the same button, and only a press acts */
+  ok(useIt === 1, 'the app offers *use it* as a button, not as a habit');
+  await pg.click('#dock [data-use]');
+  await pg.waitForTimeout(600);
+  const said = (await pg.textContent('#dock .dock-msg')).trim();
+  const used = await pg.locator('#dock .dock-used').count();
+  ok(used === 1 || said.length > 0,
+    'pressing it either writes or says why not' + (said ? ' (“' + said + '”)' : ''));
+}
+
+/* ── the notice ───────────────────────────────────────────────────── */
+const notices = await pg.locator('.notice:visible').count();
+ok(notices >= 1, 'a notice is in the work area');
+if (notices) {
+  const tone = (await pg.textContent('.notice .notice-tone') || '').trim();
+  ok(/notice|heads-up|offer/i.test(tone), 'and it carries its word, not only a colour (' + tone + ')');
+  const box = await pg.evaluate(() => {
+    /* two columns may carry it (a job's work area and the welcome screen are
+     * siblings); the one that is on the screen is the one being judged */
+    const n = [...document.querySelectorAll('.notice')].find((x) => x.getClientRects().length);
+    const r = n.getBoundingClientRect();
+    const host = n.parentElement.getBoundingClientRect();
+    return {
+      centred: Math.abs((r.left + r.right) / 2 - (host.left + host.right) / 2) < 24,
+      rounded: parseFloat(getComputedStyle(n).borderTopLeftRadius) > 4,
+      x: Math.round(n.querySelector('.notice-x').getBoundingClientRect().width),
+    };
+  });
+  ok(box.centred, 'it is centred over the work, not pinned to an edge');
+  ok(box.rounded, 'and it is a boxed, rounded thing');
+  ok(box.x >= 30, 'the ✕ is hittable (' + box.x + 'px)');
+
+  await pg.click('.notice:visible .notice-x');
+  await pg.waitForTimeout(300);
+  ok((await pg.locator('.notice').count()) === 0, 'pressing ✕ puts it away');
+  /* the reload that proves it stays away is the last thing this suite does,
+   * because it also empties the dock and the conversation is checked above */
+  await pg.reload({ waitUntil: 'networkidle' });
+  await pg.waitForTimeout(1400);
+  ok((await pg.locator('.notice').count()) === 0, 'and it stays away in this browser');
+  await pg.click('#dock [data-a=toggle]');
+  await pg.waitForTimeout(300);
 }
 
 await pg.click('#dock [data-a=hide]');

@@ -1,7 +1,8 @@
 import * as settings from './vendor/settings.js';
 import * as engine from './vendor/engine.js';
 import * as who from './vendor/who.js';
-import { mountDock } from './vendor/dock.js';
+import { mountDock, lastField, putInto } from './vendor/dock.js';
+import { mountNotice } from './vendor/notices.js';
 /* vpl · vz — zed. A project is a dictionary; a row is a key and a value.
  *
  * The screen is one list. Keys are monospace and always visible; values stay
@@ -952,4 +953,32 @@ function wireSettings() {
 
 wireSettings();
 
-const DOCK = mountDock({ app: 'vz', openSettings: () => SET && SET.open() });
+/* A dictionary is a list of pairs; the model gets the open one and a slice of
+ * the rest, so "what do we call this elsewhere" is answerable. */
+function dockContext() {
+  if (!S.project) return '';
+  const open = S.pairs.find((r) => r.id === S.openId);
+  const parts = [`Dictionary: ${S.project.name || S.project.title || 'untitled'}`];
+  if (open) parts.push(`Open pair:\n${open.key}: ${open.value || '(no value yet)'}`);
+  const near = S.pairs.slice(0, 30).map((r) => `${r.key}: ${String(r.value || '').slice(0, 80)}`);
+  if (near.length) parts.push('In the sheet:\n' + near.join('\n'));
+  const field = lastField();
+  const sel = field && field.selectionEnd > field.selectionStart
+    ? field.value.slice(field.selectionStart, field.selectionEnd) : '';
+  return { text: parts.join('\n\n'), selection: sel };
+}
+
+function useFromDock(text) {
+  const field = lastField();
+  if (!field) return 'open a row and put the caret in its value first';
+  if (S.role === 'view') return 'this dictionary is read-only for you';
+  return putInto(field, text, null) ? '' : 'that field will not take it';
+}
+
+const DOCK = mountDock({
+  app: 'vz',
+  openSettings: () => SET && SET.open(),
+  context: dockContext,
+  onUse: useFromDock,
+});
+mountNotice({ app: 'vz', host: '#spec' });

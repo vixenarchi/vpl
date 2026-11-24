@@ -12,7 +12,8 @@
 import * as db from './lib/db.js';
 import * as ai from './vendor/ai.js';
 import * as who from './vendor/who.js';
-import { mountDock } from './vendor/dock.js';
+import { mountDock, lastField, putInto } from './vendor/dock.js';
+import { mountNotice } from './vendor/notices.js';
 import * as settings from './vendor/settings.js';
 import * as engine from './vendor/engine.js';
 import { prompts } from './prompts.js';
@@ -1211,8 +1212,25 @@ async function useFromDock(text) {
   } catch (e) { console.warn(e); }
 }
 
+/* What the model is given: the wall, and the idea in front of you. Nothing
+ * scraped from the page — a card is text, and this app knows which one. */
+function dockContext() {
+  if (!S.project) return '';
+  const pick = S.ideas.find((i) => i.id === S.pick);
+  const parts = [`Project: ${S.project.name || S.project.title || 'untitled'}`];
+  if (pick) parts.push(`The idea in front of you: ${pick.text}`);
+  const wall = S.ideas.slice(0, 40).map((i) => '- ' + String(i.text || '').replace(/\s+/g, ' ').trim());
+  if (wall.length) parts.push('On the wall:\n' + wall.join('\n'));
+  const field = lastField();
+  const sel = field && field.selectionEnd > field.selectionStart
+    ? field.value.slice(field.selectionStart, field.selectionEnd) : '';
+  return { text: parts.join('\n\n'), selection: sel };
+}
+
 const DOCK = mountDock({
   app: 'vi',
   openSettings: () => SET && SET.open(),
+  context: dockContext,
   onUse: useFromDock,
 });
+mountNotice({ app: 'vi', host: '#funnel' });

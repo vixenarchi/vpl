@@ -12,7 +12,8 @@
 import * as db from './lib/db.js';
 import * as ai from './vendor/ai.js';
 import * as who from './vendor/who.js';
-import { mountDock } from './vendor/dock.js';
+import { mountDock, lastField, putInto } from './vendor/dock.js';
+import { mountNotice } from './vendor/notices.js';
 import * as engine from './vendor/engine.js';
 import * as settings from './vendor/settings.js';
 import { TEMPLATES, DEFAULT_TEMPLATE, templateById } from './templates.js';
@@ -833,4 +834,36 @@ boot().catch((err) => {
  * Same dialog as every other app, same dock. The dock reads what is on
  * screen and answers about it; nothing it writes lands anywhere until a
  * person says so. */
-const DOCK = mountDock({ app: 'vd', openSettings: () => SET && SET.open() });
+/* The document on the desk is the context; the desk's own body field is where
+ * an answer goes, through the same autosave as typing. */
+function dockContext() {
+  const o = currentOutput();
+  const parts = [];
+  if (S.project) parts.push('Job: ' + (S.project.title || S.project.name || 'untitled'));
+  if (o) parts.push('The document on the desk' + (o.kind ? ` ({o.kind})` : '') + ':\n' + (o.body || ''));
+  else {
+    const brief = document.getElementById('brief');
+    if (brief && brief.value.trim()) parts.push('The brief:\n' + brief.value.trim());
+  }
+  const field = lastField();
+  const sel = field && field.selectionEnd > field.selectionStart
+    ? field.value.slice(field.selectionStart, field.selectionEnd) : '';
+  return { text: parts.join('\n\n'), selection: sel };
+}
+
+function useFromDock(text) {
+  if (S.role === 'view') return 'this job is read-only for you';
+  const body = document.getElementById('out-body');
+  const field = (body && !body.hidden && S.current) ? body : lastField();
+  if (!field) return 'open a document first — there is nothing to write into';
+  return putInto(field, text, null) ? '' : 'that field will not take it';
+}
+
+const DOCK = mountDock({
+  app: 'vd',
+  openSettings: () => SET && SET.open(),
+  context: dockContext,
+  onUse: useFromDock,
+});
+mountNotice({ app: 'vd', host: '#spec' });
+mountNotice({ app: 'vd', host: '#welcome' });

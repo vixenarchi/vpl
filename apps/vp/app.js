@@ -1,7 +1,8 @@
 import * as settings from './vendor/settings.js';
 import * as engine from './vendor/engine.js';
 import * as who from './vendor/who.js';
-import { mountDock } from './vendor/dock.js';
+import { mountDock, lastField, putInto } from './vendor/dock.js';
+import { mountNotice } from './vendor/notices.js';
 /* vpl · vp — slips, keys and the ledger, in one screen.
  *
  * Three verbs: make (a code), take (a code somebody gave you), revoke (either).
@@ -340,4 +341,13 @@ function wireSettings() {
 
 wireSettings();
 
-const DOCK = mountDock({ app: 'vp', openSettings: () => SET && SET.open() });
+/* vp has no document: a code, a key and a ledger. So the dock answers and offers
+ * no *use it* — there is nowhere honest for the words to go. */
+const DOCK = mountDock({
+  app: 'vp',
+  openSettings: () => SET && SET.open(),
+  context: () => (S.codes?.length || S.ledger?.length
+    ? 'Codes:\n' + (S.codes || []).map((c) => `- ${c.label || 'a code'} · ${c.kind || ''} · ${c.status || ''}`).join('\n')
+    : ''),
+});
+mountNotice({ app: 'vp', host: '.desk' });

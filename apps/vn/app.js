@@ -15,6 +15,7 @@ import * as settings from './vendor/settings.js';
 import * as engine from './vendor/engine.js';
 import * as who from './vendor/who.js';
 import { mountDock } from './vendor/dock.js';
+import { mountNotice } from './vendor/notices.js';
 
 /* ── elements ─────────────────────────────────────────────────────── */
 const $ = (id) => document.getElementById(id);
@@ -2959,3 +2960,4 @@ const DOCK = mountDock({
   context: dockContext,
   onUse: useFromDock,
 });
+mountNotice({ app: 'vn', host: '#main' });

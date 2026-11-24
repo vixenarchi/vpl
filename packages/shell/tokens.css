@@ -241,6 +241,44 @@ dialog.settings .set-foot [data-a='forget'] { color: var(--danger); }
   font-size: 0.62rem; letter-spacing: 0.02em; text-transform: uppercase;
 }
 
+/* ── the notice: one boxed line, centred over the work ────────────────
+ * An announcement from whoever runs the suite — a test system, a date, later
+ * maybe an offer. It is a box with an edge that sits inside the work column, so
+ * it never pushes the bar or the dock and never covers an input. The tone word
+ * is always there: colour is never the only signal. */
+.notice {
+  display: flex; align-items: center; gap: 0.45rem;
+  width: fit-content; max-width: min(46rem, 100%);
+  margin: 0.55rem auto 0.15rem;
+  padding: 0.3rem 0.4rem 0.3rem 0.6rem;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  background: var(--paper-2); color: var(--ink);
+  font-family: var(--sans); font-size: 0.78rem; line-height: 1.3;
+  transition: opacity 0.18s ease;
+}
+.notice.swap { opacity: 0.25; }
+.notice[data-tone='heads-up'] { border-color: var(--mark); background: var(--paper); }
+.notice[data-tone='offer'] { border-color: var(--line-strong); background: var(--paper-3); }
+.notice-tone {
+  font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ink-2);
+  border: 1px solid var(--line); border-radius: 999px; padding: 0.05rem 0.4rem;
+  white-space: nowrap;
+}
+.notice[data-tone='heads-up'] .notice-tone { color: var(--mark); border-color: var(--mark); }
+.notice-text { margin: 0; min-width: 0; }
+.notice-text a { color: inherit; text-underline-offset: 2px; }
+.notice-x {
+  border: 0; background: none; color: var(--ink-3); cursor: pointer;
+  font-size: 0.72rem; line-height: 1; padding: 0.25rem 0.35rem;
+  min-width: 1.9rem; min-height: 1.9rem; border-radius: 999px;
+}
+.notice-x:hover { color: var(--ink); background: var(--paper-3); }
+@media (max-width: 34rem) {
+  .notice { border-radius: 12px; font-size: 0.74rem; margin-left: 0; margin-right: 0; }
+}
+@media print { .notice { display: none !important; } }
+
 /* ── the dock: a chat line at the bottom of every app ─────────────────
  * Top is who and where the settings are; bottom is the model. The dock is a
  * line until somebody writes in it, then a transcript, and it never covers the

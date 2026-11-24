@@ -11,7 +11,8 @@
 import * as db from './lib/db.js';
 import * as ai from './vendor/ai.js';
 import * as who from './vendor/who.js';
-import { mountDock } from './vendor/dock.js';
+import { mountDock, lastField, putInto } from './vendor/dock.js';
+import { mountNotice } from './vendor/notices.js';
 import * as settings from './vendor/settings.js';
 import * as engine from './vendor/engine.js';
 import { prompts } from './prompts.js';
@@ -1653,4 +1654,37 @@ boot();
  * Same dialog as every other app, same dock. The dock reads what is on
  * screen and answers about it; nothing it writes lands anywhere until a
  * person says so. */
-const DOCK = mountDock({ app: 'vr', openSettings: () => SET && SET.open() });
+/* The model gets the brief and the requirement that is open, in words — not a
+ * scrape of a table, which would be a wall of statuses. */
+function dockContext() {
+  const brief = document.getElementById('brief-text');
+  const parts = [];
+  if (brief && brief.value.trim()) parts.push('The brief:\n' + brief.value.trim());
+  const open = S.reqs.find((r) => r.id === S.open);
+  if (open) {
+    parts.push(['The requirement on screen:', open.statement,
+      `how hard: ${open.strength || '?'} · status: ${open.status || '?'}`
+      + (open.detail ? `\nnotes: ${open.detail}` : '')].join('\n'));
+  }
+  const field = lastField();
+  const sel = field && field.selectionEnd > field.selectionStart
+    ? field.value.slice(field.selectionStart, field.selectionEnd) : '';
+  return { text: parts.join('\n\n'), selection: sel };
+}
+
+/* There is no single document here: the answer goes into the field the person
+ * was last writing in — the brief, or the requirement's sentence. */
+function useFromDock(text) {
+  const field = lastField();
+  if (!field) return 'open a requirement, or the brief, and put the caret in it first';
+  if (!canWrite()) return 'this document is read-only for you';
+  return putInto(field, text, null) ? '' : 'that field will not take it';
+}
+
+const DOCK = mountDock({
+  app: 'vr',
+  openSettings: () => SET && SET.open(),
+  context: dockContext,
+  onUse: useFromDock,
+});
+mountNotice({ app: 'vr', host: '#spec' });

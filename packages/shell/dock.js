@@ -32,6 +32,100 @@ const KEEP = 4;              // two exchanges of history, so "shorter still" wor
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+/* ── two hands the apps share ────────────────────────────────────────
+ * Writing into a document is the same job in every app: put the words where
+ * the caret is, or over the words that were selected. Doing it five different
+ * ways is how one app learns to lose the selection and another does not. */
+
+/** The last selection somebody made inside `root`, remembered while it exists.
+ *  Asking a question means clicking the dock's input, and that click ends the
+ *  selection — so a remembered range is the only way "replace" can mean what it
+ *  says. */
+export function textKeeper(root) {
+  let kept = null;
+  document.addEventListener('selectionchange', () => {
+    const host = typeof root === 'function' ? root() : root;
+    const sel = window.getSelection();
+    if (!host || !sel || !sel.rangeCount || sel.isCollapsed) return;
+    const r = sel.getRangeAt(0);
+    if (!host.contains(r.commonAncestorContainer)) return;
+    const text = r.toString();
+    if (!text.trim()) return;
+    kept = { range: r.cloneRange(), text };
+  });
+  return {
+    get() { return kept; },
+    clear() { kept = null; },
+    /** the remembered range, if it still points at the same words */
+    range() {
+      if (!kept) return null;
+      try { return kept.range.toString() === kept.text ? kept.range : null; } catch { return null; }
+    },
+  };
+}
+
+/* The last field somebody typed in, inside #app. Every app is built from
+ * textareas; this one finds the one that holds the caret's history without
+ * asking each app to remember it. */
+if (typeof document !== 'undefined') {
+  document.addEventListener('focusin', (e) => {
+    const t = e.target;
+    if (!t || !(t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    if (!document.getElementById('app')?.contains(t)) return;
+    window.__vplLastField = t;
+  });
+}
+
+export function lastField() {
+  const f = typeof window !== 'undefined' ? window.__vplLastField : null;
+  if (!f || !f.isConnected || f.disabled || f.readOnly || f.hidden) return null;
+  return f;
+}
+
+/** Put `text` into a field: over the remembered range if there is one, else at
+ *  the caret, else at the end. Fires `input`, which is what every app's
+ *  autosave already listens to. Returns true when it landed. */
+export function putInto(field, text, range) {
+  if (!field || field.readOnly || field.disabled) return false;
+  const value = String(text ?? '');
+  field.focus();
+
+  if (field.tagName === 'TEXTAREA' || field.tagName === 'INPUT') {
+    let a = field.selectionStart ?? field.value.length;
+    let b = field.selectionEnd ?? a;
+    const sel = range ? range.toString() : '';
+    if (sel) {
+      const at = field.value.indexOf(sel);
+      if (at >= 0) { a = at; b = at + sel.length; }
+    }
+    const before = field.value.slice(0, a);
+    const after = field.value.slice(b);
+    const glue = before && !/\n$/.test(before) ? '\n' : '';
+    field.value = before + glue + value + after;
+    const caret = (before + glue + value).length;
+    field.setSelectionRange(caret, caret);
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+  }
+
+  if (field.isContentEditable) {
+    const sel = window.getSelection();
+    if (range) { sel.removeAllRanges(); sel.addRange(range); }
+    else if (!field.contains(sel?.anchorNode || null)) {
+      const r = document.createRange();
+      r.selectNodeContents(field);
+      r.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+    const landed = document.execCommand('insertText', false, value);
+    if (!landed) field.append(document.createTextNode(value));
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+  }
+  return false;
+}
+
 export function mountDock({ app = 'this app', context, onUse, placeholder, openSettings } = {}) {
   const el = document.createElement('section');
   el.id = 'dock';

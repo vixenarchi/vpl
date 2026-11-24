@@ -94,6 +94,34 @@ The chat line at the bottom of every app is one component
   *use it* when there was not (the answer goes in at the caret). *drop* throws
   it away. It keeps the last two exchanges so "shorter still" has a subject.
 
+### One dock, eight contexts
+
+The dock is one file and eight ways of being given the work. None of them
+scrapes the screen — the page is a wall of status words, and a model asked
+"make this shorter" needs the sentence, not the table:
+
+- **vn** — the title, the body, and the remembered selection. *replace
+  selection*.
+- **vi** — the wall's ideas as a list, and the card in front of you. *use it*
+  pins a new card; there is no selection to replace in a funnel.
+- **vr** — the brief, and the requirement whose detail is open, with its
+  strength and status. *use it* writes into the field the person was last
+  writing in: the brief or the requirement's sentence.
+- **vz** — the dictionary's name, the open pair and the first rows. *use it*
+  writes the value.
+- **vd / vc / va** — the job's name and the document on the desk (its kind
+  too); when there is no document yet, the brief. *use it* goes into
+  `#out-body` through the same autosave as typing, so the row follows 750 ms
+  later like any other keystroke.
+- **vp** — codes in the drawer, and **no button**: a key, a credit and a ledger
+  have nowhere honest for chat prose to land.
+
+One helper makes the textarea case work at all: a textarea keeps its
+`selectionStart`/`selectionEnd` when it loses focus, so the last field with the
+caret in it (`lastField()`) is enough — no remembered DOM range is needed
+outside vn's contenteditable. `putInto()` writes over that range and fires
+`input`, which is exactly what every app's autosave listens for.
+
 The transcript is a **layer**, not a growing column: about three rows, capped
 and scrolled inside itself, sitting exactly on top of the line. Before this it
 stretched the app's column upward, and the work area walked off the screen.
