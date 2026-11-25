@@ -126,7 +126,7 @@ The transcript is a **layer**, not a growing column: about three rows, capped
 and scrolled inside itself, sitting exactly on top of the line. Before this it
 stretched the app's column upward, and the work area walked off the screen.
 
-The settings dialog is the same size on every tab: the four panels share one
+The settings dialog is the same size on every tab: the five panels share one
 grid cell, the tallest sets the height, and the hidden ones are invisible rather
 than removed. (`hidden` cannot be used — the tokens make it
 `display: none !important`, and a tab that leaves the layout is a dialog that

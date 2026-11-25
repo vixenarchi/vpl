@@ -37,7 +37,7 @@ Cloudflare Pages project.
   account works the queue, and the desk keeps or drops what comes back. See
   `docs/va.md`.
 - **settings** — one dialog in every app, built by `packages/shell/settings.js`
-  (copied, like the rest of the shell): four tabs (`model`, `search`, `key`,
+  (copied, like the rest of the shell): five tabs (`model`, `search`, `key`,
   `theme`), one row of buttons (`test`, `forget`, `save`), and the themes —
   `paper`, `ink`, and vi's `comic`, now available everywhere. See
   `docs/settings.md`.
@@ -70,7 +70,7 @@ in `vi`.
   the small canvas, and the job folder an agent pulls (never a command endpoint)
 - `docs/bin.md` — the recycle bin: one `deleted_at` column, one block of CSS and
   seven apps; why a delete is undoable and emptying is a second act.
-- `docs/settings.md` — the one settings dialog: four tabs, test/forget/save, the
+- `docs/settings.md` — the one settings dialog: five tabs, test/forget/save, the
   themes, and the three auth bugs it uncovered (a JWT fragment, two tabs sharing
   a session, a logout that left a token behind)
 - `docs/unify.md` — the bar, gate texts and share dialog, written down as one

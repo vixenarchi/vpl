@@ -2,9 +2,15 @@
  *
  * Copied into apps/<name>/vendor/ by tools/stage.sh, like ai.js and engine.js —
  * an app published alone still owns its copy. What it is, is one dialog: four
- * tabs (model, search, key, theme), one row of buttons (test, forget, save), and
- * no per-app variants. An app that invents its own settings is an app whose
- * settings nobody can find twice.
+ * tabs about the model (model, search, key, theme), one row of buttons (test,
+ * forget, save), and no per-app variants. An app that invents its own settings
+ * is an app whose settings nobody can find twice.
+ *
+ * A fifth tab, **you**, is the account itself — the name we call you, your
+ * password, and (in the app that owns the data) deleting it. It appears only
+ * when the app passes `account` hooks, because a tab that cannot do what it
+ * says is worse than a tab that is not there. vn used to keep a second dialog
+ * for exactly these three fields; it was the same person in two places.
  *
  * It talks to ai.js for the keys and to nothing else. The theme is a
  * `data-theme` attribute on <html>, so a theme is a palette in tokens.css and
@@ -56,7 +62,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
 /* ── the component ───────────────────────────────────────────────────
  * mountSettings({ dialog, proxy, appName }) → { open, close, refresh }
  * The dialog is an empty <dialog id="ai-dialog"> in the page; this fills it. */
-export function mountSettings({ dialog, proxy, onSaved } = {}) {
+export function mountSettings({ dialog, proxy, onSaved, account } = {}) {
   /* the address a test call goes through: this deployment's `proxy`, if it has
    * one. A test with nowhere to go says exactly that instead of hanging. */
   proxy = proxy ?? ((window.__VPL_CONFIG__ || {}).proxy || '');
@@ -79,6 +85,7 @@ export function mountSettings({ dialog, proxy, onSaved } = {}) {
       <button type="button" role="tab" data-tab="search">search</button>
       <button type="button" role="tab" data-tab="key">key</button>
       <button type="button" role="tab" data-tab="theme">theme</button>
+      ${account ? '<button type="button" role="tab" data-tab="you">you</button>' : ''}
     </div>
 
     <div class="set-panels">
@@ -135,6 +142,30 @@ export function mountSettings({ dialog, proxy, onSaved } = {}) {
       </div>
       <p class="set-note">a theme is a palette; it changes colour, never a button's meaning.</p>
     </section>
+
+    ${account ? `
+    <section class="set-panel" data-panel="you">
+      <p class="set-note" id="set-you-line">…</p>
+      ${account.rename ? `
+      <div class="set-row">
+        <label for="set-you-name">name</label>
+        <input id="set-you-name" type="text" autocomplete="name"
+               placeholder="what should we call you?">
+      </div>
+      <button type="button" class="set-act" data-a="rename">save the name</button>` : ''}
+      ${account.password ? `
+      <div class="set-row">
+        <label for="set-you-pass">new password</label>
+        <input id="set-you-pass" type="password" autocomplete="new-password"
+               placeholder="at least 6 characters">
+      </div>
+      <button type="button" class="set-act" data-a="password">change the password</button>` : ''}
+      ${account.destroy ? `
+      <div class="set-danger">
+        <p class="set-note" id="set-you-what"></p>
+        <button type="button" class="set-act danger" data-a="destroy">delete my account</button>
+      </div>` : ''}
+    </section>` : ''}
     </div>
 
     <p class="set-msg" aria-live="polite"></p>
@@ -173,6 +204,7 @@ export function mountSettings({ dialog, proxy, onSaved } = {}) {
     });
     if (tab === 'key') paintAccount();
     if (tab === 'theme') paintThemes();
+    if (tab === 'you') paintYou();
     paintMode();
   }
 
@@ -252,6 +284,71 @@ export function mountSettings({ dialog, proxy, onSaved } = {}) {
         <button type="button" class="ghost danger" data-acc="remove">remove from my account</button>`;
     }
     box.querySelectorAll('[data-acc]').forEach((b) => { b.onclick = () => accountAct(b.dataset.acc); });
+  }
+
+  /* Who you are, in one line, and only the fields this app can actually act on.
+   * `who` may say nothing (signed out) — then the tab says so instead of
+   * showing a name box that would fail. */
+  async function paintYou() {
+    if (!account) return;
+    const line = $('#set-you-line');
+    let who = null;
+    try { who = await account.who?.(); } catch { who = null; }
+    if (!who) {
+      line.textContent = 'not signed in — this tab is empty until you are.';
+      return;
+    }
+    line.textContent = [(who.name || '').trim() || 'no name yet', who.email || '',
+      who.google ? 'name from Google' : ''].filter(Boolean).join(' · ');
+    if (account.rename) $('#set-you-name').value = (who.name || '').trim();
+    if (account.destroy) {
+      let what = '';
+      try { what = await account.what?.() || ''; } catch { what = ''; }
+      $('#set-you-what').textContent = what;
+    }
+  }
+
+  async function renameMe() {
+    const name = ($('#set-you-name')?.value || '').trim();
+    try {
+      await account.rename(name);
+      say(name ? `hello, ${name}.` : 'the name was cleared.', 'ok');
+      await paintYou();
+    } catch (e) {
+      say(e.message || 'the name did not save', 'bad');
+    }
+  }
+
+  async function changeMyPassword() {
+    const field = $('#set-you-pass');
+    const pw = field.value;
+    if (pw.length < 6) return say('a password needs six characters', 'bad');
+    try {
+      await account.password(pw);
+      field.value = '';
+      say('changed — use the new one the next time you sign in', 'ok');
+    } catch (e) {
+      say(e.message || 'the password did not change', 'bad');
+    }
+  }
+
+  /* Deleting the account is typed, not clicked: the word is the only thing
+   * between a tired person and every note they have. */
+  async function destroyMe() {
+    const typed = 'delete';
+    const yes = window.prompt(
+      'This deletes the account and everything in it, with no backup.\n' +
+      'Type ' + typed + ' to confirm.');
+    if (yes === null) return;
+    if (yes.trim().toLowerCase() !== typed) return say('nothing was deleted.', '');
+    say('deleting…', 'busy');
+    try {
+      await account.destroy();
+      say('the account is gone.', 'ok');
+      await account.after?.();
+    } catch (e) {
+      say(e.message || 'nothing was deleted', 'bad');
+    }
   }
 
   function signedInNow() {
@@ -392,6 +489,9 @@ export function mountSettings({ dialog, proxy, onSaved } = {}) {
     if (a === 'save') return save();
     if (a === 'test') return test();
     if (a === 'forget') return forget();
+    if (a === 'rename') return renameMe();
+    if (a === 'password') return changeMyPassword();
+    if (a === 'destroy') return destroyMe();
   });
 
   return {
@@ -404,6 +504,7 @@ export function mountSettings({ dialog, proxy, onSaved } = {}) {
        * that was signed out at load and signed in a second later would show a
        * stale "sign in and one key follows you" for the rest of the session. */
       void paintAccount();
+      void paintYou();
     },
     close: () => dialog.close(),
     /* an app may have something to say in this dialog ("no key yet — paste one

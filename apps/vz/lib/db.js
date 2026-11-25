@@ -284,3 +284,16 @@ export async function copyToMe(src, pairs) {
   }
   return p;
 }
+
+/* ── the account itself ──────────────────────────────────────────────
+ * The person is the suite's, not this app's: a name and a password are auth
+ * calls against the same user, so they work from any app that is signed in. */
+export async function setAccount(patch) {
+  const db = await client();
+  const body = {};
+  if (patch.name !== undefined) body.data = { full_name: patch.name };
+  if (patch.password !== undefined) body.password = patch.password;
+  const { data, error } = await db.auth.updateUser(body);
+  if (error) throw error;
+  return data.user;
+}

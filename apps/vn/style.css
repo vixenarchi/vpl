@@ -911,15 +911,7 @@ kbd {
   background: var(--paper-2); border: 1px solid var(--line);
 }
 
-/* ── settings ──────────────────────────────────────────────────────── */
-.settings-dialog {
-  max-width: 30rem; width: min(30rem, 92vw);
-  position: relative;
-  max-height: 86dvh; overflow-y: auto;
-  padding: 1rem 1.05rem 0.5rem;
-  font-size: 0.9rem;
-}
-.settings-dialog::backdrop { background: rgb(0 0 0 / 0.35); }
+/* ── dialogs ───────────────────────────────────────────────────────── */
 .dialog input, .dialog select, .dialog textarea { text-align: left; }
 .foot-gap { flex: 1 1 auto; }
 .dialog-x {
@@ -931,36 +923,6 @@ kbd {
   font-size: 0.72rem; line-height: 1; cursor: pointer;
 }
 .dialog-x:hover { background: var(--paper-3); color: var(--ink); }
-/* the two ways out stay reachable in a long dialog */
-.settings-foot {
-  position: sticky; bottom: -0.5rem; margin-top: 0.3rem;
-  padding: 0.45rem 0 0.15rem; background: var(--paper);
-}
-.settings-dialog h2 {
-  margin: 0 0 0.1rem; font-family: var(--serif); font-weight: 500; font-size: 1.12rem;
-}
-.settings-dialog label {
-  display: block; margin-top: 0.35rem;
-  font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--ink-3);
-}
-.settings-dialog input[type='text'],
-.settings-dialog input[type='password'] {
-  width: 100%; padding: 0.34rem 0.5rem;
-  border: 1px solid var(--line); border-radius: 6px;
-  background: var(--paper); color: var(--ink);
-  font: inherit; font-size: 0.84rem;
-}
-.settings-dialog .share-section { padding-top: 0.6rem; margin-top: 0.6rem; }
-.settings-dialog .share-section h3 { margin-bottom: 0.3rem; font-size: 0.66rem; }
-.settings-dialog .share-hint { font-size: 0.7rem; line-height: 1.4; }
-.settings-dialog .confirm-row { margin-top: 0.5rem; gap: 0.35rem; }
-.settings-dialog button { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
-.settings-dialog .share-msg { font-size: 0.72rem; }
-.settings-dialog .pass-wrap input { padding-right: 2rem; }
-.set-line { display: flex; gap: 0.4rem; margin-top: 0.1rem; }
-.set-line input { flex: 1; }
-.settings-dialog .share-msg { min-height: 1rem; }
 
 /* ── putting a note out of the bin for good ───────────────────────── */
 .purge-dialog {

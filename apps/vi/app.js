@@ -1209,6 +1209,21 @@ function wireAiDialog() {
     dialog: $('#ai-dialog'),
     proxy: engine.PROXY,
     onSaved: () => { try { paintAiHint(); } catch {} },
+    /* the same account in every app: a name and a password are auth calls */
+    account: {
+      who: async () => {
+        const s = await db.session();
+        const u = s?.user;
+        if (!u) return null;
+        return {
+          name: u.user_metadata?.full_name || u.user_metadata?.name || '',
+          email: u.email || '',
+          google: u.app_metadata?.provider === 'google',
+        };
+      },
+      rename: (name) => db.setAccount({ name }),
+      password: (pw) => db.setAccount({ password: pw }),
+    },
   });
   $('#btn-ai').onclick = () => openAiDialog();
   const hint = $('#ai-hint-open');

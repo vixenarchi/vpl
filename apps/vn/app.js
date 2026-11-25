@@ -30,18 +30,6 @@ const el = {
   btnList: $('btn-projects'), btnNew: $('btn-new'), btnHelp: $('btn-help'),
   btnTheme: $('btn-theme'), gateTheme: $('gate-theme'), readerTheme: $('reader-theme'), btnOut: $('btn-out'), btnSettings: $('btn-settings'),
 
-  settings: $('settings'), setWho: $('set-who'), setClose: $('set-close'),
-  setX: $('set-x'), setCancel: $('set-cancel'),
-  setNameForm: $('set-name-form'), setName: $('set-name'), setNameHint: $('set-name-hint'),
-  setAiUrl: $('set-ai-url'), setAiModel: $('set-ai-model'), setAiKey: $('set-ai-key'),
-  setAiProvider: $('set-ai-provider'),
-  setAiSave: $('set-ai-save'), setAiClear: $('set-ai-clear'), setAiMsg: $('set-ai-msg'),
-  setAiTest: $('set-ai-test'), setAiEye: $('set-ai-eye'),
-  setPass: $('set-pass'), setPassEye: $('set-pass-eye'), btnSetPass: $('btn-set-pass'),
-  setPassMsg: $('set-pass-msg'),
-  setDelMsg: $('set-del-msg'), setDelWhat: $('set-del-what'),
-  btnDeleteAccount: $('btn-delete-account'),
-
   bar: document.querySelector('.bar'),
   agent: $('agent'), agentOpen: $('btn-agent'),
   agentForm: $('agent-form'), agentInput: $('agent-input'),
@@ -2396,34 +2384,10 @@ function aiConfig() {
   } catch { return { url: '', model: '', key: '' }; }
 }
 
-function setAiConfig(next) {
-  try { localStorage.setItem(AI_STORE, JSON.stringify(next)); } catch {}
-  paintAgent();
-}
 
 /* The suite's rule for endpoints lives in vendor/ai.js, so vn and vi cannot
  * disagree about whether Gemini wants /v1 or not. */
 const aiEndpoint = ai.aiEndpoint;
-
-// one list of providers for the whole suite, staged from packages/shell/ai.js
-let aiAccount = null;
-
-if (el.setAiProvider) {
-  ai.mountAi({
-    provider: el.setAiProvider,
-    url: el.setAiUrl,
-    model: el.setAiModel,
-    models: document.querySelector('#ai-models'),
-  });
-  aiAccount = ai.mountAccountAi({
-    box: $('ai-account'),
-    read: () => ({
-      url: el.setAiUrl.value.trim(),
-      model: el.setAiModel.value.trim(),
-      key: el.setAiKey.value.trim() || aiConfig().key,
-    }),
-  });
-}
 
 /* Model APIs do not send CORS headers, so the browser throws their answer
  * away — the same key that works in curl fails on a page. Where the app is
@@ -2522,64 +2486,6 @@ async function askAgent(instruction) {
   return String(text).trim();
 }
 
-/* A key you cannot test is a key you find out about later, mid-sentence.
- * This asks the endpoint one tiny question with the values as typed. */
-async function testAiEndpoint() {
-  const url = el.setAiUrl.value.trim();
-  const model = el.setAiModel.value.trim() || 'gpt-4o-mini';
-  const key = el.setAiKey.value.trim() || aiConfig().key;
-
-  const say = (text) => {
-    el.setAiMsg.textContent = text;
-    el.setAiMsg.dataset.state = 'ok';
-  };
-  const fail = (text) => {
-    el.setAiMsg.textContent = text;
-    el.setAiMsg.dataset.state = 'bad';
-  };
-
-  if (!url) return fail('add an api url first.');
-  if (!key) return fail('add an api key first.');
-
-  el.setAiMsg.dataset.state = 'busy';
-  el.setAiMsg.textContent = 'asking ' + model + '…';
-  const started = Date.now();
-  const stop = new AbortController();
-  const timer = setTimeout(() => stop.abort(), 25000);
-
-  try {
-    const res = await chatCall({
-      url,
-      key,
-      model,
-      max_tokens: 8,
-      messages: [{ role: 'user', content: 'reply with the single word: ok' }],
-    });
-    const ms = Date.now() - started;
-
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '');
-      return fail(`${res.status} ${res.statusText || ''}`.trim() +
-        (detail ? ` — ${detail.replace(/\s+/g, ' ').slice(0, 160)}` : ''));
-    }
-
-    const json = await res.json().catch(() => null);
-    const said = json?.choices?.[0]?.message?.content;
-    if (!said) return fail('it answered, but not in the chat format this app expects.');
-    const via = proxyMode === 'direct' ? 'directly'
-      : proxyMode === 'shared' ? 'through the shared proxy'
-      : 'through this app';
-    say(`works — ${model} answered in ${ms} ms ${via}: “${String(said).trim().slice(0, 40)}”`);
-  } catch (err) {
-    if (err.name === 'AbortError') return fail('no answer in 25 s — wrong url, or the model is slow.');
-    /* a wrong address is nearly always CORS or DNS, and the browser hides
-     * which one, so say both instead of pretending to know */
-    fail('could not reach it — check the url, the key, and whether it allows calls from a browser.');
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 let agentAnswer = '';
 
 function agentMsg(text) { el.agentMsg.textContent = text || ''; }
@@ -2661,131 +2567,13 @@ function agentInto(where) {
 
 /* ── settings ──────────────────────────────────────────────────────── */
 async function openSettings() {
-  if (await ai.adoptAccountAi()) { /* the key field below picks it up */ }
-  const user = await db.session().then((s) => s?.user).catch(() => null);
-  const meta = user?.user_metadata || {};
-
-  el.setWho.textContent = user
-    ? displayName(user) + ' · ' + (user.email || '')
-    : '';
-  el.setName.value = meta.full_name || meta.name || '';
-  el.setNameHint.hidden = !(user?.app_metadata?.provider === 'google');
-
-  const cfg = aiConfig();
-  el.setAiUrl.value = cfg.url;
-  el.setAiModel.value = cfg.model;
-  el.setAiKey.value = cfg.key;
-  el.setAiMsg.textContent = '';
-  el.setDelMsg.textContent = '';
-
-  /* say what would actually go, in numbers, before the prompt appears */
-  const notes = S.notes.length + S.trash.length;
-  const links = S.shares.filter((g) => g.owner_id === myId()).length;
-  el.setDelWhat.textContent = 'this deletes ' + notes + (notes === 1 ? ' note' : ' notes') +
-    (links ? ' and ' + links + (links === 1 ? ' shared link' : ' shared links') : '') +
-    ', and the account itself.';
-
-  if (aiAccount) aiAccount.paint();
-  el.settings.showModal();
+  /* the account's key follows you in, if there is one; from here the shared
+   * dialog owns every field — model, search, key, theme, and you */
+  try { await ai.adoptAccountAi(); } catch { /* no account key, no harm */ }
+  if (SET) SET.open();
 }
 
-async function saveName(e) {
-  e.preventDefault();
-  const name = el.setName.value.trim();
-  try {
-    await db.setName(name);
-    toast(name ? 'hello, ' + name + '.' : 'the name was cleared.');
-  } catch (err) {
-    toast(friendly(err));
-  }
-}
 
-function saveAi() {
-  const url = el.setAiUrl.value.trim();
-  const key = el.setAiKey.value.trim();
-  setAiConfig({ url, model: el.setAiModel.value.trim(), key });
-  el.setAiMsg.textContent = url && key ? 'saved in this browser.' : 'saved — but the assistant needs both a url and a key.';
-}
-
-function clearAi() {
-  setAiConfig({ url: el.setAiUrl.value.trim(), model: el.setAiModel.value.trim(), key: '' });
-  el.setAiKey.value = '';
-  el.setAiMsg.textContent = 'the key was forgotten.';
-}
-
-async function deleteMyAccount() {
-  const typed = 'delete';
-  const yes = prompt(
-    'This deletes the account, every note in it and every link you made.\n' +
-    'There is no backup. Type ' + typed + ' to confirm.');
-  if (yes === null) return;
-  if (yes.trim().toLowerCase() !== typed) {
-    el.setDelMsg.textContent = 'nothing was deleted.';
-    return;
-  }
-
-  el.btnDeleteAccount.disabled = true;
-  try {
-    await db.deleteAccount();
-    el.setDelMsg.textContent = 'the account is gone.';
-    await db.signOut();
-    location.hash = '#/';
-    location.reload();
-  } catch (err) {
-    el.setDelMsg.textContent = friendly(err);
-  } finally {
-    el.btnDeleteAccount.disabled = false;
-  }
-}
-
-el.btnSettings.addEventListener('click', openSettings);
-el.setClose.addEventListener('click', () => el.settings.close());
-el.setX.addEventListener('click', () => el.settings.close());
-el.setCancel.addEventListener('click', () => el.settings.close());
-el.setNameForm.addEventListener('submit', saveName);
-el.setAiSave.addEventListener('click', saveAi);
-el.setAiClear.addEventListener('click', clearAi);
-el.setAiTest.addEventListener('click', testAiEndpoint);
-
-el.setAiEye.addEventListener('click', () => {
-  const shown = el.setAiKey.type === 'text';
-  el.setAiKey.type = shown ? 'password' : 'text';
-  el.setAiEye.setAttribute('aria-pressed', String(!shown));
-  el.setAiEye.title = el.setAiEye.ariaLabel = shown ? 'show api key' : 'hide api key';
-});
-
-el.setPassEye.addEventListener('click', () => {
-  const shown = el.setPass.type === 'text';
-  el.setPass.type = shown ? 'password' : 'text';
-  el.setPassEye.setAttribute('aria-pressed', String(!shown));
-  el.setPassEye.title = el.setPassEye.ariaLabel = shown ? 'show password' : 'hide password';
-});
-
-el.btnSetPass.addEventListener('click', async () => {
-  const pw = el.setPass.value;
-  if (pw.length < 6) {
-    el.setPassMsg.dataset.state = 'bad';
-    el.setPassMsg.textContent = 'at least 6 characters.';
-    return;
-  }
-  el.btnSetPass.disabled = true;
-  el.setPassMsg.dataset.state = 'busy';
-  el.setPassMsg.textContent = 'changing it…';
-  try {
-    await db.setPassword(pw);
-    el.setPass.value = '';
-    el.setPass.type = 'password';
-    el.setPassEye.setAttribute('aria-pressed', 'false');
-    el.setPassMsg.dataset.state = 'ok';
-    el.setPassMsg.textContent = 'changed — use the new one next time you sign in.';
-  } catch (err) {
-    el.setPassMsg.dataset.state = 'bad';
-    el.setPassMsg.textContent = friendly(err);
-  } finally {
-    el.btnSetPass.disabled = false;
-  }
-});
-el.btnDeleteAccount.addEventListener('click', deleteMyAccount);
 
 /* the answer hangs over the note; it must be easy to put away */
 function closeAgentAnswer() {
@@ -2919,9 +2707,35 @@ function wireSettings() {
     dialog: document.getElementById('ai-dialog'),
     proxy: engine.PROXY,
     onSaved: () => { try { paintSpec(); } catch { } try { paintAiHint(); } catch { } },
+    /* the person, in the same dialog as the key: the old second dialog was the
+     * same three fields in another place. vn is the one app that also owns the
+     * data, so it is the one that can say what deleting it would destroy. */
+    account: {
+      who: async () => {
+        const s = await db.session().catch(() => null);
+        const u = s?.user;
+        if (!u) return null;
+        return {
+          name: u.user_metadata?.full_name || u.user_metadata?.name || '',
+          email: u.email || '',
+          google: u.app_metadata?.provider === 'google',
+        };
+      },
+      rename: (name) => db.setName(name),
+      password: (pw) => db.setPassword(pw),
+      what: () => {
+        const notes = S.notes.length + S.trash.length;
+        const links = S.shares.filter((g) => g.owner_id === myId()).length;
+        return 'this deletes ' + notes + (notes === 1 ? ' note' : ' notes') +
+          (links ? ' and ' + links + (links === 1 ? ' shared link' : ' shared links') : '') +
+          ', and the account itself.';
+      },
+      destroy: () => db.deleteAccount(),
+      after: async () => { await db.signOut(); location.hash = '#/'; location.reload(); },
+    },
   });
   const gear = document.getElementById('btn-ai');
-  if (gear) gear.onclick = () => SET.open();
+  if (gear) gear.onclick = () => openSettings();
 }
 
 wireSettings();

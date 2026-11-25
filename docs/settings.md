@@ -9,7 +9,7 @@ who learns one app should not have to re-learn the gear icon.
 
 ## What is in it
 
-- **Four tabs, top left:** `model`, `search`, `key`, `theme`.
+- **Five tabs, top left:** `model`, `search`, `key`, `theme`, `you`.
 - **One row of buttons at the bottom:** `test` on the left, `forget` and `save`
   on the right.
 - **Type is small on purpose** — 0.76 rem fields, 0.68 rem labels, tight line
@@ -35,6 +35,28 @@ The account's key (`vpl_ai`), the thing that follows a person between browsers
 and addresses. Three actions, phrased as sentences: *save to my account*,
 *use the account's key here*, *remove from my account*. Signed out, the tab
 says so instead of showing buttons that cannot work.
+
+### you
+
+The person, not the model. A name, a new password, and — in **vn** only — the
+one button that cannot be undone.
+
+The person belongs to the suite, not to an app: a name and a password are auth
+calls against the same user, so they work from whichever app is signed in. That
+is why the tab is in all eight. Deleting the account is different: only vn
+holds the notes, so only vn can say what would be lost ("this deletes 12 notes
+and 5 shared links, and the account itself") and only vn offers the button.
+
+The tab is **opt-in**: an app passes `account: { who, rename, password,
+destroy, what, after }` to `mountSettings`, and a hook it does not pass is a
+field that is not drawn. A tab that cannot do what it says is worse than a tab
+that is not there.
+
+`who()` returns `{ name, email, google }`; `paintYou()` is called on every
+`open()`, because who is signed in can change between two openings. Deleting is
+typed, not clicked — the word `delete` is the only thing between a tired person
+and every note they have — and `after()` takes the app home (sign out, `#/`,
+reload).
 
 ### theme
 

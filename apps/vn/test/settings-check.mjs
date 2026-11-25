@@ -3,7 +3,7 @@
  *   node settings-check.mjs                      # http://127.0.0.1:8107
  *   APP_URL=http://127.0.0.1:8100 node settings-check.mjs
  *
- * What it proves: the four tabs exist and switch, a save reaches localStorage,
+ * What it proves: the tabs exist and switch, a save reaches localStorage,
  * forget clears both keys, the theme is applied and survives a reload, the test
  * button really calls the model door, and the key tab is honest about sign-in.
  * The door is mocked, so nothing is spent and no provider is touched.
@@ -61,7 +61,10 @@ await pg.waitForTimeout(800);
 await pg.click('#btn-ai');
 ok(await until(async () => pg.locator('#ai-dialog[open]').isVisible()), NAME + ': settings opens');
 const tabs = await pg.locator('#ai-dialog [role=tab]').allTextContents();
-ok(tabs.join(',') === 'model,search,key,theme', 'four tabs, in one order: ' + tabs.join(','));
+/* The person is the suite's, not an app's: a name and a password work from
+ * any app that is signed in, so "you" is last in all of them. Only vn also
+ * owns the data, so only vn offers to delete the account. */
+ok(tabs.join(',') === 'model,search,key,theme,you', 'the tabs, in one order: ' + tabs.join(','));
 
 /* ── the form is tight, not an essay ─────────────────────────────── */
 const size = await pg.evaluate(() => {
@@ -82,7 +85,41 @@ await pg.click('#ai-dialog [data-tab=theme]');
 ok(await pg.locator('#ai-dialog [data-panel=theme]').isVisible(), 'the theme tab shows the theme panel');
 ok(!(await pg.locator('#ai-dialog [data-panel=model]').isVisible()), 'and hides the model panel');
 
+/* ── the fifth tab: the person, not the model ─────────────────────
+ * A name and a password are auth calls against the same user, so every app
+ * offers them; only vn also owns the data, so only vn offers to delete it. */
+const heights = {};
+heights.model = await pg.evaluate(() => Math.round(document.getElementById('ai-dialog').getBoundingClientRect().height));
+if (tabs.includes('you')) {
+  await pg.click('#ai-dialog [data-tab=you]');
+  ok(await until(async () => pg.locator('#ai-dialog [data-panel=you]').isVisible()), 'the you tab shows the account panel');
+  heights.you = await pg.evaluate(() => Math.round(document.getElementById('ai-dialog').getBoundingClientRect().height));
+  ok(Math.abs(heights.you - heights.model) <= 1,
+    'the dialog does not change size when the tab changes (' + heights.model + ' → ' + heights.you + 'px)');
+  const who = await pg.evaluate(() => ({
+    line: document.querySelector('#set-you-line')?.textContent || '',
+    name: document.querySelector('#set-you-name')?.value ?? null,
+    pass: !!document.querySelector('#set-you-pass'),
+    whats: document.querySelector('#set-you-what')?.textContent || '',
+    destroy: !!document.querySelector('[data-a=destroy]'),
+    fields: [...document.querySelectorAll('#ai-dialog [data-panel=you] input')]
+      .map((i) => getComputedStyle(i).textAlign),
+  }));
+  ok(/@/.test(who.line), 'the panel says who is signed in: ' + who.line);
+  ok(who.name !== null && who.name.length >= 0, 'the name field is there and filled from the account: "\u0022' + who.name + '\u0022');
+  ok(who.pass, 'so is the password field');
+  ok(!who.fields.some((a) => a === 'center'), 'nothing typed in it is centred');
+  if (NAME === 'vn') {
+    ok(who.destroy && /delete/i.test(who.whats), 'vn says what deleting would destroy: ' + who.whats.slice(0, 70));
+  } else {
+    ok(!who.destroy, 'no delete button in an app that does not hold the data');
+  }
+  await pg.click('#ai-dialog [data-tab=model]');
+  ok(await pg.locator('#ai-dialog [data-panel=model]').isVisible(), 'and back to the model tab');
+}
+
 /* ── a theme is applied and remembered ──────────────────────────── */
+await pg.click('#ai-dialog [data-tab=theme]');
 await pg.click('#ai-dialog .set-theme[data-theme=vi]');
 ok((await pg.evaluate(() => document.documentElement.dataset.theme)) === 'vi', 'comic applies at once');
 await pg.reload({ waitUntil: 'networkidle' });

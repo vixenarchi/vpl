@@ -1363,3 +1363,37 @@ file parses — and then `await` inside a now-sync function is a runtime parse
 error, so vz booted to a blank page ("Unexpected reserved word"). Syntax checks
 that only prove "it parses" say nothing about whether the code is what you meant
 to write. The suite caught it because the app never reached its gate.
+
+## 2026-11 · the second dialog that was the same dialog
+
+vn had two settings dialogs. One was the suite's, built by
+`packages/shell/settings.js`; the other was vn's own, and it held a name field,
+a password field and a delete button. Two gears, one of them hidden behind a
+button that no longer existed in the markup (`#btn-settings` was `null`, and a
+`quietEl` stub took the listener on the chin — which is why nobody noticed).
+
+The fix was not to delete vn's dialog but to ask what it was for. A name and a
+password are *auth calls against the same user*, so they have nothing to do with
+notes: they belong to the person, and the person is the suite's. That is the
+fifth tab, `you`, and it is in all eight apps. What is not in all eight is
+*delete my account* — only vn holds the notes, so only vn can say "this deletes
+12 notes and 5 shared links, and the account itself", and only vn draws the
+button. A hook an app does not pass is a field that is not drawn.
+
+Then vn's `#settings` dialog, its 6 KB of markup, thirteen `el.` entries and
+170 lines of handlers went away. Three lessons worth keeping:
+
+- **A tab that cannot do what it says is worse than a tab that is not there.**
+  Hence `account` is optional and every field is conditional on its own hook.
+- **A stretched button in a one-column grid reads as centred text.** The first
+  rendering of `save the name` looked like a caption, not a control. Buttons
+  now carry `justify-self: start` and their own edge, and the delete block sits
+  below a rule, because "what would be lost" is not another setting.
+- **The dialog must not change size when the tab changes** — and it does not,
+  because the panels share one grid cell and the tallest one (`you`, 355 px on
+  vn) sets the height for all five.
+
+The test grew with it: `settings-check.mjs` now asserts the five tabs, the
+height staying put across the switch (364 → 364 px, ±1), the account line
+carrying the signed-in address, a filled name field, a password field, nothing
+centred, and `delete my account` **only** in vn. 30/30 in all eight.

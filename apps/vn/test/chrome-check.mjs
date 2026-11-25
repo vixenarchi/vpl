@@ -109,8 +109,8 @@ ok(await pg.locator('.bar #btn-theme').count() === 0, 'the theme is not a fourth
 ok(await pg.locator('#btn-ai').isVisible(), 'there is a settings gear');
 await pg.click('#btn-ai');
 ok(await until(async () => pg.locator('#ai-dialog[open]').isVisible()), 'it opens the shared settings');
-ok((await pg.locator('#ai-dialog [role=tab]').allTextContents()).join(',') === 'model,search,key,theme',
-  'and it is the same four tabs');
+ok((await pg.locator('#ai-dialog [role=tab]').allTextContents()).join(',') === 'model,search,key,theme,you',
+  'and it is the same five tabs');
 const mode = await pg.locator('#ai-dialog [data-a=mode]').count();
 ok(mode === 1, 'and one press next to the word switches dark or normal');
 
@@ -175,12 +175,17 @@ if (NAME === 'vn' || NAME === 'vi') {
     /* with no project open it must say so, not pretend */
     const cards = await pg.locator('#notes li').count();
     await pg.click('#dock [data-use]');
-    /* production writes land on the network, not on the next frame */
-    await until(async () => (await pg.locator('#notes li').count()) !== cards, 5000);
+    /* production writes land on the network, not on the next frame. With no
+     * wall open nothing is written at all, so the wait is for the sentence
+     * that says so — read once, it can be read before it is painted. */
     if (cards === 0) {
-      const why = (await pg.textContent('#dock .dock-msg')).trim();
-      ok(/project/i.test(why), 'with no wall open it explains instead of pretending: “' + why + '”');
+      const why = await until(async () => {
+        const t = (await pg.textContent('#dock .dock-msg') || '').trim();
+        return t.length > 3 ? t : false;
+      }, 5000);
+      ok(/project/i.test(why || ''), 'with no wall open it explains instead of pretending: “' + (why || '') + '”');
     } else {
+      await until(async () => (await pg.locator('#notes li').count()) !== cards, 5000);
       const grown = await pg.locator('#notes li').count();
       ok(grown === cards + 1, 'pressing it pins one more idea (' + cards + ' → ' + grown + ')');
     }

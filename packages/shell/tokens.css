@@ -195,6 +195,23 @@ dialog.settings .set-theme {
 dialog.settings .set-theme[aria-pressed='true'] { border-color: var(--mark); box-shadow: inset 0 0 0 1px var(--mark); }
 dialog.settings .set-theme-name { font-size: 0.76rem; font-weight: 600; }
 dialog.settings .set-theme-note { font-size: 0.68rem; color: var(--ink-3); }
+/* A button that acts on the person, not on a key: its own width, its own
+ * edge, and left where the field it belongs to starts. A stretched button in a
+ * one-column grid reads as a line of centred text, not as something to press. */
+dialog.settings .set-act {
+  justify-self: start; font: inherit; font-size: 0.74rem; line-height: 1.2;
+  padding: 0.18rem 0.5rem; border: 1px solid var(--line); border-radius: 5px;
+  background: var(--paper); color: var(--ink-2); cursor: pointer;
+}
+dialog.settings .set-act:hover { color: var(--ink); border-color: var(--line-strong); background: var(--paper-2); }
+dialog.settings .set-act.danger { color: var(--danger); }
+dialog.settings .set-act.danger:hover { border-color: var(--danger); background: color-mix(in oklab, var(--danger) 8%, var(--paper)); }
+/* what would be lost is not another setting: a line, then the one button that
+ * cannot be undone */
+dialog.settings .set-danger {
+  display: grid; gap: 0.15rem; justify-items: start;
+  margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px solid var(--line);
+}
 dialog.settings .set-msg {
   font-size: 0.72rem; line-height: 1.3; margin: 0.3rem 0 0; min-height: 1.1em; color: var(--ink-2);
 }
