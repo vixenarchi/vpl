@@ -158,3 +158,19 @@ nothing either, and now names the document. Everything else already did.
 Colours, type, the app's own metaphor (tree, funnel, sheet, dictionary, desk,
 verdict strip). Those differences are the product; the list above is only what
 should not differ.
+
+## Empty states — reviewed, nothing to change
+
+Every app already says one sentence and stops: `no jobs yet. one job is one
+document you have to write.` · `no rules yet — without them there is nothing to
+check against.` · `nothing on the wall yet.` Where there is an action the button
+is beside the sentence (`vd`/`vc`/`va`'s *generate*), and where the action lives
+in the bar (`＋`, *new note*) the empty state does not repeat it. What is *not*
+there matters more: no illustration, no three-step hint, no "getting started".
+An empty state that explains the app is a tutorial, and we do not ship those.
+
+## A phone stacks by the same rules
+
+`ux-sniff` measures every app at 390 px: no sideways scroll, no tap target under
+30 px, no control that is only reachable on hover. `chrome-check` measures 354 px
+in the batch test. Nothing in the last month moved those numbers.
