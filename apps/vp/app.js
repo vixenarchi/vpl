@@ -10,7 +10,8 @@ import { mountNotice } from './vendor/notices.js';
  * without a ledger is a mystery.
  */
 import * as db from './lib/db.js';
-import { writeAi, readAi, accountAi } from './vendor/ai.js';
+import { writeAi, readAi, accountAi, storedId } from './vendor/ai.js';
+import { plainAuthError } from './vendor/words.js';
 
 /* Where a credit is spent: `door` in config.local.js. Without one, vp still
  * writes keys and tracks credits — it simply has no door to hand them out at. */
@@ -68,14 +69,6 @@ function toAuthEmail(v) {
  * the name Google gave us, else the address tidied, else a letter. */
 function displayName(session) {
   return who.whoLabel(session);
-}
-
-function plainAuthError(err) {
-  const m = String(err?.message || err || '');
-  if (/already registered/i.test(m)) return 'that address already has an account — sign in instead';
-  if (/invalid login credentials/i.test(m)) return 'wrong address or password';
-  if (/invalid format|validate email/i.test(m)) return 'that does not look like an address';
-  return m || 'could not sign in';
 }
 
 /* ── theme ────────────────────────────────────────────────────────── */
@@ -321,6 +314,31 @@ async function boot() {
   await enterApp();
 }
 
+/* Who is signed in, and whether that is still true. Registered before anybody can
+ * sign in, because a person who arrived at the gate and only then typed a
+ * password must still be noticed by a second tab — so this cannot live inside
+ * boot's "there is already a session" branch. Three ways to notice, because one
+ * is not enough, and all three ask *storage*: the client in this tab still
+ * believes it is whoever loaded the page. */
+function wireWatch() {
+  const check = () => {
+    const now = storedId() || null;
+    if (!S.session) {
+      if (now) location.reload();
+      return;
+    }
+    if (now !== S.session.user?.id) location.reload();
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') check();
+  });
+  window.addEventListener('focus', check);
+  window.addEventListener('storage', (e) => {
+    if (e.key && e.key.includes('-auth-token')) check();
+  });
+}
+
+wireWatch();
 boot();
 
 /* ── the settings dialog, and the dock ─────────────────────────────

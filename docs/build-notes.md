@@ -1500,3 +1500,26 @@ guard opens the settings. Both were test-side discoveries, both worth the note.
 
 `vc-lib.mjs` is 44 checks, `vc-batch.mjs` is 40, both in `tools/test-all.sh` and
 `tools/test-vc.sh`.
+
+## 2026-11 · the sentence that was copied five times
+
+`plainAuthError()` was the same twelve lines in `va`, `vc`, `vd`, `vp` and `vz`:
+Supabase says *Invalid login credentials* and every app translated it, identically
+and separately. It now lives in `packages/shell/words.js` and is imported — the
+markup of the gate is still copied, because an app has to keep working when the
+rest of the repo is gone, but the words a *code path* produces are one file.
+
+The work turned up something older than the copy-paste. **vp did not notice a
+second tab.** `vn`, `vi`, `vr`, `vd`, `vc` and `va` all carry three listeners —
+coming back into view, `focus`, and the `storage` event — and all three ask
+*storage* (`ai.storedId()`) rather than the client, because the client in a tab
+still believes it is whoever loaded the page. vp had none of them: it repainted
+on its own auth events only, so a second tab's sign-in left the first showing the
+previous person's ledger until somebody reloaded. `auth-check.mjs` had been
+reporting it for a while, in the one group `test-all.sh` does not run per app.
+
+And the first fix did not work, for a reason worth writing down: the listeners
+were registered inside `boot()` *after* the "there is already a session" branch,
+so a person who arrived at the gate and only then typed a password never got
+them. **A listener that only exists for people who were already signed in is not
+a listener.** It is registered at module scope now, before `boot()`.

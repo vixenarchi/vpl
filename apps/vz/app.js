@@ -12,6 +12,7 @@ import { mountNotice } from './vendor/notices.js';
  */
 
 import * as db from './lib/db.js';
+import { plainAuthError } from './vendor/words.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -86,14 +87,6 @@ function displayName(session) {
 
 /* Supabase says "User already registered" and "Unable to validate email
  * address"; a person deserves the same fact in fewer words. */
-function plainAuthError(err) {
-  const m = String(err?.message || err || '');
-  if (/already registered/i.test(m)) return 'that address already has an account — sign in instead';
-  if (/invalid format|validate email/i.test(m)) return 'that does not look like an address';
-  if (/invalid login credentials/i.test(m)) return 'wrong address or password';
-  return m || 'could not sign in';
-}
-
 function until(fn, ms = 8000) {
   const t0 = performance.now();
   return new Promise((resolve, reject) => {

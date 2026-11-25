@@ -19,6 +19,7 @@ import * as settings from './vendor/settings.js';
 import { TEMPLATES, DEFAULT_TEMPLATE, templateById } from './templates.js';
 import { parseDocument, setXY, VIEWS } from './lib/boxes.js';
 import { draw } from './lib/draw.js';
+import { plainAuthError } from './vendor/words.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
@@ -95,14 +96,6 @@ function toAuthEmail(v) {
  * the name Google gave us, else the address tidied, else a letter. */
 function displayName(session) {
   return who.whoLabel(session);
-}
-
-function plainAuthError(err) {
-  const m = String(err?.message || err || '');
-  if (/already registered/i.test(m)) return 'that address already has an account — sign in instead';
-  if (/invalid format|validate email/i.test(m)) return 'that does not look like an address';
-  if (/invalid login credentials/i.test(m)) return 'wrong address or password';
-  return m || 'could not sign in';
 }
 
 /* ── boot ─────────────────────────────────────────────────────────── */

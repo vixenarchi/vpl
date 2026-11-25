@@ -86,10 +86,19 @@ were deleted; the tap floor no longer touches `.bar .brand`.
 
 - The gate's four sentences: what an account is, that it works across the suite,
   that a name is an account at `@vpl.local`, and what a failed sign-in means.
-- `plainAuthError` already gives three human sentences; they are copy-pasted in
-  four apps and must become one list (same words, one place in `ai.js`'s
-  neighbour, `shell/words.js`).
-- The guest banner: one sentence plus what the reader can do.
+  The *markup* is copied (the apps are copies) and the sentences are identical in
+  all eight; the one sentence a code path produces now lives once.
+- **Done: `packages/shell/words.js`.** `plainAuthError()` was copy-pasted in five
+  apps and is now imported from the shell, so a sixth cannot invent a fourth way
+  to say *wrong address or password*. The provider's English is only passed
+  through when we have nothing better.
+- **Done, by accident of the same work: vp's second tab.** vp never noticed that
+  another tab had signed in as somebody else — it showed the previous person's
+  ledger until reload. It now carries the same three listeners as the rest of the
+  suite (coming back into view, focus, the storage event), registered *before*
+  anybody can sign in, so a person who arrived at the gate and only then typed a
+  password is still noticed. `auth-check` is 11/11 in all eight again.
+- Still waiting: the guest banner — one sentence plus what the reader can do.
 
 ## Sharing
 
