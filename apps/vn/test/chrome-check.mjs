@@ -175,7 +175,8 @@ if (NAME === 'vn' || NAME === 'vi') {
     /* with no project open it must say so, not pretend */
     const cards = await pg.locator('#notes li').count();
     await pg.click('#dock [data-use]');
-    await pg.waitForTimeout(900);
+    /* production writes land on the network, not on the next frame */
+    await until(async () => (await pg.locator('#notes li').count()) !== cards, 5000);
     if (cards === 0) {
       const why = (await pg.textContent('#dock .dock-msg')).trim();
       ok(/project/i.test(why), 'with no wall open it explains instead of pretending: “' + why + '”');
