@@ -538,7 +538,7 @@ function openArtifact(a) {
   const f = $('#art-file');
   f.hidden = !a?.file_name;
   if (a?.file_name) f.textContent = `original: ${a.file_name} · ${fmtSize(a.file_size)}`;
-  msg('#art-msg', '');
+  msg('#art-dlg-msg', '');
   $('#art-dialog').showModal();
   setTimeout(() => (a ? $('#art-text') : $('#art-title')).focus(), 60);
 }
@@ -555,7 +555,7 @@ $('#art-save').onclick = async () => {
   if (!d || !S.project) return;
   const title = $('#art-title').value.trim() || 'untitled input';
   const text = $('#art-text').value;
-  msg('#art-save', 'saving…', 'busy');
+  msg('#art-dlg-msg', 'saving…', 'busy');
   try {
     if (d.id) {
       const row = await db.updateArtifact(d.id, { title, text });
@@ -572,7 +572,7 @@ $('#art-save').onclick = async () => {
     $('#art-dialog').close();
     renderArtifacts();
     paintSpec();
-  } catch (err) { msg('#art-msg', err.message, 'bad'); }
+  } catch (err) { msg('#art-dlg-msg', err.message, 'bad'); }
 };
 
 $('#art-del').onclick = async () => {
@@ -586,7 +586,7 @@ $('#art-del').onclick = async () => {
     $('#art-dialog').close();
     renderArtifacts();
     paintSpec();
-  } catch (err) { msg('#art-msg', err.message, 'bad'); }
+  } catch (err) { msg('#art-dlg-msg', err.message, 'bad'); }
 };
 
 /* ── files: a pdf becomes text, the original stays in the bucket ──── */

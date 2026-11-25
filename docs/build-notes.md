@@ -1528,3 +1528,26 @@ a listener.** It is registered at module scope now, before `boot()`.
 unnoticed: `tools/test-settings.sh` walked six apps out of eight, so `auth-check`
 never ran against `vz` or `vp`. Both are in the list now, with their own domains,
 because *a group that is not in the list is a group that is green by absence*.
+
+## 2026-11-24 (evening) — an id that is not an address
+
+Three apps had **two `#art-msg`** elements: one in the side panel, one inside the
+`input` dialog. `getElementById` returns the first, so every message written from
+inside the dialog — *saving…*, an upload that failed, a pdf that would not
+parse — was painted **behind the modal**, where nobody could read it. The dialog
+had a message line that could never be written to.
+
+The dialog's line is `#art-dlg-msg` now, and the three dialog paths (save, remove,
+a read error) report there. The panel keeps the ones that belong to it: *reading a
+pdf*, *3 added*.
+
+Two lessons, both cheap:
+
+- **`msg('#art-save', 'saving…')` wrote a message into a button.** `#art-save` is
+  the *save* control; the helper sets `textContent` on whatever it is given, so
+  the label of a button became the progress line for a moment. A helper that takes
+  an id will happily take the wrong one.
+- **A duplicate id is invisible until it matters.** The browser does not warn, the
+  page looks right, and only the message nobody can see is missing. `chrome-check`
+  now lists every id twice and fails, in all eight apps. It would have caught
+  these three on the day they were written.

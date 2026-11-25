@@ -304,6 +304,17 @@ const flow = await pg.evaluate(() => {
 });
 ok(flow.pos !== 'fixed' || flow.parent === 'body', 'the dock takes its own strip (' + flow.pos + ' in ' + flow.parent + ')');
 
+/* one id, one element: a duplicate id is a message that lands in the wrong place
+ * (vd, vc and va each had two #art-msg, so the dialog reported behind itself) */
+const dupIds = await pg.evaluate(() => {
+  const seen = new Map();
+  for (const el of document.querySelectorAll('[id]')) {
+    seen.set(el.id, (seen.get(el.id) || 0) + 1);
+  }
+  return [...seen].filter(([, n]) => n > 1).map(([id]) => id);
+});
+ok(dupIds.length === 0, 'no id appears twice on the page' + (dupIds.length ? ' (' + dupIds.join(', ') + ')' : ''));
+
 /* ── chrome does not print ────────────────────────────────────────
  * Ctrl+P is a way to print, not a way to print the application. In every app the
  * bar, the rail and the dock step aside under print media, and the work stays —
