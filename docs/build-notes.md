@@ -1523,3 +1523,8 @@ were registered inside `boot()` *after* the "there is already a session" branch,
 so a person who arrived at the gate and only then typed a password never got
 them. **A listener that only exists for people who were already signed in is not
 a listener.** It is registered at module scope now, before `boot()`.
+
+**vz had it too.** The same missing three listeners, and the same reason it went
+unnoticed: `tools/test-settings.sh` walked six apps out of eight, so `auth-check`
+never ran against `vz` or `vp`. Both are in the list now, with their own domains,
+because *a group that is not in the list is a group that is green by absence*.

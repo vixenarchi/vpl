@@ -92,12 +92,16 @@ were deleted; the tap floor no longer touches `.bar .brand`.
   apps and is now imported from the shell, so a sixth cannot invent a fourth way
   to say *wrong address or password*. The provider's English is only passed
   through when we have nothing better.
-- **Done, by accident of the same work: vp's second tab.** vp never noticed that
-  another tab had signed in as somebody else — it showed the previous person's
-  ledger until reload. It now carries the same three listeners as the rest of the
-  suite (coming back into view, focus, the storage event), registered *before*
-  anybody can sign in, so a person who arrived at the gate and only then typed a
-  password is still noticed. `auth-check` is 11/11 in all eight again.
+- **Done, by accident of the same work: a second tab.** `vp` and `vz` never
+  noticed that another tab had signed in as somebody else — one showed the
+  previous person's ledger, the other the previous person's dictionary, until
+  reload. Both now carry the suite's three listeners (coming back into view,
+  focus, the storage event), asking *storage* rather than the client, and they are
+  registered **before** `boot()` so a person who arrived at the gate and only then
+  typed a password is noticed too. `auth-check` is 11/11 in all eight.
+- **`tools/test-settings.sh` now walks all eight.** It used to check six, which is
+  exactly why two apps kept a bug for weeks: a group that is not in the list is a
+  group that is green by absence.
 - Still waiting: the guest banner — one sentence plus what the reader can do.
 
 ## Sharing

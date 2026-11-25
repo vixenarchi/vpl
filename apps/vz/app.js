@@ -12,6 +12,7 @@ import { mountNotice } from './vendor/notices.js';
  */
 
 import * as db from './lib/db.js';
+import { storedId } from './vendor/ai.js';
 import { plainAuthError } from './vendor/words.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -958,6 +959,30 @@ document.addEventListener('click', (e) => {
   }
 });
 
+/* Who is signed in, and whether that is still true. Registered before boot() and
+ * outside its "there is already a session" branch, because a person who arrived
+ * at the gate and only then typed a password must be noticed by a second tab
+ * too. All three ask *storage*: the client in this tab still believes it is
+ * whoever loaded the page. The same three listeners exist in every app. */
+function wireWatch() {
+  const check = () => {
+    const now = storedId() || null;
+    if (!S.session) {
+      if (now) location.reload();
+      return;
+    }
+    if (now !== S.session.user?.id) location.reload();
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') check();
+  });
+  window.addEventListener('focus', check);
+  window.addEventListener('storage', (e) => {
+    if (e.key && e.key.includes('-auth-token')) check();
+  });
+}
+
+wireWatch();
 boot().catch((err) => {
   $('#gate').hidden = false;
   msg($('#gate-msg'), err.message || 'could not start', 'bad');
