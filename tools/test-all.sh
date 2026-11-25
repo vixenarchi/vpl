@@ -93,6 +93,7 @@ run "vr · requirements" env VR_URL="${VR_URL:-http://127.0.0.1:${PORT[vr]}}" no
 run "vz · dictionary" env VZ_URL="${VZ_URL:-http://127.0.0.1:${PORT[vz]}}" node vz-check.mjs
 run "vd · documents" env VD_URL="${VD_URL:-http://127.0.0.1:${PORT[vd]}}" node vd-check.mjs
 run "vc · compliance" env VC_URL="${VC_URL:-http://127.0.0.1:${PORT[vc]}}" node vc-check.mjs
+run "vc · library" env VC_URL="${VC_URL:-http://127.0.0.1:${PORT[vc]}}" node vc-lib.mjs
 run "vp · keys & codes" env VP_URL="${VP_URL:-http://127.0.0.1:${PORT[vp]}}" node vp-check.mjs
 run "va · desk + drawing + hand-off" node va-check.mjs
 for a in vn vi vr vz vd vc va; do

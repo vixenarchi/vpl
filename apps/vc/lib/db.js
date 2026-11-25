@@ -34,7 +34,8 @@ function loadScript(src) {
 }
 
 const P = 'id,user_id,title,brief,template,created_at,updated_at';
-const A = 'id,project_id,user_id,kind,title,text,file_path,file_name,file_size,file_mime,pos,deleted_at,created_at,updated_at';
+const A = 'id,project_id,user_id,kind,title,text,file_path,file_name,file_size,file_mime,pos,from_standard,deleted_at,created_at,updated_at';
+const ST = 'id,user_id,title,kind,source_url,text,file_path,file_name,file_size,file_mime,chars,deleted_at,created_at,updated_at';
 const R = 'id,project_id,user_id,template,model,notes,prompt,status,error,took_ms,created_at';
 const O = 'id,project_id,run_id,user_id,kind,title,body,pos,created_at,updated_at';
 const SH = 'id,project_id,owner_id,code,email,role,pending,created_at';
@@ -158,6 +159,7 @@ export async function addArtifact(projectId, row) {
     file_name: row.file_name || null,
     file_size: row.file_size ?? null,
     file_mime: row.file_mime || null,
+    from_standard: row.from_standard || null,
     pos: row.pos ?? Date.now() % 1000000,
   }).select(A).single();
   if (error) throw error;
@@ -218,6 +220,61 @@ export async function fileUrl(path) {
   const { data, error } = await db.storage.from(BUCKET).createSignedUrl(path, 3600);
   if (error) throw error;
   return data.signedUrl;
+}
+
+/* ── the library ──────────────────────────────────────────────────── */
+/* A drawer, not a catalogue: the person's own laws, standards, policies, terms
+ * and job ads, private, reused across their checks. Nothing here is shared and
+ * nothing is pointed at — "add to this check" copies the text. */
+export async function listStandards({ bin = false } = {}) {
+  const db = await client();
+  let q = db.from('vc_standards').select(ST);
+  q = bin ? q.not('deleted_at', 'is', null) : q.is('deleted_at', null);
+  const { data, error } = await q.order('updated_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function addStandard(row) {
+  const db = await client();
+  const s = await session();
+  const { data, error } = await db.from('vc_standards').insert({
+    user_id: s.user.id,
+    title: String(row.title || '').slice(0, 200),
+    kind: row.kind || 'law',
+    source_url: row.source_url ? String(row.source_url).slice(0, 2000) : null,
+    text: row.text || '',
+    file_path: row.file_path || null,
+    file_name: row.file_name || null,
+    file_size: row.file_size ?? null,
+    file_mime: row.file_mime || null,
+  }).select(ST).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateStandard(id, patch) {
+  const db = await client();
+  const { data, error } = await db.from('vc_standards')
+    .update(patch).eq('id', id).select(ST).single();
+  if (error) throw error;
+  return data;
+}
+
+/* ✕ puts it in the bin, like every other ✕ in the suite: a 200-page law is the
+ * last thing that should vanish because a finger slipped. */
+export async function binStandard(id) {
+  return updateStandard(id, { deleted_at: new Date().toISOString() });
+}
+
+export async function restoreStandard(id) {
+  return updateStandard(id, { deleted_at: null });
+}
+
+export async function deleteStandard(id) {
+  const db = await client();
+  const { error } = await db.from('vc_standards').delete().eq('id', id);
+  if (error) throw error;
 }
 
 /* ── the transformation ───────────────────────────────────────────── */

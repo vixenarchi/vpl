@@ -1,11 +1,16 @@
 # vc · what comes after the first week
 
-Three things, agreed but deliberately **not built yet**. They are written down
-here so the design stays one design and not three opinions.
+Three things, written down so the design stays one design and not three
+opinions. **The first one is built** (§1); two are still ahead (§2, §3).
 
-## 1. A library of standards, on the account
+## 1. A library of standards, on the account — **built**
 
-Today a rule is pasted into a check and lives there. The same law is pasted into
+`supabase/migrations/20261211000000_vc_standards.sql`, `vc-lib.mjs` 29 checks,
+`docs/vc.md` "The library". `chars` is a generated column; `deleted_at` gives the
+drawer the same bin as everything else; `vc_artifacts.from_standard` is
+provenance, not a foreign key you must keep.
+
+What is still true of it: a rule is pasted into a check and lives there. The same law is pasted into
 five checks and drifts. So: one table, `vc_standards`, owned by a person, reused
 across their checks.
 

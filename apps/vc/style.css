@@ -163,6 +163,73 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
 .side-head.gap-top { margin-top: 1rem; }
 .none-line { font-size: 0.76rem; margin: 0.1rem 0 0; }
 
+/* ── the library ───────────────────────────────────────────────────────
+ * A drawer: a short list of the documents a person keeps, each with how much
+ * text it carries (so "this does not fit in one call" is visible before the
+ * press), and two verbs per row — add, or put away. */
+.lib-line { font-size: 0.78rem; line-height: 1.45; margin: 0.1rem 0 0.5rem; max-width: 44rem; }
+.lib-list {
+  list-style: none; margin: 0; padding: 0;
+  max-height: 15rem; overflow-y: auto;          /* the only scroller in here */
+  border-top: 1px solid var(--rule);
+}
+.lib-item {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.1rem 0.5rem; align-items: baseline;
+  padding: 0.42rem 0.3rem; border-bottom: 1px solid var(--rule);
+}
+.lib-item:hover { background: var(--paper-2); }
+.lib-item .kind {
+  font-family: var(--mono); font-size: 0.67rem; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--ink-3);
+  border: 1px solid var(--rule-strong); border-radius: 2px; padding: 0 0.2rem;
+  white-space: nowrap;
+}
+.lib-item .what { min-width: 0; }
+.lib-item .name {
+  display: block; width: 100%; text-align: left; border: none; background: none;
+  padding: 0; font-size: 0.84rem; color: var(--ink); cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lib-item .line {
+  display: block; font-size: 0.72rem; color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* the row's verbs are invisible until the row is touched: two buttons on every
+ * line would be a wall of buttons, not a drawer */
+.lib-item .tools { display: flex; gap: 0.15rem; align-items: baseline; }
+.lib-item .tools button {
+  border: 1px solid transparent; background: none; font: inherit;
+  font-size: 0.72rem; color: var(--ink-3); padding: 0.12rem 0.35rem;
+  border-radius: 3px; cursor: pointer; min-height: 30px;
+}
+.lib-item .tools .add {
+  border-color: var(--rule-strong); color: var(--ink-2);
+  opacity: 0;
+}
+.lib-item:hover .tools .add, .lib-item:focus-within .tools .add { opacity: 1; }
+.lib-item .tools button:hover { color: var(--ink); border-color: var(--line-strong, var(--rule-strong)); }
+.lib-item .tools .del { opacity: 0; }
+.lib-item:hover .tools .del, .lib-item:focus-within .tools .del { opacity: 1; }
+.lib-bin-line { font-size: 0.76rem; margin: 0.45rem 0 0; display: flex; align-items: baseline; gap: 0.4rem; }
+.lib-edit { margin-top: 0.7rem; display: grid; gap: 0.35rem; }
+.lib-edit .art-title { font-size: 0.9rem; }
+.lib-kind-row {
+  display: grid; grid-template-columns: 5rem auto 1fr; gap: 0.45rem; align-items: center;
+}
+.lib-kind-row label {
+  font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3);
+}
+.lib-kind-row select {
+  font: inherit; font-size: 0.8rem; padding: 0.15rem 0.3rem;
+  min-width: 8.5rem; min-height: 30px; justify-self: start;
+}
+.lib-kind-row #lib-chars {
+  font-size: 0.72rem; justify-self: end; white-space: nowrap; color: var(--ink-3);
+}
+.lib-foot { margin-top: 0.6rem; display: flex; justify-content: flex-start; }
+.art-from { font-size: 0.72rem; margin: 0.1rem 0 0.5rem; }
+
 /* ── the findings strip ────────────────────────────────────────────── */
 .findings {
   display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap;

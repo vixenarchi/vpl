@@ -22,9 +22,11 @@ fi
 echo "vc at $URL"
 cd apps/vn/test
 fail=0
-out=$(VC_URL="$URL" node vc-check.mjs 2>&1); rc=$?
-echo "$out" | grep -E "FAIL|passed," | sed 's/^/  /'
-[ $rc -ne 0 ] && fail=1
+for suite in vc-check.mjs vc-lib.mjs; do
+  out=$(VC_URL="$URL" node "$suite" 2>&1); rc=$?
+  echo "$out" | grep -E "FAIL|passed," | sed 's/^/  /'
+  [ $rc -ne 0 ] && fail=1
+done
 
 if [ $fail -eq 1 ]; then
   echo "something failed — see above"

@@ -104,13 +104,11 @@
             <h2>standardi</h2>
             <span id="std-count" class="count muted"></span>
             <span class="grow"></span>
+            <button id="btn-from-lib" class="ghost w-only" type="button"
+                    title="a law you keep, so you stop pasting it">library</button>
             <button id="btn-add-standard" class="ghost w-only" type="button">＋ standard</button>
           </div>
           <p class="side-note muted">the rules — a policy, a checklist, a law's paragraph.</p>
-          <div id="bin-banner" class="bin-banner" hidden>
-            <span class="bin-banner-title">recycle bin</span>
-            <span id="bin-banner-note" class="bin-banner-note">nothing in it</span>
-          </div>
           <div id="bin-banner" class="bin-banner" hidden>
             <span class="bin-banner-title">recycle bin</span>
             <span id="bin-banner-note" class="bin-banner-note">nothing in it</span>
@@ -201,6 +199,7 @@
   <input id="art-title" class="art-title" type="text" placeholder="what is this — tender, minutes, note"
          aria-label="input title" spellcheck="false">
   <p id="art-file" class="art-file" hidden></p>
+  <p id="art-from" class="art-from muted" hidden></p>
   <textarea id="art-text" class="art-text" rows="14" spellcheck="false"
             placeholder="paste the text here"></textarea>
   <p id="art-msg" class="msg" aria-live="polite"></p>
@@ -209,6 +208,49 @@
     <span class="grow"></span>
     <button id="art-x2" class="ghost" type="button">cancel</button>
     <button id="art-save" class="primary w-only" type="button">keep it</button>
+  </div>
+</dialog>
+
+<!-- ── the library: a law you keep ────────────────────────────────── -->
+<dialog id="lib-dialog" class="dialog wide">
+  <button id="lib-x" class="dialog-x" type="button" aria-label="close">✕</button>
+  <h2>the library</h2>
+  <p class="lib-line muted">a law you keep, so you stop pasting it. adding one copies
+    its text into this check — the report stays readable even if the law changes.</p>
+
+  <ul id="lib-list" class="lib-list"></ul>
+  <p id="lib-none" class="muted none-line" hidden>nothing kept yet — a law, a policy, a job ad.</p>
+  <p id="lib-bin-line" class="lib-bin-line muted" hidden></p>
+
+  <div id="lib-edit" class="lib-edit" hidden>
+    <input id="lib-title" class="art-title" type="text" spellcheck="false"
+           placeholder="what is it — the AI Act, our security policy, the job ad"
+           aria-label="what this standard is called">
+    <div class="lib-kind-row">
+      <label for="lib-kind">kind</label>
+      <select id="lib-kind">
+        <option value="law">law</option>
+        <option value="standard">standard</option>
+        <option value="policy">policy</option>
+        <option value="terms">terms</option>
+        <option value="job-ad">job ad</option>
+      </select>
+      <span id="lib-chars" class="muted"></span>
+    </div>
+    <textarea id="lib-text" class="art-text" rows="9" spellcheck="false"
+              placeholder="paste the text — the part you are actually held to"></textarea>
+    <p id="lib-msg" class="msg" aria-live="polite"></p>
+    <div class="dialog-foot">
+      <button id="lib-del" class="ghost danger w-only" type="button" hidden>remove</button>
+      <span class="grow"></span>
+      <button id="lib-cancel" class="ghost" type="button">cancel</button>
+      <button id="lib-save" class="primary w-only" type="button">keep it</button>
+      <button id="lib-add" class="primary w-only" type="button" hidden>add to this check</button>
+    </div>
+  </div>
+
+  <div class="lib-foot">
+    <button id="lib-new" class="ghost" type="button">＋ a new standard</button>
   </div>
 </dialog>
 

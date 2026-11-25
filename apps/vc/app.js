@@ -32,6 +32,10 @@ const S = {
   guest: null,         // null | 'share'
   current: null,       // the output on the desk
   artDraft: null,      // the input open in the dialog
+  lib: [],             // the standards this person keeps
+  libBin: [],          // standards in the bin
+  libShowBin: false,
+  libDraft: null,      // the standard open in the library editor
   notes: '',
   busy: false,
   lastMs: 0,
@@ -160,6 +164,9 @@ async function enterApp() {
   who.chip($('#who'));
   $('#who').title = S.session?.user?.email || '';
   wireAi();
+  /* the drawer is small and private: it comes with the account, so an input can
+   * always say which standard it was copied from */
+  loadLibrary().catch(() => {});
   await loadProjects();
   const bring = localStorage.getItem('vd.copy');
   if (bring) {
@@ -292,6 +299,8 @@ function paintSpec() {
   renderArtifacts();
   paintOutput();
   $('#btn-first-generate').hidden = S.role === 'view';
+  /* the library is the owner's drawer: a guest never sees the door */
+  $('#btn-from-lib').hidden = S.role !== 'owner';
 }
 
 function growBrief(el) {
@@ -514,6 +523,7 @@ function openArtifact(a, kind = 'evidence') {
   $('#art-del').hidden = !a;
   const f = $('#art-file');
   f.hidden = !a?.file_name;
+  paintFrom(a);
   if (a?.file_name) f.textContent = `original: ${a.file_name} · ${fmtSize(a.file_size)}`;
   msg('#art-msg', '');
   $('#art-dialog').showModal();
@@ -604,6 +614,247 @@ $('#file-input').addEventListener('change', async (e) => {
   paintSpec();
   msg('#art-msg', `${files.length} added`, 'ok');
   toast('read it, then generate');
+});
+
+/* Did this input come from the library? Provenance, not a link: the text is a
+ * copy, and a standard that was replaced or binned does not touch it. */
+function paintFrom(a) {
+  const line = $('#art-from');
+  if (!a?.from_standard) { line.hidden = true; line.textContent = ''; return; }
+  const from = S.lib.find((x) => x.id === a.from_standard)
+    || S.libBin.find((x) => x.id === a.from_standard);
+  line.hidden = false;
+  line.textContent = from
+    ? 'copied from the library — ' + (from.title || 'a standard without a name')
+    : 'copied from the library — that standard is no longer there';
+}
+
+/* ── the library: a law you keep, so you stop pasting it ────────────
+ * Private to the person, never shared, never pointed at. "add" copies the text
+ * into this check and remembers which library row it came from. A law replaced
+ * next year cannot change a report written today. */
+const LIB_KIND = ['law', 'standard', 'policy', 'terms', 'job-ad'];
+
+function charsLine(st) {
+  const n = (st?.text || '').length;
+  if (!n) return 'no text yet';
+  return n.toLocaleString() + (n === 1 ? ' character' : ' characters');
+}
+
+async function loadLibrary() {
+  [S.lib, S.libBin] = await Promise.all([
+    db.listStandards().catch(() => []),
+    db.listStandards({ bin: true }).catch(() => []),
+  ]);
+}
+
+function libRow(st) {
+  const bin = S.libShowBin;
+  return `<li class="lib-item" data-id="${esc(st.id)}">`
+    + `<span class="kind">${esc(st.kind)}</span>`
+    + `<span class="what"><button class="name" type="button">${esc(st.title || 'a standard without a name')}</button>`
+    + `<span class="line">${esc(charsLine(st))}${st.source_url ? ' · linked' : ''}</span></span>`
+    + '<span class="tools">'
+    + (bin
+      ? '<button class="back" type="button" title="back into the library">back</button>'
+        + '<button class="del" type="button" title="delete for good">✕</button>'
+      : '<button class="add" type="button" title="copy it into this check">add</button>'
+        + '<button class="del" type="button" title="put it in the bin">✕</button>')
+    + '</span></li>';
+}
+
+function renderLibrary() {
+  const rows = S.libShowBin ? S.libBin : S.lib;
+  $('#lib-list').innerHTML = rows.map(libRow).join('');
+  $('#lib-none').hidden = rows.length > 0;
+  $('#lib-none').textContent = S.libShowBin
+    ? 'the bin is empty — nothing was removed.'
+    : 'nothing kept yet — a law, a policy, a job ad.';
+  const n = S.libBin.length;
+  const line = $('#lib-bin-line');
+  line.hidden = n === 0;
+  line.textContent = '';
+  if (n) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ghost';
+    b.textContent = S.libShowBin
+      ? 'back to the library'
+      : `${n} in the bin — show ${n === 1 ? 'it' : 'them'}`;
+    b.onclick = () => { S.libShowBin = !S.libShowBin; renderLibrary(); };
+    line.append(b);
+  }
+}
+
+function showLibEditor(st) {
+  S.libDraft = st ? { ...st } : { kind: 'law', title: '', text: '' };
+  /* one thing at a time: the list steps aside while a standard is open, so the
+   * row above and the field below cannot both claim to be the same document */
+  for (const sel of ['#lib-list', '#lib-none', '#lib-bin-line', '#lib-new']) $(sel).hidden = true;
+  $('#lib-edit').hidden = false;
+  $('#lib-title').value = S.libDraft.title || '';
+  $('#lib-kind').value = LIB_KIND.includes(S.libDraft.kind) ? S.libDraft.kind : 'law';
+  $('#lib-text').value = S.libDraft.text || '';
+  $('#lib-chars').textContent = charsLine(S.libDraft);
+  $('#lib-del').hidden = !st?.id;
+  $('#lib-add').hidden = !st?.id;
+  msg('#lib-msg', '');
+  setTimeout(() => $('#lib-title').focus(), 50);
+}
+
+function hideLibEditor() {
+  S.libDraft = null;
+  $('#lib-edit').hidden = true;
+  $('#lib-new').hidden = false;
+  $('#lib-list').hidden = false;
+  msg('#lib-msg', '');
+  renderLibrary();
+}
+
+async function openLibrary() {
+  if (S.role !== 'owner') return toast('the library is yours alone');
+  $('#lib-dialog').showModal();
+  hideLibEditor();
+  S.libShowBin = false;
+  renderLibrary();
+  try {
+    await loadLibrary();
+    renderLibrary();
+  } catch (err) { msg('#lib-msg', err.message, 'bad'); }
+}
+
+$('#btn-from-lib').onclick = () => openLibrary();
+$('#lib-x').onclick = () => $('#lib-dialog').close();
+$('#lib-cancel').onclick = hideLibEditor;
+$('#lib-new').onclick = () => showLibEditor(null);
+$('#lib-text').addEventListener('input', () => {
+  $('#lib-chars').textContent = charsLine({ text: $('#lib-text').value });
+});
+
+async function addFromLibrary(st) {
+  if (!S.project) return toast('open a check first — a standard belongs to one');
+  try {
+    const row = await db.addArtifact(S.project.id, {
+      kind: 'standard', title: st.title || 'a standard', text: st.text || '',
+      from_standard: st.id,
+    });
+    S.artifacts.push(row);
+    renderArtifacts();
+    paintSpec();
+    $('#lib-dialog').close();
+    toast('“' + (st.title || 'the standard') + '” is in this check — the text is a copy');
+  } catch (err) { msg('#lib-msg', err.message, 'bad'); }
+}
+
+$('#lib-add').onclick = async () => {
+  const st = S.libDraft;
+  if (!st?.id) return;
+  /* what is on screen is what gets copied: a person who edited the text and
+   * pressed add means the words they just wrote */
+  const text = $('#lib-text').value;
+  const title = $('#lib-title').value.trim();
+  if (text !== (st.text || '') || title !== (st.title || '')) {
+    try {
+      const kept = await db.updateStandard(st.id, { text, title, kind: $('#lib-kind').value });
+      const i = S.lib.findIndex((x) => x.id === kept.id);
+      if (i >= 0) S.lib[i] = kept;
+      S.libDraft = { ...kept };
+    } catch (err) { return msg('#lib-msg', err.message, 'bad'); }
+  }
+  return addFromLibrary({ ...(S.libDraft || st), text, title });
+};
+
+$('#lib-save').onclick = async () => {
+  const title = $('#lib-title').value.trim();
+  const text = $('#lib-text').value;
+  const kind = $('#lib-kind').value;
+  if (!title) return msg('#lib-msg', 'a name first, so you can find it again', 'bad');
+  if (!text.trim()) return msg('#lib-msg', 'and the text you are held to', 'bad');
+  const btn = $('#lib-save');
+  btn.disabled = true;
+  msg('#lib-msg', 'keeping…', 'busy');
+  try {
+    const d = S.libDraft;
+    if (d?.id) {
+      const row = await db.updateStandard(d.id, { title, text, kind });
+      const i = S.lib.findIndex((x) => x.id === row.id);
+      if (i >= 0) S.lib[i] = row;
+      S.libDraft = { ...row };
+      hideLibEditor();
+      renderLibrary();
+      toast('kept — press add to put it in this check');
+    } else {
+      const row = await db.addStandard({ title, text, kind });
+      S.lib = [row, ...S.lib];
+      hideLibEditor();
+      renderLibrary();
+      toast('kept — press add to put it in this check');
+    }
+  } catch (err) { msg('#lib-msg', err.message, 'bad'); }
+  finally { btn.disabled = false; }
+};
+
+$('#lib-del').onclick = async () => {
+  const d = S.libDraft;
+  if (!d?.id) return;
+  try {
+    await db.binStandard(d.id);
+    const gone = S.lib.find((x) => x.id === d.id);
+    if (gone) S.libBin = [{ ...gone, deleted_at: new Date().toISOString() }, ...S.libBin];
+    S.lib = S.lib.filter((x) => x.id !== d.id);
+    hideLibEditor();
+    renderLibrary();
+    toast('“' + (gone?.title || 'the standard') + '” is in the bin');
+  } catch (err) { msg('#lib-msg', err.message, 'bad'); }
+};
+
+$('#lib-list').addEventListener('click', async (e) => {
+  const li = e.target.closest('.lib-item');
+  if (!li) return;
+  const st = (S.libShowBin ? S.libBin : S.lib).find((x) => x.id === li.dataset.id);
+  if (!st) return;
+
+  if (e.target.closest('.add')) return addFromLibrary(st);
+
+  if (e.target.closest('.del')) {
+    if (!S.libShowBin) {
+      try {
+        await db.binStandard(st.id);
+        S.lib = S.lib.filter((x) => x.id !== st.id);
+        S.libBin = [{ ...st, deleted_at: new Date().toISOString() }, ...S.libBin];
+        renderLibrary();
+        toast('“' + (st.title || 'the standard') + '” is in the bin');
+      } catch (err) { msg('#lib-msg', err.message, 'bad'); }
+      return;
+    }
+    /* a second press, in the bin, is the only one that destroys */
+    try {
+      await db.deleteStandard(st.id);
+      S.libBin = S.libBin.filter((x) => x.id !== st.id);
+      renderLibrary();
+      toast('gone for good');
+    } catch (err) { msg('#lib-msg', err.message, 'bad'); }
+    return;
+  }
+
+  if (e.target.closest('.back')) {
+    try {
+      const row = await db.restoreStandard(st.id);
+      S.libBin = S.libBin.filter((x) => x.id !== st.id);
+      S.lib = [row, ...S.lib];
+      /* taking the last one back leaves nothing to look at in the bin: go back
+       * to the library, or the restored standard looks like it vanished */
+      S.libShowBin = S.libBin.length > 0;
+      renderLibrary();
+      toast('back in the library');
+    } catch (err) { msg('#lib-msg', err.message, 'bad'); }
+    return;
+  }
+
+  if (e.target.closest('.name')) {
+    if (S.libShowBin) return;
+    showLibEditor(st);
+  }
 });
 
 /* ── the output on the desk ───────────────────────────────────────── */

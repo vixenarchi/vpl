@@ -1397,3 +1397,43 @@ The test grew with it: `settings-check.mjs` now asserts the five tabs, the
 height staying put across the switch (364 → 364 px, ±1), the account line
 carrying the signed-in address, a filled name field, a password field, nothing
 centred, and `delete my account` **only** in vn. 30/30 in all eight.
+
+## 2026-11 · a law you keep, so you stop pasting it
+
+The first item from `docs/vc-next.md`: `vc_standards`, and *add from library*
+in the check. The sentence the screen has to hold is one line — "a law you keep,
+so you stop pasting it" — and everything about the design follows from it.
+
+- **A copy, not a pointer.** *add* writes the text into `vc_artifacts` and
+  remembers `from_standard`. Provenance is a nullable uuid with `on delete set
+  null`, because the interesting case is not "where did this come from" but "what
+  happens when the law is replaced next year": the report must still open and
+  still read the same. The test proves it by editing the standard and by
+  deleting it for good, and then opening the input to find the words unchanged.
+- **`chars` is generated, not typed.** `generated always as (char_length(text))
+  stored`. It exists for one honest reason: a person should see that 400 000
+  characters will not fit in one call *before* the press.
+- **The drawer is private.** Owner-only RLS. No share function reads it, and the
+  library button is hidden for any role that is not `owner` — the guest check in
+  `vc-lib.mjs` is exactly that sentence.
+- **✕ bins, like everywhere else.** A 200-page law is the last thing that should
+  vanish because a finger slipped, so the first ✕ is the bin, and the second
+  press — in the bin — destroys.
+- **One thing at a time.** Pressing a row, or *＋ a new standard*, hides the list:
+  the row above and the field below must not both claim to be the same document.
+
+Two things the work turned up:
+
+- **A modal `<dialog>` asked about through a locator lied.** `locator('#lib-dialog[open]').count()`
+  stayed 0 for twelve seconds while `document.getElementById('lib-dialog').open`
+  was already `true`. The test asks the page instead (`pg.evaluate`) and stopped
+  flaking. Worth remembering: a locator is a convenience, not the DOM.
+- **vc's bin banner was in the markup twice.** Same `id` twice, so the browser
+  quietly used the first and the second was dead weight; it surfaced only while
+  editing that neighbourhood.
+- **A restored standard must not look like it vanished.** Taking the last item
+  back out of the bin leaves an empty bin view, so the drawer now returns to the
+  library when the bin empties — and stays in the bin when it does not.
+
+`vc-lib.mjs` is 29 checks, green three runs in a row, and it is in
+`tools/test-all.sh` and `tools/test-vc.sh`.
