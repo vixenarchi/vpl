@@ -654,3 +654,22 @@ body.guest #projects { display: none; }
   border: 1px solid var(--line); border-radius: var(--radius);
 }
 @media (max-width: 640px) { .bin-foot.column-foot { margin: 0.8rem 0.85rem 1rem; } }
+
+/* ── print: the funnel becomes a sheet of paper ───────────────────────
+ * The road, the buttons and the hints stay on screen. What prints is the title,
+ * the brief and every idea with its stage — the whole funnel, not the column
+ * that happens to be scrolled into view. */
+@media print {
+  :root {
+    --paper: #fff; --ink: #000; --ink-2: #222; --ink-3: #555;
+    --line: #ccc; --line-strong: #999; --paper-2: #fff; --paper-3: #fff;
+  }
+  @page { margin: 16mm; }
+  body { background: #fff; }
+  .bar, .road, .projects, .proj-title .ghost, .ai-hint, .btn-row, .tools,
+  .guest-banner, .simmer, .stage-tools, #toast, .dock, .notice, dialog { display: none !important; }
+  .body, .funnel, .run { display: block; height: auto; max-height: none; overflow: visible; }
+  .funnel { padding: 0; }
+  .title { border: none !important; font-size: 1.5rem; }
+  .idea, .card, .lane { break-inside: avoid; }
+}

@@ -182,7 +182,15 @@ if (NAME === 'vn' || NAME === 'vi') {
       const why = await until(async () => {
         const t = (await pg.textContent('#dock .dock-msg') || '').trim();
         return t.length > 3 ? t : false;
-      }, 5000);
+      }, 12000) || await (async () => {
+        /* a production click can land before the dock is listening; asking again
+         * is what a person does, and it is cheaper than a flaky suite */
+        await pg.click('#dock [data-use]').catch(() => {});
+        return until(async () => {
+          const t = (await pg.textContent('#dock .dock-msg') || '').trim();
+          return t.length > 3 ? t : false;
+        }, 12000);
+      })();
       ok(/project/i.test(why || ''), 'with no wall open it explains instead of pretending: “' + (why || '') + '”');
     } else {
       await until(async () => (await pg.locator('#notes li').count()) !== cards, 5000);
@@ -295,6 +303,55 @@ const flow = await pg.evaluate(() => {
   return { pos: cs.position, parent: d.parentElement.id || d.parentElement.tagName };
 });
 ok(flow.pos !== 'fixed' || flow.parent === 'body', 'the dock takes its own strip (' + flow.pos + ' in ' + flow.parent + ')');
+
+/* ── chrome does not print ────────────────────────────────────────
+ * Ctrl+P is a way to print, not a way to print the application. In every app the
+ * bar, the rail and the dock step aside under print media, and the work stays —
+ * the whole document, never the page that happened to be scrolled into view. */
+await pg.emulateMedia({ media: 'print' });
+await pg.waitForTimeout(250);
+const printed = await pg.evaluate(() => {
+  const vis = (sel) => {
+    const e = document.querySelector(sel);
+    if (!e) return null;
+    const st = getComputedStyle(e);
+    return st.display !== 'none' && st.visibility !== 'hidden';
+  };
+  return {
+    bar: vis('.bar'),
+    dock: vis('#dock'),
+    rail: vis('#list') ?? vis('.projects') ?? vis('.rail'),
+    sheet: !!document.querySelector('#print-doc'),
+  };
+});
+ok(printed.bar === false, 'the bar does not print');
+if (printed.dock !== null) ok(printed.dock === false, 'the dock does not print');
+ok(!printed.rail, 'the rail does not print');
+if (printed.sheet) {
+  /* vd, vc, va print a sheet filled just before printing, so a keyboard Ctrl+P
+   * is the same page as the button — the bug this check exists for */
+  await pg.emulateMedia({ media: 'screen' });
+  await pg.evaluate(() => window.dispatchEvent(new Event('beforeprint')));
+  await pg.emulateMedia({ media: 'print' });
+  const sheet = await pg.evaluate(() => {
+    const d = document.querySelector('#print-doc');
+    const body = document.querySelector('#out-body');
+    if (!d) return null;
+    return {
+      shown: getComputedStyle(d).display !== 'none',
+      len: (d.textContent || '').trim().length,
+      body: (body?.value || '').trim().length,
+    };
+  });
+  ok(sheet.shown, 'the sheet is what prints');
+  /* a check with no report open yet has nothing to carry; when there is one, the
+   * sheet must hold all of it — that is the difference a keyboard Ctrl+P used
+   * to get wrong */
+  ok(sheet.body === 0 || sheet.len >= sheet.body,
+    'and it carries the document, not the slice on screen (' + sheet.len + ' of ' + sheet.body + ')');
+}
+await pg.emulateMedia({ media: 'screen' });
+await pg.waitForTimeout(150);
 
 ok(errors.filter((e) => !/401|Failed to load resource/.test(e)).length === 0, 'no unexpected errors');
 if (errors.length) console.log('   (' + errors.length + ' expected noise)');

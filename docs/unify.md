@@ -102,13 +102,49 @@ were deleted; the tap floor no longer touches `.bar .brand`.
 - **`tools/test-settings.sh` now walks all eight.** It used to check six, which is
   exactly why two apps kept a bug for weeks: a group that is not in the list is a
   group that is green by absence.
-- Still waiting: the guest banner — one sentence plus what the reader can do.
+- **Done: the guest banner, in one shape.** `guestLine()` in
+  `packages/shell/words.js`: *what this is — what you can do*, an em dash, no
+  exclamation mark, the same words in the seven apps that can share. The app
+  passes its own noun (`note`, `funnel`, `document`, `check`, `job`, `sheet`) and
+  that word is the only thing that may differ. The anonymous reader is told the
+  one thing they can actually do (*copy takes it as text*), and a grant is told
+  what stays with the owner, because "you may write" with no boundary is a trap.
 
-## Sharing
+## Sharing — done, with one shape left to align
 
-- One dialog, two doors and (in `vz`) a third switch; same headings, same
-  `copy the link`, same list of people with `can read` / `can write`.
-- `copy to mine` sits in the same place in every header, with the same words.
+One dialog in all seven: `share this <noun>`, the separator `a public link —
+anyone with it can read`, `make link` / `copy the link`, then `one person` with
+`can read` / `can write` and a list of people under it. `copy to mine` is in the
+same place in every header with the same words (`vn` keeps it on the note bar,
+because a note lives in a tree and a copy can be a branch).
+
+- **What is still different, and why:** `vn` makes its link with a switch, not a
+  button, because it shares a note *and everything under it* — the switch is the
+  honest shape for a tree. Its button now says `copy the link` like everybody
+  else's. If the switch is ever replaced, it is a real change to `share-check`,
+  not a wording change.
+
+## Print — done
+
+- **Chrome does not print, and the work does.** `vn` and `vi` had no print rules
+  at all; they have them now (bar, rail, dock, toolbar, notice and road step
+  aside, the note/funnel prints in full). `chrome-check` asserts it in all eight:
+  the bar and the rail are hidden under print media, the dock is not printed, and
+  in `vd`/`vc`/`va` the `.print-doc` sheet is visible where the editor is hidden.
+- **A keyboard `Ctrl+P` printed a blank page in `vd`, `vc` and `va`.** Those three
+  hide `#out-body` under print and show a `.print-doc` sheet — but the sheet was
+  only ever filled by the *button*. Nothing filled it before a keyboard print, so
+  Ctrl+P produced the title and nothing else. There is a `beforeprint` listener
+  now, and the chrome check dispatches it and insists the sheet carries the whole
+  document, not the slice on screen.
+- `vr` was already right (rows keep their names, the pager is hidden, `beforeprint`
+  writes the meta line), and `vz` already unfolded hidden values on paper.
+
+## Destructive questions name the thing
+
+`confirm()` in `vp` asked "revoke this key?" and "revoke this code?" — which is
+not a name. Both now say the label between quotes. `vr`'s *copy* question named
+nothing either, and now names the document. Everything else already did.
 
 ## Small things
 

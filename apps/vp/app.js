@@ -197,7 +197,9 @@ async function paintCodes() {
   $('#codes').querySelectorAll('[data-kill="code"]').forEach((b) => {
     b.onclick = async () => {
       const li = b.closest('li');
-      if (!confirm('revoke this code? anyone holding the slip will be refused.')) return;
+      /* a question names the thing it is about: "this code" is not a name */
+      const label = S.codes.find((c) => c.id === li.dataset.id)?.label || 'this code';
+      if (!confirm(`revoke “${label}”? anyone holding the slip will be refused.`)) return;
       await db.revokeCode(li.dataset.id);
       await paintCodes();
       toast('revoked');
@@ -265,7 +267,8 @@ async function paintKeys() {
   $('#keys').querySelectorAll('[data-kill="key"]').forEach((b) => {
     b.onclick = async () => {
       const li = b.closest('li');
-      if (!confirm('revoke this key? calls through it stop now.')) return;
+      const label = S.keys.find((k) => k.id === li.dataset.id)?.label || 'this key';
+      if (!confirm(`revoke “${label}”? calls through it stop now.`)) return;
       await db.revokeKey(li.dataset.id);
       await paintKeys();
       toast('revoked');

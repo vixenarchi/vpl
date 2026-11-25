@@ -13,7 +13,7 @@ import { mountNotice } from './vendor/notices.js';
 
 import * as db from './lib/db.js';
 import { storedId } from './vendor/ai.js';
-import { plainAuthError } from './vendor/words.js';
+import { plainAuthError, guestLine } from './vendor/words.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -290,25 +290,19 @@ function applyRole() {
   const banner = $('#guest-banner');
   if (guest && S.guest === 'public') {
     banner.hidden = false;
-    banner.innerHTML = 'a <b>published</b> project — anyone with the link reads it. '
-      + 'You are reading a copy of the sheet, not the sheet itself.';
+    banner.textContent = guestLine({ thing: 'sheet', publicLink: true });
   } else if (guest && S.role === 'edit') {
     banner.hidden = false;
-    banner.innerHTML = 'shared with you — you may <b>write</b> keys and values. '
-      + 'The name, hiding, publishing and emptying the bin stay with the owner.';
+    banner.textContent = guestLine({ thing: 'sheet', role: 'edit', signedIn: !!S.session });
   } else if (guest) {
     banner.hidden = false;
-    banner.innerHTML = 'shared with you, <b>read only</b>. '
-      + (S.session
-        ? '<b>copy to mine</b> makes a project where the keys are yours.'
-        : '<b>copy</b> takes the sheet as text; <b>copy to mine</b> needs an account.');
+    banner.textContent = guestLine({ thing: 'sheet', signedIn: !!S.session, canCopy: true });
   } else if (S.role === 'edit') {
     banner.hidden = false;
-    banner.innerHTML = 'shared with you — you may <b>write</b> keys and values and move them to the bin. '
-      + 'The name, hiding, publishing and emptying the bin stay with the owner.';
+    banner.textContent = guestLine({ thing: 'sheet', role: 'edit', signedIn: true });
   } else if (S.role === 'view') {
     banner.hidden = false;
-    banner.innerHTML = 'shared with you, <b>read only</b>.';
+    banner.textContent = guestLine({ thing: 'sheet', signedIn: true });
   } else {
     banner.hidden = true;
   }

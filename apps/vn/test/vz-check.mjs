@@ -198,7 +198,11 @@ gp.on('pageerror', (e) => errors.push('guest: ' + e.message));
 gp.on('dialog', (d) => d.accept());
 await gp.goto(link, { waitUntil: 'networkidle' });
 await gp.waitForTimeout(1600);
-ok((await gp.locator('#guest-banner').textContent()).includes('shared with you'), 'a guest sees what the link is');
+/* one shape for the reader's banner in all seven apps that can share:
+ * *what this is — what you can do* (packages/shell/words.js) */
+const guestBanner = (await gp.locator('#guest-banner').textContent()).trim();
+ok(/shared sheet/.test(guestBanner) && /copy/.test(guestBanner),
+  'a guest sees what the link is, and what they can do: ' + guestBanner);
 ok((await gp.locator('#pairs .pair').count()) > 0, 'and the keys');
 ok(await gp.locator('#projects').isHidden(), 'a guest has no rail of projects');
 ok(await gp.locator('#add').isHidden(), 'and no add box');

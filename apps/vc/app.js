@@ -15,7 +15,7 @@ import { mountNotice } from './vendor/notices.js';
 import * as engine from './vendor/engine.js';
 import * as settings from './vendor/settings.js';
 import { TEMPLATES, DEFAULT_TEMPLATE, templateById, nounsFor } from './templates.js';
-import { plainAuthError } from './vendor/words.js';
+import { plainAuthError, guestLine } from './vendor/words.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
@@ -1375,9 +1375,18 @@ $('#btn-copy').onclick = async () => {
 $('#btn-print').onclick = () => {
   const o = currentOutput();
   if (!o) return toast('nothing to print yet');
-  $('#print-doc').textContent = `${S.project?.title || ''}\n\n${o.body}`;
+  fillPrintDoc();
   window.print();
 };
+
+/* Ctrl+P is the other way to print, and it used to print a blank page: the
+ * `.print-doc` sheet is what the print CSS shows, and it was only ever filled by
+ * the button. The work is the same either way — the whole document, once. */
+function fillPrintDoc() {
+  const o = currentOutput();
+  $('#print-doc').textContent = `${S.project?.title || ''}\n\n${o?.body || ''}`;
+}
+window.addEventListener('beforeprint', fillPrintDoc);
 
 /* ── generate ─────────────────────────────────────────────────────── */
 $('#gen').onsubmit = (e) => { e.preventDefault(); generate(); };
@@ -1671,7 +1680,7 @@ async function openGuest(code) {
   $('#spec').hidden = false;
   $('#btn-share').hidden = true;
   $('#guest-banner').hidden = false;
-  $('#guest-banner').textContent = 'you are reading a shared check. a copy can become yours — it never writes back.';
+  $('#guest-banner').textContent = guestLine({ thing: 'check', signedIn: !!S.session });
   $('#btn-own').hidden = false;
   $('#btn-own').textContent = 'copy to mine';
   paintSpec();

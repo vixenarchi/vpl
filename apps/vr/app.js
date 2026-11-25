@@ -16,6 +16,7 @@ import { mountNotice } from './vendor/notices.js';
 import * as settings from './vendor/settings.js';
 import * as engine from './vendor/engine.js';
 import { prompts } from './prompts.js';
+import { guestLine } from './vendor/words.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -292,7 +293,7 @@ function applyRole() {
   $('#btn-own').hidden = isOwner() || !S.session;
   if (S.guest) {
     $('#guest-banner').hidden = false;
-    $('#guest-banner').textContent = 'shared document — you are reading a link. nothing you do here is saved.';
+    $('#guest-banner').textContent = guestLine({ thing: 'document', signedIn: !!S.session });
     $('#projects').hidden = true;
   } else {
     $('#guest-banner').hidden = true;
@@ -1522,7 +1523,7 @@ function wireChrome() {
 
   $('#btn-own').onclick = async () => {
     if (!S.project) return;
-    if (!confirm('Copy this document into your own documents?')) return;
+    if (!confirm(`Copy “${S.project?.title || 'this document'}” into your own documents?`)) return;
     flash('copying…', 'ok');
     try {
       const p = await db.copyToMe(S.project, S.reqs, S.terms, S.themes, S.vocab);

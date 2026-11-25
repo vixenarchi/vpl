@@ -17,6 +17,7 @@ import { mountNotice } from './vendor/notices.js';
 import * as settings from './vendor/settings.js';
 import * as engine from './vendor/engine.js';
 import { prompts } from './prompts.js';
+import { guestLine } from './vendor/words.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -254,15 +255,15 @@ function applyRole() {
   const banner = $('#guest-banner');
   if (S.guest) {
     banner.hidden = false;
-    banner.innerHTML = `<b>shared funnel</b> — you are reading a link. nothing you do here is saved.`;
+    banner.textContent = guestLine({ thing: 'funnel', signedIn: !!S.session });
   } else {
     banner.hidden = true;
     if (S.role === 'view') {
       banner.hidden = false;
-      banner.innerHTML = `<b>shared with you</b> — you can read this funnel and nothing else.`;
+      banner.textContent = guestLine({ thing: 'funnel', signedIn: true });
     } else if (S.role === 'edit') {
       banner.hidden = false;
-      banner.innerHTML = `<b>shared with you for writing</b> — text, not decisions. choosing and parking stay with the owner.`;
+      banner.textContent = guestLine({ thing: 'funnel', role: 'edit', signedIn: true });
     }
   }
   /* a guest has no rail; everybody else does, including a reader who has just

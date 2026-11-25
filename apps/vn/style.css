@@ -1065,3 +1065,27 @@ kbd {
 .ai-acc-note, .ai-acc-msg { flex-basis: 100%; margin: 0; font-size: .8rem; opacity: .72; }
 .ai-acc-msg { opacity: .9; }
 .ai-acc-msg:empty { display: none; }
+
+/* ── print: the note becomes the page ─────────────────────────────────
+ * Ctrl+P is the only print button vn has, and it prints the note, not the
+ * application: no bar, no rail, no dock, no toolbar, no notice. The pane that is
+ * open is the pane that prints — write prints what is in the editor, view prints
+ * what a reader sees. Nothing is paged; the note is as long as it is. */
+@media print {
+  :root {
+    --paper: #fff; --ink: #000; --ink-2: #222; --ink-3: #555;
+    --line: #ccc; --line-strong: #999; --paper-2: #fff; --paper-3: #fff;
+  }
+  @page { margin: 16mm; }
+  body { background: #fff; }
+  .bar, .list, .dock, .notice, .note-bar, .toolbar, .read-bar, .reader-nav,
+  .trash-banner, .bin-banner, .placeholder, #toast, dialog { display: none !important; }
+  .workspace { display: block; height: auto; }
+  .main, .note, .pane { padding: 0; margin: 0; height: auto; max-height: none; overflow: visible; }
+  .note { border: none; }
+  .title { border: none !important; font-size: 1.5rem; }
+  .editor, .note-body, .reader-body { max-height: none; overflow: visible; height: auto; }
+  .reader-body { padding: 0; display: block; }
+  .doc a { color: #000; text-decoration: underline; }
+  .doc pre, .doc .box { break-inside: avoid; }
+}
