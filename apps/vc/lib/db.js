@@ -34,10 +34,11 @@ function loadScript(src) {
 }
 
 const P = 'id,user_id,title,brief,template,created_at,updated_at';
-const A = 'id,project_id,user_id,kind,title,text,file_path,file_name,file_size,file_mime,pos,from_standard,deleted_at,created_at,updated_at';
+const A = 'id,project_id,user_id,kind,title,text,file_path,file_name,file_size,file_mime,pos,from_standard,target_id,deleted_at,created_at,updated_at';
+const T = 'id,project_id,user_id,name,status,error,n_pass,n_fail,n_unknown,pos,deleted_at,created_at,updated_at';
 const ST = 'id,user_id,title,kind,source_url,text,file_path,file_name,file_size,file_mime,chars,deleted_at,created_at,updated_at';
 const R = 'id,project_id,user_id,template,model,notes,prompt,status,error,took_ms,created_at';
-const O = 'id,project_id,run_id,user_id,kind,title,body,pos,created_at,updated_at';
+const O = 'id,project_id,run_id,user_id,kind,title,body,pos,target_id,created_at,updated_at';
 const SH = 'id,project_id,owner_id,code,email,role,pending,created_at';
 
 /* ── auth ─────────────────────────────────────────────────────────── */
@@ -138,10 +139,13 @@ export async function deleteProject(id) {
 /* ── inputs ───────────────────────────────────────────────────────── */
 /* An input that was removed is in the bin, with its text — and a file's path
  * stays valid, so a restore does not need the bucket again. */
-export async function listArtifacts(projectId, { bin = false } = {}) {
+export async function listArtifacts(projectId, { bin = false, targetId = null } = {}) {
   const db = await client();
   let q = db.from('vc_artifacts').select(A).eq('project_id', projectId);
   q = bin ? q.not('deleted_at', 'is', null) : q.is('deleted_at', null);
+  /* null is the check itself: the rules, and the evidence of a check without
+   * targets. A target id is that candidate's own pile. */
+  q = targetId ? q.eq('target_id', targetId) : q.is('target_id', null);
   const { data, error } = await q.order('pos').order('created_at');
   if (error) throw error;
   return data;
@@ -160,6 +164,7 @@ export async function addArtifact(projectId, row) {
     file_size: row.file_size ?? null,
     file_mime: row.file_mime || null,
     from_standard: row.from_standard || null,
+    target_id: row.target_id || null,
     pos: row.pos ?? Date.now() % 1000000,
   }).select(A).single();
   if (error) throw error;
@@ -271,18 +276,89 @@ export async function restoreStandard(id) {
   return updateStandard(id, { deleted_at: null });
 }
 
+/* A standard's own file. The path begins with the standard's id, which is what
+ * the storage policy asks about — a standard is not a project, so it has its own
+ * question (20261212000000_vc_standard_files.sql). */
+export async function uploadStandardFile(standardId, file) {
+  const db = await client();
+  if (file.size > MAX_FILE) throw new Error('larger than 10 MB — keep the part you are held to');
+  const safe = String(file.name || 'file').replace(/[^\w.\-]+/g, '-').slice(-80);
+  const path = `${standardId}/${crypto.randomUUID()}-${safe}`;
+  const { error } = await db.storage.from(BUCKET).upload(path, file, {
+    cacheControl: '3600', upsert: false, contentType: file.type || 'application/octet-stream',
+  });
+  if (error) throw error;
+  return { path, name: file.name, size: file.size, mime: file.type };
+}
+
 export async function deleteStandard(id) {
   const db = await client();
   const { error } = await db.from('vc_standards').delete().eq('id', id);
   if (error) throw error;
 }
 
+/* ── the batch: a queue of independent targets ─────────────────────── */
+/* status is a queue position. Nothing here runs on its own: `running` is only
+ * true while a person is watching, and a reload turns it back into `queued`. */
+export async function listTargets(projectId, { bin = false } = {}) {
+  const db = await client();
+  let q = db.from('vc_targets').select(T).eq('project_id', projectId);
+  q = bin ? q.not('deleted_at', 'is', null) : q.is('deleted_at', null);
+  const { data, error } = await q.order('pos').order('created_at');
+  if (error) throw error;
+  return data;
+}
+
+export async function addTarget(projectId, name = '') {
+  const db = await client();
+  const s = await session();
+  const { data, error } = await db.from('vc_targets').insert({
+    user_id: s.user.id, project_id: projectId,
+    name: String(name || '').slice(0, 200), status: 'queued',
+    pos: Date.now() % 1000000,
+  }).select(T).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateTarget(id, patch) {
+  const db = await client();
+  const { data, error } = await db.from('vc_targets')
+    .update(patch).eq('id', id).select(T).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function binTarget(id) {
+  return updateTarget(id, { deleted_at: new Date().toISOString() });
+}
+
+export async function restoreTarget(id) {
+  return updateTarget(id, { deleted_at: null });
+}
+
+export async function deleteTarget(id) {
+  const db = await client();
+  const { error } = await db.from('vc_targets').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/* A queue that was interrupted: the row that was running is not running any
+ * more — nobody is watching it — so it goes back to the queue, in its place. */
+export async function requeueRunning(projectId) {
+  const db = await client();
+  const { error } = await db.from('vc_targets')
+    .update({ status: 'queued' })
+    .eq('project_id', projectId).eq('status', 'running');
+  if (error) throw error;
+}
+
 /* ── the transformation ───────────────────────────────────────────── */
-export async function startRun(projectId, { template, model, notes, prompt }) {
+export async function startRun(projectId, { template, model, notes, prompt, targetId }) {
   const db = await client();
   const s = await session();
   const { data, error } = await db.from('vc_runs').insert({
-    user_id: s.user.id, project_id: projectId,
+    user_id: s.user.id, project_id: projectId, target_id: targetId || null,
     template, model, notes, prompt, status: 'running',
   }).select(R).single();
   if (error) throw error;
@@ -306,20 +382,22 @@ export async function listRuns(projectId, limit = 12) {
 }
 
 /* ── outputs ──────────────────────────────────────────────────────── */
-export async function listOutputs(projectId) {
+export async function listOutputs(projectId, { targetId = null } = {}) {
   const db = await client();
-  const { data, error } = await db.from('vc_outputs').select(O)
-    .eq('project_id', projectId).order('created_at', { ascending: false });
+  let q = db.from('vc_outputs').select(O).eq('project_id', projectId);
+  q = targetId ? q.eq('target_id', targetId) : q.is('target_id', null);
+  const { data, error } = await q.order('created_at', { ascending: false });
   if (error) throw error;
   return data;
 }
 
-export async function addOutput(projectId, { run_id, kind, title, body }) {
+export async function addOutput(projectId, { run_id, kind, title, body, target_id }) {
   const db = await client();
   const s = await session();
   const { data, error } = await db.from('vc_outputs').insert({
     user_id: s.user.id, project_id: projectId, run_id: run_id || null,
     kind: kind || 'doc', title: String(title || '').slice(0, 200), body: body || '',
+    target_id: target_id || null,
     pos: 0,
   }).select(O).single();
   if (error) throw error;

@@ -101,14 +101,14 @@
         <!-- inputs -->
         <section class="side inputs">
           <div class="side-head">
-            <h2>standardi</h2>
+            <h2 id="std-head">standardi</h2>
             <span id="std-count" class="count muted"></span>
             <span class="grow"></span>
             <button id="btn-from-lib" class="ghost w-only" type="button"
                     title="a law you keep, so you stop pasting it">library</button>
             <button id="btn-add-standard" class="ghost w-only" type="button">＋ standard</button>
           </div>
-          <p class="side-note muted">the rules — a policy, a checklist, a law's paragraph.</p>
+          <p id="std-note" class="side-note muted">the rules — a policy, a checklist, a law's paragraph.</p>
           <div id="bin-banner" class="bin-banner" hidden>
             <span class="bin-banner-title">recycle bin</span>
             <span id="bin-banner-note" class="bin-banner-note">nothing in it</span>
@@ -116,14 +116,33 @@
           <ul id="standards" class="artifacts"></ul>
           <p id="std-none" class="muted none-line" hidden>no rules yet — without them there is nothing to check against.</p>
 
+          <!-- a batch: one row is one check, with its own proofs and its own report -->
+          <div id="targets-wrap" class="targets-wrap" hidden>
+            <div class="side-head gap-top">
+              <h2 id="tgt-head">kontrole</h2>
+              <span id="tgt-count" class="count muted"></span>
+              <span class="grow"></span>
+              <button id="btn-add-target" class="ghost w-only" type="button">＋ kontrolu</button>
+            </div>
+            <p id="tgt-note" class="side-note muted">one row is one check: its own proofs,
+              its own report. they run one at a time, in this order.</p>
+            <ul id="targets" class="targets"></ul>
+            <div class="tgt-foot">
+              <button id="btn-run-all" class="w-only" type="button">run all</button>
+              <button id="btn-stop" class="ghost w-only" type="button" hidden>stop</button>
+              <span id="tgt-run-msg" class="muted"></span>
+            </div>
+          </div>
+
           <div class="side-head gap-top">
-            <h2>dokazi</h2>
+            <h2 id="ev-head">dokazi</h2>
+            <span id="ev-who" class="ev-who" hidden></span>
             <span id="ev-count" class="count muted"></span>
             <span class="grow"></span>
             <button id="btn-add-evidence" class="ghost w-only" type="button">＋ dokaz</button>
             <button id="btn-add-file" class="ghost w-only" type="button">＋ file</button>
           </div>
-          <p class="side-note muted">what proves it — minutes, a configuration, a screenshot, a pdf.</p>
+          <p id="ev-note" class="side-note muted">what proves it — minutes, a configuration, a screenshot, a pdf.</p>
           <ul id="evidence" class="artifacts"></ul>
           <p id="ev-none" class="muted none-line" hidden>no evidence yet. a report will be honest and useless.</p>
 
@@ -237,6 +256,16 @@
       </select>
       <span id="lib-chars" class="muted"></span>
     </div>
+    <div class="lib-src">
+      <input id="lib-url" class="lib-url" type="text" spellcheck="false"
+             autocapitalize="none" placeholder="or a link — eur-lex, narodne-novine, zakon.hr"
+             aria-label="where the text comes from">
+      <button id="lib-fetch" class="ghost" type="button" title="read the page through this app's door">read it</button>
+      <button id="lib-file-btn" class="ghost" type="button" title="a pdf becomes text; the original stays">＋ pdf</button>
+      <input id="lib-file" type="file" hidden accept=".pdf,.txt,.md,.markdown,.csv,.json,.html">
+    </div>
+    <p id="lib-src-msg" class="msg" aria-live="polite"></p>
+    <p id="lib-file-line" class="art-file muted" hidden></p>
     <textarea id="lib-text" class="art-text" rows="9" spellcheck="false"
               placeholder="paste the text — the part you are actually held to"></textarea>
     <p id="lib-msg" class="msg" aria-live="polite"></p>

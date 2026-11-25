@@ -227,6 +227,16 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
 .lib-kind-row #lib-chars {
   font-size: 0.72rem; justify-self: end; white-space: nowrap; color: var(--ink-3);
 }
+/* where the text comes from: three doors, one line, and the paste lobby below */
+.lib-src { display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap; }
+.lib-src .lib-url {
+  flex: 1 1 20rem; min-width: 12rem; font: inherit; font-size: 0.78rem;
+  padding: 0.18rem 0.35rem; border: 1px solid var(--rule-strong); border-radius: 3px;
+  background: var(--paper); color: var(--ink); text-align: left;
+}
+.lib-src .lib-url:focus { outline: 2px solid var(--mark); outline-offset: 0; }
+.lib-src button { font-size: 0.76rem; }
+.lib-file-line, #lib-file-line { font-size: 0.74rem; margin: 0; }
 .lib-foot { margin-top: 0.6rem; display: flex; justify-content: flex-start; }
 .art-from { font-size: 0.72rem; margin: 0.1rem 0 0.5rem; }
 
@@ -438,3 +448,70 @@ body[data-guest='1'] .brief { pointer-events: none; }
 .ai-acc-note, .ai-acc-msg { flex-basis: 100%; margin: 0; font-size: .8rem; opacity: .72; }
 .ai-acc-msg { opacity: .9; }
 .ai-acc-msg:empty { display: none; }
+
+/* ── the batch: one row is one check ───────────────────────────────── */
+.targets-wrap { margin: 0.1rem 0 0; }
+.targets {
+  list-style: none; margin: 0.15rem 0 0; padding: 0;
+  display: grid; gap: 0.1rem; max-height: 15rem; overflow-y: auto;
+}
+.tgt {
+  display: grid; grid-template-columns: 1.9rem minmax(4rem, 1fr) auto auto auto;
+  align-items: center; gap: 0.35rem; padding: 0.1rem 0.2rem;
+  border: 1px solid transparent; border-radius: 3px; font-size: 0.8rem;
+}
+.tgt:hover { background: var(--paper-2); }
+.tgt.on { background: var(--paper-2); border-color: var(--rule-strong); }
+.tgt-pick {
+  min-height: 30px; min-width: 1.9rem; border: 0; background: none; cursor: pointer;
+  font-family: var(--mono); font-size: 0.72rem; color: var(--ink-3);
+  border-radius: 3px; display: flex; align-items: center; justify-content: center;
+}
+.tgt.on .tgt-pick { color: var(--mark); font-weight: 600; }
+.tgt-pick:hover { background: var(--paper-3); color: var(--ink); }
+.tgt-name {
+  font: inherit; font-size: 0.8rem; color: var(--ink); background: transparent;
+  border: 1px solid transparent; border-radius: 3px; padding: 0.12rem 0.22rem;
+  min-width: 0; text-align: left;
+}
+.tgt-name:hover { border-color: var(--rule); }
+.tgt-name:focus { outline: none; border-color: var(--mark); background: var(--paper); }
+.tgt-state { font-size: 0.7rem; color: var(--ink-3); text-transform: lowercase; }
+.tgt.st-running .tgt-state { color: var(--mark); }
+.tgt.st-failed .tgt-state { color: var(--danger); }
+.tgt.st-done .tgt-state { color: var(--ink-2); }
+.tgt-tally { display: flex; gap: 0.2rem; }
+/* 0.66rem, not 0.62: the suite's floor is 10.5px and this line is read at a glance */
+.tgt-tally .verdict { font-size: 0.66rem; padding: 0.02rem 0.22rem; }
+.tgt-tally .verdict b { font-size: 0.7rem; }
+.tgt-why { font-size: 0.68rem; color: var(--ink-3); max-width: 8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tgt-del {
+  min-height: 30px; min-width: 1.4rem; border: 0; background: none; cursor: pointer;
+  color: var(--ink-3); font-size: 0.75rem;
+}
+.tgt-del:hover { color: var(--danger); }
+.tgt-foot { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.55rem; flex-wrap: wrap; }
+.tgt-foot button { min-height: 30px; }
+.tgt-foot #btn-run-all {
+  font: inherit; font-size: 0.76rem; padding: 0.2rem 0.6rem;
+  border: 1px solid var(--ink); border-radius: 3px; background: var(--ink); color: var(--paper);
+}
+.tgt-foot #btn-run-all:disabled { opacity: 0.5; }
+#tgt-run-msg { font-size: 0.72rem; }
+.ev-who { font-size: 0.72rem; }
+.ev-clear {
+  font: inherit; font-size: 0.7rem; border: 1px solid var(--rule-strong); border-radius: 2px;
+  background: var(--paper-2); color: var(--ink-2); padding: 0.05rem 0.3rem; cursor: pointer;
+  min-height: 30px;
+}
+.ev-clear:hover { color: var(--ink); border-color: var(--ink-3); }
+
+/* a phone: the tally drops to its own line so the name keeps its room */
+@media (max-width: 40rem) {
+  .tgt { grid-template-columns: 1.9rem minmax(4rem, 1fr) auto; grid-template-areas: 'pick name del' '. state .' '. tally .'; row-gap: 0.05rem; }
+  .tgt-pick { grid-area: pick; }
+  .tgt-name { grid-area: name; }
+  .tgt-del { grid-area: del; }
+  .tgt-state { grid-area: state; padding-left: 0.22rem; }
+  .tgt-tally { grid-area: tally; padding-left: 0.22rem; }
+}

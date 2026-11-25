@@ -1437,3 +1437,66 @@ Two things the work turned up:
 
 `vc-lib.mjs` is 29 checks, green three runs in a row, and it is in
 `tools/test-all.sh` and `tools/test-vc.sh`.
+
+## 2026-11 · fifty offers, one list, and a door that reads one page
+
+The library made *a law you keep* true. What was left was everything that makes
+a law arrive and everything that makes it meet more than one document.
+
+**Where the words come from.** A standard had three doors: paste, a pdf, a link.
+The link was the interesting one, because both sources a compliance check
+actually cites — `eur-lex.europa.eu` and `narodne-novine.nn.hr` — answer with
+HTML and no CORS headers. A browser cannot read them; that is not a bug to work
+around, it is how those servers were configured. So the suite got a second door
+next to the model's: `api.terg.hr/fetch`, one page, on demand, no cache and no
+crawl. It keeps an allowlist of legal sources, follows a redirect but re-checks
+the host it lands on, refuses anything over 3 MB, and strips HTML to text with no
+cleverness at all. A PDF comes back as one sentence — *download it and drop it
+here* — because a file the person already has does not need a second silo.
+
+The same door exists in `serve.py`, so development does not depend on a
+deployment. That is a rule now, not a coincidence: **every function the app talks
+to has a local twin**, otherwise the local app is a different app.
+
+- **A pdf becomes text in the browser, the original goes to the bucket under the
+  standard's own id** — `<vc_standards.id>/<uuid>-<name>`. The four `vc_files_*`
+  policies learned a second question (`vc_can_read_std` / `vc_can_edit_std`)
+  rather than gaining a fifth policy: the drawer stays owner-only and nothing new
+  is shared by accident.
+- **A standard has to exist before its file has somewhere to live.** So a file
+  chosen in a fresh draft keeps the standard first, then fills it. Ugly in the
+  code, honest on the screen: the row appears the moment the file is dropped.
+
+**The batch.** Fifty offers, or one job ad and a pile of CVs. `vc_targets` is one
+row per candidate or offer, and `run all` works it **strictly one at a time, in
+order** — not for speed, but because fifty parallel calls is fifty chances to
+lose a half-written report and an account at the provider.
+
+- **`running` is only true while somebody is looking.** `openJob` sends a
+  `running` row back to `queued`, in its own place. No scheduler, no cron, no
+  worker: the queue moves because a person pressed a button and stops when they
+  leave. `stop` finishes the one in flight and says so in words.
+- **Counts live on the row.** `n_pass` / `n_fail` / `n_unknown` are written when a
+  report lands, so the list can be read at a glance without parsing fifty
+  documents — and the number is never alone, the word is next to it.
+- **Rules stay shared, proofs do not.** A standard added while a row is on the
+  desk belongs to the check; a proof belongs to that row. That one sentence is
+  the whole data model change; a `target_id` nullable on three tables.
+- **The nouns come from the template pack.** A job ad's batch says *uvjeti
+  natječaja* and *kandidati*; an audit's says *standardi* and *dokazi*. The third
+  template, `tender`, was added because the batch needed its native shape rather
+  than a renamed audit.
+- **A repaint must not take the caret.** Picking a row rebuilds the list, so the
+  field being typed into is found again and the selection restored — the same
+  rule as `paintSpec()` not writing into a focused input, one level down.
+- **The cap is 50, and it says so** — not a technical limit, a promise that this
+  stays a tool and not a document factory.
+
+**Two things the work turned up.** A clicked row that contains an input does not
+select itself if the handler skips `.tgt-name` (it looked like "another row is
+another pile" was broken when it was the test clicking the input). And a test
+that clicks `run all` without a model key does nothing at all, correctly: the
+guard opens the settings. Both were test-side discoveries, both worth the note.
+
+`vc-lib.mjs` is 44 checks, `vc-batch.mjs` is 40, both in `tools/test-all.sh` and
+`tools/test-vc.sh`.

@@ -14,7 +14,7 @@ import { mountDock, lastField, putInto } from './vendor/dock.js';
 import { mountNotice } from './vendor/notices.js';
 import * as engine from './vendor/engine.js';
 import * as settings from './vendor/settings.js';
-import { TEMPLATES, DEFAULT_TEMPLATE, templateById } from './templates.js';
+import { TEMPLATES, DEFAULT_TEMPLATE, templateById, nounsFor } from './templates.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
@@ -24,7 +24,12 @@ const S = {
   session: null,
   projects: [],
   project: null,
-  artifacts: [],
+  artifacts: [],       // the check's own pile (rules, and shared proofs)
+  tArtifacts: [],      // the selected row's own proofs
+  targets: [],         // the batch: one row is one check
+  targetBin: [],
+  target: null,        // which row is on the desk; null is the check itself
+  batch: false,        // a run is in flight (stop is the only verb)
   bin: [],             // inputs in the recycle bin
   binMode: false,
   outputs: [],
@@ -250,8 +255,15 @@ async function openJob(id) {
   if (!S.project) return renderWelcome();
   localStorage.setItem('vd.last', id);
   S.artifacts = await db.listArtifacts(id);
+  S.targets = await db.listTargets(id).catch(() => []);
+  S.targetBin = [];
+  /* a queue never survives a page: nobody is watching a row that says it is
+   * running, so it is queued again, in its own place */
+  if (S.targets.some((t) => t.status === 'running')) db.requeueRunning(id).catch(() => {});
+  S.target = S.targets[0]?.id || null;
+  S.tArtifacts = S.target ? await db.listArtifacts(id, { targetId: S.target }) : [];
   S.bin = await db.listArtifacts(id, { bin: true }).catch(() => []);
-  S.outputs = await db.listOutputs(id);
+  S.outputs = await db.listOutputs(id, { targetId: S.target });
   S.role = await db.roleOn(S.project);
   if (seq !== _loadSeq) return;             // only the last answer counts
   S.current = S.outputs[0]?.id || null;
@@ -286,21 +298,58 @@ function paintSpec() {
   const tpl = templateById(p.template);
   $('#template-about').textContent = `— ${tpl.about}. expects: ${tpl.needs}.`;
 
-  const words = S.artifacts.reduce((n, a) => n + engine.countWords(a.text), 0);
+  const n = tpl.nouns;
+  const pile = evRows();
+  /* Croatian counts the genitive plural after any number but one: 1 standard,
+   * 2 standarda — the same noun cannot serve both, so the pack carries both */
+  const words = [...S.artifacts, ...pile].reduce((k, a) => k + engine.countWords(a.text), 0);
   const nStd = S.artifacts.filter((a) => a.kind === 'standard').length;
-  const nEv = S.artifacts.length - nStd;
+  const nEv = pile.length;
   $('#proj-meta').textContent = [
-    `${nStd} standard${nStd === 1 ? '' : 'a'}`,
-    `${nEv} dokaz${nEv === 1 ? '' : 'a'}`,
+    `${nStd} ${nStd === 1 ? n.rule : n.ruleCount}`,
+    `${nEv} ${nEv === 1 ? n.proof : n.proofCount}`,
+    S.targets.length ? `${S.targets.length} ${S.targets.length === 1 ? n.target : n.targetCount}` : '',
     words ? `${words.toLocaleString()} words to read` : 'nothing to read yet',
     engine.hasKey() ? engine.modelName() : 'no model key yet',
-  ].join(' · ');
+  ].filter(Boolean).join(' · ');
 
+  paintNouns(tpl);
   renderArtifacts();
+  paintTargets();
   paintOutput();
   $('#btn-first-generate').hidden = S.role === 'view';
   /* the library is the owner's drawer: a guest never sees the door */
   $('#btn-from-lib').hidden = S.role !== 'owner';
+}
+
+/* Every noun on this screen comes from the template pack, so a job ad does not
+ * read like an audit. One place, so the head, the button and the empty line
+ * agree with each other. */
+function paintNouns(tpl) {
+  const n = tpl.nouns;
+  $('#std-head').textContent = n.rules;
+  $('#ev-head').textContent = n.proofs;
+  $('#tgt-head').textContent = n.targets;
+  $('#btn-add-standard').textContent = '＋ ' + n.rule;
+  $('#btn-add-evidence').textContent = '＋ ' + n.proof;
+  $('#btn-add-target').textContent = '＋ ' + n.target;
+  $('#btn-add-target').title = S.targets.length >= MAX_TARGETS
+    ? `${MAX_TARGETS} is the cap — one call each, and somebody has to read them`
+    : 'add one more';
+  $('#std-note').textContent = `the rules — a policy, a checklist, a law's paragraph.`;
+  $('#ev-note').textContent = S.target
+    ? `what proves it for this ${n.target} — this pile is only theirs.`
+    : `what proves it — minutes, a configuration, a screenshot, a pdf.`;
+  const who = S.targets.find((t) => t.id === S.target);
+  $('#ev-who').hidden = !who;
+  if (who) {
+    $('#ev-who').innerHTML = `<button type="button" class="ev-clear" title="back to the whole check">${esc(who.name || 'unnamed')} ✕</button>`;
+  }
+}
+
+/* Which proofs belong to the desk: the selected row's own, or the check's. */
+function evRows() {
+  return S.target ? S.tArtifacts : S.artifacts.filter((a) => a.kind !== 'standard');
 }
 
 function growBrief(el) {
@@ -342,7 +391,7 @@ $('#template').addEventListener('change', async () => {
  * counts it, each list is tinted with a mark strip, the button under the lists
  * is filled, and every row says *restore* instead of the usual tools. */
 function paintBin() {
-  const n = S.bin.length;
+  const n = S.bin.length + S.targetBin.length;
   const btn = $('#btn-bin');
   btn.setAttribute('aria-pressed', String(S.binMode));
   btn.title = S.binMode ? 'close the recycle bin and go back to the inputs'
@@ -351,7 +400,7 @@ function paintBin() {
   $('#bin-count').textContent = n ? String(n) : '';
   $('#bin-banner').hidden = !S.binMode;
   $('#bin-banner-note').textContent = n
-    ? `${n} input${n === 1 ? '' : 's'} in the bin — restore one, or delete it for good`
+    ? `${n} thing${n === 1 ? '' : 's'} in the bin — restore one, or delete it for good`
     : 'nothing in it — a removed input waits here';
   $('#btn-bin-empty').hidden = !S.binMode || !n;
 }
@@ -373,6 +422,237 @@ function binRowHTML(a) {
 }
 
 
+/* ── the batch ─────────────────────────────────────────────────────── */
+/* Fifty offers, or one job ad and a pile of CVs. One row is one check: its own
+ * proofs, its own report, its own counts. The queue moves because a person
+ * pressed a button and stops when they leave — there is no scheduler here. */
+const MAX_TARGETS = 50;
+const TGT_WORD = { queued: 'waiting', running: 'running', done: 'done', failed: 'failed' };
+
+function targetRow(t, i) {
+  const on = t.id === S.target;
+  const c = { pass: t.n_pass, fail: t.n_fail, unknown: t.n_unknown };
+  const tally = t.status === 'done'
+    ? `<span class="verdict pass"><b>${c.pass}</b> pass</span>`
+      + `<span class="verdict fail"><b>${c.fail}</b> fail</span>`
+      + `<span class="verdict unknown"><b>${c.unknown}</b> unknown</span>`
+    : t.error ? `<span class="tgt-why">${esc(t.error.slice(0, 80))}</span>`
+      : '';
+  return `<li class="tgt st-${t.status}${on ? ' on' : ''}" data-id="${t.id}">
+      <button class="tgt-pick" type="button" aria-pressed="${on}"
+              title="put this one on the desk"><span class="pos">${i + 1}</span></button>
+      <input class="tgt-name" type="text" value="${esc(t.name || '')}"
+             aria-label="name of this row" spellcheck="false"${S.role === 'view' ? ' readonly' : ''}>
+      <span class="tgt-state">${t.status === 'queued' ? 'not run yet' : (TGT_WORD[t.status] || esc(t.status))}</span>
+      <span class="tgt-tally">${tally}</span>
+      <button class="tgt-del" type="button" title="remove — it waits in the recycle bin"
+              ${S.role === 'view' ? 'hidden' : ''}>✕</button>
+    </li>`;
+}
+
+function targetBinRows() {
+  return S.targetBin.map((t) => `<li class="art in-bin tgt-bin" data-id="${t.id}" data-tgt="1">
+      <span class="kind">row</span>
+      <span class="what"><span class="name">${esc(t.name || 'unnamed row')}</span>
+        <span class="line">its own ${esc(nounsFor(S.project?.template).proofs)} and report</span></span>
+      <span class="tools">
+        <button class="row-restore" type="button" data-back title="put it back">restore</button>
+        <button class="del" type="button" data-purge title="delete it for good">✕</button>
+      </span>
+    </li>`).join('');
+}
+
+function paintTargets() {
+  const tpl = templateById(S.project?.template);
+  const n = tpl.nouns;
+  const wrap = $('#targets-wrap');
+  const show = !!n.batch || S.targets.length > 0;
+  wrap.hidden = !show;
+  if (!show) return;
+  $('#tgt-count').textContent = S.targets.length ? String(S.targets.length) : '';
+  $('#btn-add-target').disabled = S.targets.length >= MAX_TARGETS || S.role === 'view';
+  /* a repaint that rebuilds the list must give the caret back to the field it
+   * took it from: a change of selection is not a reason to stop typing */
+  const live = document.activeElement;
+  const keep = live?.classList?.contains('tgt-name') ? live.closest('.tgt')?.dataset.id : null;
+  let caret = null;
+  try { caret = keep ? [live.selectionStart, live.selectionEnd] : null; } catch { caret = null; }
+  $('#targets').innerHTML = S.targets.map(targetRow).join('');
+  if (keep) {
+    const inp = $(`#targets .tgt[data-id="${keep}"] .tgt-name`);
+    if (inp) {
+      inp.focus();
+      try { inp.setSelectionRange(caret[0] ?? inp.value.length, caret[1] ?? inp.value.length); } catch { /* readonly */ }
+    }
+  }
+  const run = $('#btn-run-all');
+  run.disabled = S.batch || S.role === 'view' || !S.targets.length;
+  run.textContent = S.batch ? 'running…' : `run all ${S.targets.length || ''}`.trim();
+  run.title = S.batch ? 'one at a time — stop finishes the one in flight'
+    : `${S.targets.length} call${S.targets.length === 1 ? '' : 's'}, one after another`;
+  $('#btn-stop').hidden = !S.batch;
+  if (!S.batch && !$('#tgt-run-msg').dataset.keep) {
+    $('#tgt-run-msg').textContent = S.targets.length
+      ? `${S.targets.length} × 1 call`
+      : '';
+  }
+}
+
+async function selectTarget(id) {
+  S.target = id || null;
+  const projectId = S.project?.id;
+  if (!projectId) return;
+  S.tArtifacts = S.target ? await db.listArtifacts(projectId, { targetId: S.target }) : [];
+  S.outputs = await db.listOutputs(projectId, { targetId: S.target });
+  S.current = S.outputs[0]?.id || null;
+  paintNouns(templateById(S.project.template));
+  renderArtifacts();
+  paintTargets();
+  paintOutput();
+}
+
+async function addTargetRow() {
+  if (S.role === 'view' || !S.project) return;
+  const n = nounsFor(S.project.template);
+  if (S.targets.length >= MAX_TARGETS) {
+    return toast(`${MAX_TARGETS} is the cap — one call each`);
+  }
+  try {
+    const t = await db.addTarget(S.project.id, `${n.target} ${S.targets.length + 1}`);
+    S.targets.push(t);
+    await selectTarget(t.id);
+    const inp = $(`#targets .tgt[data-id="${t.id}"] .tgt-name`);
+    if (inp) { inp.focus(); inp.select(); }
+  } catch (err) { toast('could not add it: ' + err.message); }
+}
+
+async function binTargetRow(t) {
+  try {
+    await db.binTarget(t.id);
+    S.targets = S.targets.filter((x) => x.id !== t.id);
+    S.targetBin = [{ ...t, deleted_at: new Date().toISOString() }, ...S.targetBin];
+    if (S.target === t.id) await selectTarget(S.targets[0]?.id || null);
+    else { renderArtifacts(); paintTargets(); }
+    toast('“' + (t.name || 'the row') + '” is in the recycle bin');
+  } catch (err) { toast('could not remove it: ' + err.message); }
+}
+
+async function restoreTarget(t) {
+  try {
+    await db.restoreTarget(t.id);
+    S.targetBin = S.targetBin.filter((x) => x.id !== t.id);
+    S.targets = await db.listTargets(S.project.id);
+    renderArtifacts();
+    paintTargets();
+    toast('“' + (t.name || 'the row') + '” is back');
+  } catch (err) { toast('could not restore it: ' + err.message); }
+}
+
+async function purgeTarget(t) {
+  try {
+    await db.deleteTarget(t.id);
+    S.targetBin = S.targetBin.filter((x) => x.id !== t.id);
+    renderArtifacts();
+    paintTargets();
+  } catch (err) { toast('could not delete it: ' + err.message); }
+}
+
+/* What a batch needs from the model is a fraction of what a chat needs: the
+ * rules do not change between rows, so the rules are sent once per row anyway —
+ * one request per row keeps a failure to one row. */
+async function runRow(row, tpl, rules) {
+  const projectId = S.project.id;
+  await db.updateTarget(row.id, { status: 'running', error: '' });
+  row.status = 'running';
+  paintTargets();
+  const proofs = await db.listArtifacts(projectId, { targetId: row.id });
+  const messages = engine.buildMessages({
+    template: tpl, project: S.project, artifacts: [...rules, ...proofs], notes: '',
+  });
+  const t0 = Date.now();
+  const run = await db.startRun(projectId, {
+    template: tpl.id, model: engine.modelName(), notes: '',
+    prompt: `template: ${tpl.id}\ntarget: ${row.name || row.id}\ninputs: ${proofs.map((a) => a.title || a.kind).join(' · ')}`,
+    targetId: row.id,
+  });
+  const answer = await engine.callModel(messages);
+  if (!answer || !answer.trim()) throw new Error('the model answered with nothing');
+  await db.finishRun(run.id, { status: 'done', took_ms: Date.now() - t0 });
+  const out = await db.addOutput(projectId, {
+    run_id: run.id, kind: tpl.kind, title: tpl.out, body: answer, target_id: row.id,
+  });
+  const c = countVerdicts(answer);
+  const upd = await db.updateTarget(row.id, {
+    status: 'done', n_pass: c.pass, n_fail: c.fail, n_unknown: c.unknown, error: '',
+  });
+  Object.assign(row, upd);
+  return out;
+}
+
+let STOP_BATCH = false;
+
+async function runBatch() {
+  if (S.batch || !S.project || S.role === 'view') return;
+  const tpl = templateById(S.project.template);
+  const n = tpl.nouns;
+  if (!engine.hasKey()) {
+    msg('#tgt-run-msg', 'no model key yet — paste one in the settings', 'bad');
+    openAi();
+    return;
+  }
+  const rules = S.artifacts.filter((a) => a.kind === 'standard');
+  if (!rules.length) {
+    msg('#tgt-run-msg', `no ${n.rules} yet — each row needs something to be measured against`, 'bad');
+    return;
+  }
+  if (S.targets.length > MAX_TARGETS) {
+    msg('#tgt-run-msg', `${MAX_TARGETS} is the cap`, 'bad');
+    return;
+  }
+  const queue = [...S.targets];
+  S.batch = true;
+  STOP_BATCH = false;
+  paintTargets();
+  paintBusy(true, Date.now());
+  let done = 0;
+  let failed = 0;
+  try {
+    for (const row of queue) {
+      if (STOP_BATCH) break;
+      $('#tgt-run-msg').dataset.keep = '1';
+      msg('#tgt-run-msg', `${done + failed + 1} of ${queue.length} — ${row.name || 'row'}`, 'busy');
+      try {
+        const out = await runRow(row, tpl, rules);
+        if (row.id === S.target) {
+          S.outputs.unshift(out);
+          S.current = out.id;
+          paintOutput();
+        }
+        done += 1;
+      } catch (err) {
+        failed += 1;
+        row.status = 'failed';
+        row.error = String(err.message || err).slice(0, 200);
+        db.updateTarget(row.id, { status: 'failed', error: row.error }).catch(() => {});
+        if (err.code === engine.NO_KEY) { STOP_BATCH = true; openAi(); }
+      }
+      paintTargets();
+    }
+  } finally {
+    S.batch = false;
+    paintBusy(false);
+    delete $('#tgt-run-msg').dataset.keep;
+    paintTargets();
+  }
+  const stopped = STOP_BATCH && done + failed < queue.length;
+  msg('#tgt-run-msg',
+    `done: ${done} of ${queue.length}${failed ? `, ${failed} failed` : ''}`
+    + (stopped ? ' — stopped after the one in flight' : ''),
+    failed ? 'bad' : 'ok');
+}
+
+/* ── the bin, closing over both kinds of row ───────────────────────── */
+
 /* Opening the bin from halfway down a long list used to show a tinted list and
  * nothing else: the banner that names the place was above the fold. The place
  * announces itself when you enter it. */
@@ -387,6 +667,7 @@ async function toggleBin() {
   S.binMode = !S.binMode;
   if (S.binMode) {
     try { S.bin = await db.listArtifacts(S.project.id, { bin: true }); } catch { S.bin = []; }
+    try { S.targetBin = await db.listTargets(S.project.id, { bin: true }); } catch { S.targetBin = []; }
   }
   renderArtifacts();
   paintBin();
@@ -398,6 +679,9 @@ async function restoreInput(a) {
     await db.restoreArtifact(a.id);
     S.bin = S.bin.filter((x) => x.id !== a.id);
     S.artifacts = [...S.artifacts, { ...a, deleted_at: null }];
+    if (a.target_id && S.target === a.target_id) {
+      S.tArtifacts = [...S.tArtifacts, { ...a, deleted_at: null }];
+    }
     renderArtifacts();
     paintSpec();
     toast('“' + (a.title || 'the input') + '” is back');
@@ -413,13 +697,15 @@ async function purgeInput(a) {
 }
 
 async function emptyBin() {
-  if (!S.bin.length) return;
-  const n = S.bin.length;
+  if (!S.bin.length && !S.targetBin.length) return;
+  const n = S.bin.length + S.targetBin.length;
   try {
+    for (const t of S.targetBin) await db.deleteTarget(t.id);
     await db.emptyBin(S.project.id);
     S.bin = [];
+    S.targetBin = [];
     renderArtifacts();
-    toast(`${n} input${n === 1 ? '' : 's'} deleted for good`);
+    toast(`${n} ${n === 1 ? 'thing' : 'things'} deleted for good`);
   } catch (err) { toast(err.message); }
 }
 
@@ -453,19 +739,22 @@ function renderArtifacts() {
   if (S.binMode) {
     $('#standards').classList.add('bin-mode');
     $('#evidence').classList.remove('bin-mode');
-    $('#standards').innerHTML = S.bin.map(binRowHTML).join('');
+    /* a binned row of a batch is one thing to lose too: it says `target` and
+     * takes its proofs with it when it is destroyed */
+    $('#standards').innerHTML = targetBinRows() + S.bin.map(binRowHTML).join('');
     $('#evidence').innerHTML = '';
-    $('#std-none').hidden = S.bin.length > 0;
-    $('#std-none').textContent = S.bin.length ? '' : 'the recycle bin is empty — a removed standard or dokaz waits here';
+    const many = S.bin.length + S.targetBin.length;
+    $('#std-none').hidden = many > 0;
+    $('#std-none').textContent = many ? '' : 'the recycle bin is empty — a removed input waits here';
     $('#ev-none').hidden = true;
-    $('#std-count').textContent = S.bin.length ? String(S.bin.length) : '';
+    $('#std-count').textContent = many ? String(many) : '';
     $('#ev-count').textContent = '';
     paintBin();
     return;
   }
   $('#standards').classList.remove('bin-mode');
   const std = S.artifacts.filter((a) => a.kind === 'standard');
-  const ev = S.artifacts.filter((a) => a.kind !== 'standard');
+  const ev = evRows();
   for (const [sel, rows] of [['#standards', std], ['#evidence', ev]]) {
     const ul = $(sel);
     ul.innerHTML = '';
@@ -474,6 +763,9 @@ function renderArtifacts() {
   $('#std-none').hidden = std.length > 0;
   $('#std-none').textContent = 'no rules yet — without them there is nothing to check against.';
   $('#ev-none').hidden = ev.length > 0;
+  $('#ev-none').textContent = S.target
+    ? 'nothing here yet — this row is checked against the rules and nothing else.'
+    : 'no evidence yet. a report will be honest and useless.';
   $('#std-count').textContent = std.length ? String(std.length) : '';
   $('#ev-count').textContent = ev.length ? String(ev.length) : '';
   paintBin();
@@ -482,9 +774,19 @@ function renderArtifacts() {
 for (const sel of ['#standards', '#evidence']) $(sel).addEventListener('click', async (e) => {
   const li = e.target.closest('.art');
   if (!li) return;
+  /* the drawer holds rows of a batch next to the inputs, so ✕ and restore look
+   * at which of the two this row is before it looks at anything else */
+  if (li.dataset.tgt) {
+    const t = S.targetBin.find((x) => x.id === li.dataset.id)
+      || S.targets.find((x) => x.id === li.dataset.id);
+    if (!t) return;
+    if (e.target.closest('[data-back]')) return restoreTarget(t);
+    if (e.target.closest('[data-purge]')) return purgeTarget(t);
+    return;
+  }
   const a = S.binMode
     ? S.bin.find((x) => x.id === li.dataset.id)
-    : S.artifacts.find((x) => x.id === li.dataset.id);
+    : [...S.artifacts, ...S.tArtifacts].find((x) => x.id === li.dataset.id);
   if (!a) return;
 
   if (e.target.closest('[data-back]')) return restoreInput(a);
@@ -494,6 +796,7 @@ for (const sel of ['#standards', '#evidence']) $(sel).addEventListener('click', 
     /* ✕ removes it from the job, not from the world: the words go to the bin */
     await db.binArtifact(a.id);
     S.artifacts = S.artifacts.filter((x) => x.id !== a.id);
+    S.tArtifacts = S.tArtifacts.filter((x) => x.id !== a.id);
     S.bin = [{ ...a, deleted_at: new Date().toISOString() }, ...S.bin];
     renderArtifacts();
     paintSpec();
@@ -549,13 +852,19 @@ $('#art-save').onclick = async () => {
       const row = await db.updateArtifact(d.id, { title, text });
       const i = S.artifacts.findIndex((x) => x.id === d.id);
       if (i >= 0) S.artifacts[i] = row;
+      const j = S.tArtifacts.findIndex((x) => x.id === d.id);
+      if (j >= 0) S.tArtifacts[j] = row;
     } else {
+      /* a new proof belongs to the row that is on the desk; a standard belongs
+       * to the check, because a rule is the same rule for every row */
       const row = await db.addArtifact(S.project.id, {
         kind: d.kind || 'text', title, text,
         file_path: d.file_path, file_name: d.file_name,
         file_size: d.file_size, file_mime: d.file_mime,
+        target_id: d.kind === 'standard' ? null : S.target,
       });
-      S.artifacts.push(row);
+      if (row.target_id) S.tArtifacts.push(row);
+      else S.artifacts.push(row);
     }
     $('#art-dialog').close();
     renderArtifacts();
@@ -695,11 +1004,120 @@ function showLibEditor(st) {
   $('#lib-title').value = S.libDraft.title || '';
   $('#lib-kind').value = LIB_KIND.includes(S.libDraft.kind) ? S.libDraft.kind : 'law';
   $('#lib-text').value = S.libDraft.text || '';
+  $('#lib-url').value = S.libDraft.source_url || '';
   $('#lib-chars').textContent = charsLine(S.libDraft);
+  paintLibFile(S.libDraft);
+  msg('#lib-src-msg', '');
+  msg('#lib-msg', '');
   $('#lib-del').hidden = !st?.id;
   $('#lib-add').hidden = !st?.id;
-  msg('#lib-msg', '');
   setTimeout(() => $('#lib-title').focus(), 50);
+}
+
+/* A standard's original: named, sized, and openable — the person may want page
+ * 47 even when the text is already in the drawer. */
+function paintLibFile(st) {
+  const line = $('#lib-file-line');
+  if (!st?.file_name) { line.hidden = true; line.textContent = ''; return; }
+  line.hidden = false;
+  line.innerHTML = 'original: <a href="#" id="lib-file-open">' + esc(st.file_name) + '</a> · '
+    + esc(fmtSize(st.file_size) || '');
+  const a = $('#lib-file-open');
+  if (a) {
+    a.onclick = async (e) => {
+      e.preventDefault();
+      try {
+        const url = await db.fileUrl(st.file_path);
+        window.open(url, '_blank', 'noopener');
+      } catch (err) { msg('#lib-src-msg', err.message, 'bad'); }
+    };
+  }
+}
+
+/* The fetch door is the model door's sibling: same address, different name.
+ * Local development answers /api/fetch; a Pages deployment without functions
+ * falls back to the suite's shared proxy, exactly as /api/chat does. */
+function fetchDoor() {
+  const door = String(engine.PROXY || '');
+  return door ? door.replace(/\/chat\/?$/, '/fetch') : '';
+}
+
+async function fetchLaw(raw) {
+  const url = String(raw || '').trim();
+  if (!/^https:\/\//i.test(url)) return msg('#lib-src-msg', 'a link starts with https://', 'bad');
+  const send = (to) => fetch(to, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ url }),
+  });
+  msg('#lib-src-msg', 'reading the page…', 'busy');
+  try {
+    let res = await send('/api/fetch');
+    if (res.status === 404 || res.status === 405) {
+      const door = fetchDoor();
+      if (door) res = await send(door);
+    }
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.text) {
+      const why = data?.error || ('the door answered ' + res.status);
+      msg('#lib-src-msg', String(why).slice(0, 220), 'bad');
+      if (data?.isPdf) $('#lib-file-btn').focus();
+      return;
+    }
+    $('#lib-text').value = data.text;
+    $('#lib-url').value = data.url || url;
+    $('#lib-chars').textContent = charsLine({ text: data.text });
+    msg('#lib-src-msg',
+      'read ' + data.chars.toLocaleString() + ' characters'
+      + (data.title ? ' from “' + String(data.title).slice(0, 60) + '”' : '') + ' — keep it to save',
+      'ok');
+  } catch (err) {
+    msg('#lib-src-msg', 'could not reach the door: ' + String(err.message || err).slice(0, 160), 'bad');
+  }
+}
+
+/* A pdf becomes text in the browser and the original goes to the bucket. A
+ * standard has to exist before its file has somewhere to live, so a file chosen
+ * in a fresh draft keeps the standard first, then fills it. */
+async function readStandardFile(file) {
+  if (!file) return;
+  let st = S.libDraft;
+  msg('#lib-src-msg', 'reading ' + file.name + '…', 'busy');
+  try {
+    if (!st?.id) {
+      st = await db.addStandard({
+        title: $('#lib-title').value.trim() || file.name,
+        kind: $('#lib-kind').value, text: '',
+      });
+      S.lib = [st, ...S.lib];
+      S.libDraft = { ...st };
+      $('#lib-title').value = st.title;
+      $('#lib-del').hidden = false;
+      $('#lib-add').hidden = false;
+      renderLibrary();
+    }
+    const stored = await db.uploadStandardFile(st.id, file);
+    const got = await engine.extract(file, (page, pages) => {
+      msg('#lib-src-msg', file.name + ' — page ' + page + ' of ' + pages, 'busy');
+    });
+    const row = await db.updateStandard(st.id, {
+      title: $('#lib-title').value.trim() || st.title,
+      text: got.text || st.text || '',
+      file_path: stored.path, file_name: stored.name,
+      file_size: stored.size, file_mime: stored.mime,
+    });
+    const i = S.lib.findIndex((x) => x.id === row.id);
+    if (i >= 0) S.lib[i] = row;
+    S.libDraft = { ...row };
+    $('#lib-text').value = row.text || '';
+    $('#lib-chars').textContent = charsLine(row);
+    paintLibFile(row);
+    msg('#lib-src-msg', got.text
+      ? (got.note || 'text taken from ' + file.name)
+      : (got.note || 'the file is kept, but there is no text in it to read'),
+      got.text ? 'ok' : '');
+  } catch (err) {
+    msg('#lib-src-msg', String(err.message || err).slice(0, 200), 'bad');
+  }
 }
 
 function hideLibEditor() {
@@ -727,6 +1145,13 @@ $('#btn-from-lib').onclick = () => openLibrary();
 $('#lib-x').onclick = () => $('#lib-dialog').close();
 $('#lib-cancel').onclick = hideLibEditor;
 $('#lib-new').onclick = () => showLibEditor(null);
+$('#lib-fetch').onclick = () => fetchLaw($('#lib-url').value);
+$('#lib-file-btn').onclick = () => $('#lib-file').click();
+$('#lib-file').addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  e.target.value = '';
+  await readStandardFile(file);
+});
 $('#lib-text').addEventListener('input', () => {
   $('#lib-chars').textContent = charsLine({ text: $('#lib-text').value });
 });
@@ -753,9 +1178,10 @@ $('#lib-add').onclick = async () => {
    * pressed add means the words they just wrote */
   const text = $('#lib-text').value;
   const title = $('#lib-title').value.trim();
-  if (text !== (st.text || '') || title !== (st.title || '')) {
+  const source_url = $('#lib-url').value.trim() || null;
+  if (text !== (st.text || '') || title !== (st.title || '') || source_url !== (st.source_url || null)) {
     try {
-      const kept = await db.updateStandard(st.id, { text, title, kind: $('#lib-kind').value });
+      const kept = await db.updateStandard(st.id, { text, title, kind: $('#lib-kind').value, source_url });
       const i = S.lib.findIndex((x) => x.id === kept.id);
       if (i >= 0) S.lib[i] = kept;
       S.libDraft = { ...kept };
@@ -775,8 +1201,9 @@ $('#lib-save').onclick = async () => {
   msg('#lib-msg', 'keeping…', 'busy');
   try {
     const d = S.libDraft;
+    const source_url = $('#lib-url').value.trim() || null;
     if (d?.id) {
-      const row = await db.updateStandard(d.id, { title, text, kind });
+      const row = await db.updateStandard(d.id, { title, text, kind, source_url });
       const i = S.lib.findIndex((x) => x.id === row.id);
       if (i >= 0) S.lib[i] = row;
       S.libDraft = { ...row };
@@ -784,7 +1211,7 @@ $('#lib-save').onclick = async () => {
       renderLibrary();
       toast('kept — press add to put it in this check');
     } else {
-      const row = await db.addStandard({ title, text, kind });
+      const row = await db.addStandard({ title, text, kind, source_url });
       S.lib = [row, ...S.lib];
       hideLibEditor();
       renderLibrary();
@@ -962,6 +1389,40 @@ $('#btn-print').onclick = () => {
 /* ── generate ─────────────────────────────────────────────────────── */
 $('#gen').onsubmit = (e) => { e.preventDefault(); generate(); };
 $('#btn-first-generate').onclick = () => generate();
+$('#btn-add-target').onclick = () => addTargetRow();
+$('#btn-run-all').onclick = () => runBatch();
+$('#btn-stop').onclick = () => {
+  STOP_BATCH = true;
+  if (!S.batch) return;
+  msg('#tgt-run-msg', 'stopping after the one in flight…', 'busy');
+};
+/* the row is a name you can change in place: no second dialog for one word */
+$('#targets').addEventListener('click', async (e) => {
+  const li = e.target.closest('.tgt');
+  if (!li) return;
+  const t = S.targets.find((x) => x.id === li.dataset.id);
+  if (!t) return;
+  if (e.target.closest('.tgt-del')) return binTargetRow(t);
+  if (S.target !== t.id) await selectTarget(t.id);
+});
+$('#targets').addEventListener('change', async (e) => {
+  const inp = e.target.closest('.tgt-name');
+  if (!inp) return;
+  const id = inp.closest('.tgt').dataset.id;
+  const row = S.targets.find((x) => x.id === id);
+  if (!row) return;
+  const name = inp.value.trim();
+  if (name === (row.name || '')) return;
+  try {
+    Object.assign(row, await db.updateTarget(id, { name }));
+    if (S.target === id) paintNouns(templateById(S.project.template));
+  } catch (err) { msg('#tgt-run-msg', 'could not rename it: ' + err.message, 'bad'); }
+});
+$('#ev-who').addEventListener('click', (e) => {
+  if (!e.target.closest('.ev-clear')) return;
+  if (S.targets.length) selectTarget(S.targets[0].id);
+  else selectTarget(null);
+});
 $('#notes').addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); generate(); }
 });
@@ -969,6 +1430,7 @@ $('#notes').addEventListener('keydown', (e) => {
 function paintBusy(on, t0 = 0) {
   S.busy = on;
   $('#btn-generate').disabled = on;
+  $('#btn-run-all').disabled = on || S.role === 'view' || !S.targets.length;
   $('#btn-generate').textContent = on ? 'thinking…' : 'generate';
   clearInterval(paintBusy._t);
   if (!on) return;
@@ -984,7 +1446,9 @@ async function generate() {
   if (S.busy || !S.project) return;
   if (S.role === 'view') return;
   const tpl = templateById(S.project.template);
-  if (!S.artifacts.length) {
+  /* what the model reads: the rules, and the proofs of the row on the desk */
+  const pile = [...S.artifacts.filter((a) => a.kind === 'standard'), ...evRows()];
+  if (!pile.length) {
     msg('#gen-msg', 'nothing to read yet — add an input first', 'bad');
     return;
   }
@@ -996,11 +1460,12 @@ async function generate() {
 
   const notes = $('#notes').value.trim();
   const messages = engine.buildMessages({
-    template: tpl, project: S.project, artifacts: S.artifacts, notes,
+    template: tpl, project: S.project, artifacts: pile, notes,
   });
   const promptNote = [
     `template: ${tpl.id}`,
-    `inputs: ${S.artifacts.map((a) => a.title || a.kind).join(' · ')}`,
+    S.target ? `target: ${S.targets.find((t) => t.id === S.target)?.name || S.target}` : '',
+    `inputs: ${pile.map((a) => a.title || a.kind).join(' · ')}`,
     notes ? `notes: ${notes}` : '',
   ].filter(Boolean).join('\n').slice(0, 8000);
 
@@ -1010,15 +1475,28 @@ async function generate() {
   try {
     run = await db.startRun(S.project.id, {
       template: tpl.id, model: engine.modelName(), notes, prompt: promptNote,
+      targetId: S.target,
     });
     const answer = await engine.callModel(messages);
     if (!answer || !answer.trim()) throw new Error('the model answered with nothing');
     await db.finishRun(run.id, { status: 'done', took_ms: Date.now() - t0 });
     const out = await db.addOutput(S.project.id, {
-      run_id: run.id, kind: tpl.kind, title: tpl.out, body: answer,
+      run_id: run.id, kind: tpl.kind, title: tpl.out, body: answer, target_id: S.target,
     });
     S.outputs.unshift(out);
     S.current = out.id;
+    /* a row that has a report has a tally: the list sorts by what was found */
+    if (S.target) {
+      const c = countVerdicts(answer);
+      const row = S.targets.find((t) => t.id === S.target);
+      try {
+        const upd = await db.updateTarget(S.target, {
+          status: 'done', n_pass: c.pass, n_fail: c.fail, n_unknown: c.unknown, error: '',
+        });
+        if (row) Object.assign(row, upd);
+        paintTargets();
+      } catch { /* the report is written; a tally that failed is not a lost report */ }
+    }
     S.notes = '';
     $('#notes').value = '';
     paintOutput();

@@ -1,7 +1,9 @@
 # vc · what comes after the first week
 
-Three things, written down so the design stays one design and not three
-opinions. **The first one is built** (§1); two are still ahead (§2, §3).
+Five things, written down so the design stays one design and not five opinions.
+**All five are built** (§1–§3, with the labels in §3 and the cap in §3). What is
+left is written at the end, in one paragraph, so the app stays finished while it
+grows.
 
 ## 1. A library of standards, on the account — **built**
 
@@ -34,7 +36,18 @@ vc_standards
   standards, no versions with diffs, no tags tree. `chars` is there so the
   person sees that the AI Act does not fit in one call before they press it.
 
-## 2. Upload and link
+## 2. Upload and link — **built**
+
+`supabase/migrations/20261212000000_vc_standard_files.sql`,
+`apps/api/functions/fetch.js`, `serve.py` (the same door locally),
+`vc-lib.mjs` (link, pdf, off-list sentence). A standard's file is stored under
+its own id — `<vc_standards.id>/<uuid>-<name>` — and the four `vc_files_*`
+policies now ask either the project's question or the standard's, so the drawer
+is still owner-only and nothing new is shared by accident.
+
+The form says where the words came from: a link, a pdf, or a paste. The row in
+the drawer says `linked` when `source_url` is set, and the original is named and
+openable under the text.
 
 - **PDF upload for a standard** — pdf.js in the browser, exactly as `vd` reads a
   tender. Text is stored in `vc_standards.text`; the original goes to the
@@ -50,7 +63,10 @@ vc_standards
 - No OCR, no crawling, no background sync of a law. A standard changes when the
   person says it changed.
 
-## 3. Bulk, independent
+## 3. Bulk, independent — **built**
+
+`supabase/migrations/20261213000000_vc_targets.sql`, `vc-batch.mjs` (40 checks),
+`docs/vc.md` "A batch".
 
 Fifty offers of 200 pages; a job ad and a pile of CVs. Same verdict grammar —
 `PASS`, `FAIL`, `UNKNOWN` per criterion — but one report per candidate, and a
@@ -116,3 +132,14 @@ paragraph, it is a product, and this is not that.
 4. `vc_targets` + the queue + per-target verdict counts, with the 50 cap and the
    cost line.
 5. Labels from the template pack, so a job ad does not read like an audit.
+
+**All five are done.** The order was the whole design: a library first, because a
+batch of fifty without a library is fifty pasted laws.
+
+## What is left, in one paragraph
+
+Sections mode for a document that does not fit one call (§3 above says the first
+version marks the report `truncated` instead of pretending). Sharing the library
+is still refused: a library that others can publish into is a product. Nothing
+else on this list is waiting — and the next thing that asks to enter has to pass
+the suite's test: *does it have one sentence the interface can hold?*

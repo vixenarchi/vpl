@@ -34,6 +34,41 @@ ALLOWED = {
 }
 ALLOWED_SUFFIX = ('openai.azure.com',)
 
+# The other door: api.terg.hr/fetch, matching functions/fetch.js. Legal sources
+# only — eur-lex and narodne-novine send HTML and no CORS headers, so a page
+# cannot read them. Keep this list in step with the function's.
+SOURCES = [
+    'eur-lex.europa.eu', 'narodne-novine.nn.hr', 'zakon.hr',
+    'data.gov.hr', 'www.hzinfra.hr', 'www.azop.hr',
+]
+FETCH_MAX = 3 * 1024 * 1024
+FETCH_TIMEOUT = 15
+
+
+def html_to_text(html):
+    import re
+    s = str(html or '')
+    s = re.sub(r'<!--[\s\S]*?-->', ' ', s)
+    s = re.sub(r'<(script|style|noscript|svg|head)\b[\s\S]*?</\1>', ' ', s, flags=re.I)
+    s = re.sub(r'</(p|div|section|article|li|tr|h[1-6]|blockquote|table|header|footer)>', '\n', s, flags=re.I)
+    s = re.sub(r'<br\s*/?>', '\n', s, flags=re.I)
+    s = re.sub(r'<li\b[^>]*>', '· ', s, flags=re.I)
+    s = re.sub(r'<[^>]+>', ' ', s)
+    for a, b in (('&nbsp;', ' '), ('&amp;', '&'), ('&lt;', '<'), ('&gt;', '>'),
+                 ('&quot;', '"'), ('&#39;', "'")):
+        s = s.replace(a, b)
+    s = re.sub(r'&(?:#\d+|#x[0-9a-f]+);', ' ', s, flags=re.I)
+    s = s.replace('\r', '')
+    s = re.sub(r'[ \t\u00a0]+', ' ', s)
+    s = re.sub(r' *\n *', '\n', s)
+    s = re.sub(r'\n{3,}', '\n\n', s)
+    return s.strip()
+
+
+def source_allowed(host):
+    h = (host or '').lower()
+    return any(h == src or h.endswith('.' + src) for src in SOURCES)
+
 
 class NoCache(SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -54,6 +89,8 @@ class NoCache(SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
+        if self.path.split('?')[0] == '/api/fetch':
+            return self._fetch()
         if self.path.split('?')[0] != '/api/chat':
             self.send_error(404, 'not a post office')
             return
@@ -107,6 +144,53 @@ class NoCache(SimpleHTTPRequestHandler):
         self.send_header('X-Vpl-Proxy', '1')
         self.end_headers()
         self.wfile.write(raw)
+
+    # ── the fetch door, matching functions/api/fetch.js ────────────────
+    def _fetch(self):
+        origin = self.headers.get('Origin') or ''
+        try:
+            body = json.loads(self.rfile.read(int(self.headers.get('content-length') or 0)) or b'{}')
+        except Exception:
+            return self._json({'error': 'send json'}, 400)
+        raw = str(body.get('url') or '').strip()
+        if not raw:
+            return self._json({'error': 'no url'}, 400)
+        u = urllib.parse.urlparse(raw)
+        if u.scheme != 'https':
+            return self._json({'error': 'only https'}, 400)
+        if not source_allowed(u.hostname):
+            return self._json({'error': 'that source is not on the list — download the pdf and drop it here',
+                               'source': False}, 422)
+        req = urllib.request.Request(raw, headers={
+            'User-Agent': 'vpl-vc/1.0 (compliance check; +https://terg.hr)',
+            'Accept': 'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.1',
+            'Accept-Language': 'hr,en;q=0.8',
+            'Origin': origin,
+        })
+        try:
+            with urllib.request.urlopen(req, timeout=FETCH_TIMEOUT) as r:
+                final = urllib.parse.urlparse(r.geturl())
+                if not source_allowed(final.hostname):
+                    return self._json({'error': 'it redirected somewhere that is not on the list'}, 422)
+                ctype = (r.headers.get('Content-Type') or '').lower()
+                if 'pdf' in ctype:
+                    return self._json({'error': 'that is a pdf — download it and drop it into the library instead',
+                                       'isPdf': True, 'url': r.geturl()}, 422)
+                data = r.read(FETCH_MAX + 1)
+                if len(data) > FETCH_MAX:
+                    return self._json({'error': 'larger than 3 MB — take the part you need'}, 413)
+                html = data.decode('utf-8', 'replace')
+        except urllib.error.HTTPError as e:
+            return self._json({'error': 'the source answered %d' % e.code}, 502)
+        except Exception:
+            return self._json({'error': 'could not reach it'}, 502)
+        text = html_to_text(html)
+        if len(text) < 40:
+            return self._json({'error': 'the page answered, but there was no readable text in it'}, 422)
+        import re
+        m = re.search(r'<title[^>]*>([\s\S]*?)</title>', html, flags=re.I)
+        return self._json({'url': final.geturl(), 'title': html_to_text(m.group(1)) if m else '',
+                           'text': text, 'chars': len(text)})
 
     def _json(self, body, status=200):
         raw = json.dumps(body).encode()

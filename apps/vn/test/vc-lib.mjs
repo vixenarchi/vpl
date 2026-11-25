@@ -6,10 +6,19 @@
  * for good, editing a standard does not rewrite a report already written, and
  * a guest never sees the drawer.
  *
+ * And where a standard's words come from: a link read through the app's own
+ * door, and a pdf that becomes text while the original is kept. The door itself
+ * is answered by a route here, so the test says what the screen does with a
+ * yes, a no and a "that is a pdf" — the door's own behaviour is checked against
+ * the live source by hand.
+ *
  *   node vc-lib.mjs                        # http://127.0.0.1:8105
  *   VC_URL=https://vc.terg.hr node vc-lib.mjs
  */
 import { chromium } from 'playwright';
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { OWNER } from './_account.mjs';
 
 const B = process.env.VC_URL || 'http://127.0.0.1:8105';
@@ -45,12 +54,65 @@ const LAW = 'Zakon o radu — čl. 45\n\nRadnik ima pravo na godišnji odmor od 
   + 'u kontinuitetu tijekom kalendarske godine.\n\n[' + STAMP + ']';
 const TITLE = 'Zakon o radu — čl. 45 (' + STAMP + ')';
 
+/* A one-page pdf, written by hand: a law is often a pdf, and a test that needs a
+ * real file needs it to be a real file. */
+function makePdf(path, lines) {
+  const body = lines.map((l, i) => `BT /F1 11 Tf 72 ${780 - i * 16} Td (${l.replace(/[()\\]/g, '\\$&')}) Tj ET`).join('\n');
+  const objs = [
+    '<</Type/Catalog/Pages 2 0 R>>',
+    '<</Type/Pages/Kids[3 0 R]/Count 1>>',
+    '<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Resources<</Font<</F1 4 0 R>>>>/Contents 5 0 R>>',
+    '<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>',
+    `<</Length ${body.length}>>\nstream\n${body}\nendstream`,
+  ];
+  let out = '%PDF-1.4\n';
+  const at = [];
+  objs.forEach((o, i) => { at.push(out.length); out += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  const xref = out.length;
+  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+  for (const off of at) out += String(off).padStart(10, '0') + ' 00000 n \n';
+  out += `trailer\n<</Size ${objs.length + 1}/Root 1 0 R>>\nstartxref\n${xref}\n%%EOF\n`;
+  writeFileSync(path, out, 'latin1');
+}
+
+const PDF_TEXT = ['Zakon o zastiti na radu', 'Clanak 12.', 'Poslodavac je duzan osposobiti radnika za rad na siguran nacin.'];
+const pdfPath = join(tmpdir(), `vpl-law-${STAMP}.pdf`);
+makePdf(pdfPath, PDF_TEXT);
+const READ = 'Zakon o radu\n\nClanak 45. Radnik ima pravo na godisnji odmor.\n[' + STAMP + ']';
+
 const br = await chromium.launch();
 const ctx = await br.newContext({ viewport: { width: 1400, height: 950 },
   permissions: ['clipboard-read', 'clipboard-write'] });
 const pg = await ctx.newPage();
+
+/* the door, answered here: eur-lex and narodne-novine are not on any list this
+ * test may knock on, and a test that calls them is a test that fails on a train */
+await pg.route('**/api/fetch', async (route) => {
+  const body = JSON.parse(route.request().postData() || '{}');
+  const host = (() => { try { return new URL(body.url).hostname; } catch { return ''; } })();
+  if (host.endsWith('narodne-novine.nn.hr')) {
+    return route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ url: body.url, title: 'Narodne novine', text: READ, chars: READ.length }),
+    });
+  }
+  if (host.endsWith('eur-lex.europa.eu')) {
+    return route.fulfill({
+      status: 422, contentType: 'application/json',
+      body: JSON.stringify({ error: 'that is a pdf — download it and drop it into the library instead', isPdf: true }),
+    });
+  }
+  return route.fulfill({
+    status: 422, contentType: 'application/json',
+    body: JSON.stringify({ error: 'that source is not on the list — download the pdf and drop it here', source: false }),
+  });
+});
 pg.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
-pg.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+pg.on('console', (m) => {
+  /* a refused source is the test asking for one: the browser logs the 422 that
+   * the drawer is supposed to turn into a sentence */
+  if (m.type() === 'error' && !m.text().includes('422')) errors.push('console: ' + m.text());
+});
 pg.on('dialog', (d) => d.accept());
 
 await login(pg);
@@ -111,6 +173,88 @@ ok(copied === LAW, 'the input holds the whole text, not a pointer (' + copied.le
 ok((await pg.textContent('#art-from')).includes('copied from the library'),
   'and says where it came from: ' + (await pg.textContent('#art-from')).slice(0, 60));
 await pg.click('#art-x');
+
+/* ── where the words come from: a link ──────────────────────────── */
+await pg.click('#btn-from-lib');
+await pg.waitForFunction(() => !!document.getElementById('lib-dialog')?.open);
+await pg.click('#lib-new');
+await pg.fill('#lib-title', 'NN — ' + STAMP);
+await pg.fill('#lib-url', 'https://narodne-novine.nn.hr/clanci/sluzbeni/2026.html');
+await pg.click('#lib-fetch');
+ok(await until(async () => (await pg.inputValue('#lib-text')) === READ, 10000),
+  'a link becomes the text of the standard');
+ok((await pg.textContent('#lib-src-msg')).includes('read'), 'and the form says how much it read: '
+  + (await pg.textContent('#lib-src-msg')).slice(0, 60));
+ok((await pg.textContent('#lib-chars')).includes(String(READ.length)),
+  'the character count follows the fetch');
+await pg.click('#lib-save');
+ok(await until(async () => (await pg.locator('#lib-list .lib-item', { hasText: 'NN — ' + STAMP }).count()) === 1),
+  'the linked standard is kept');
+const linked = pg.locator('#lib-list .lib-item', { hasText: 'NN — ' + STAMP }).first();
+ok((await linked.textContent()).includes('linked'), 'its row says where it came from');
+
+/* a link off the list is refused with a sentence, not a silence */
+await pg.click('#lib-new');
+await pg.fill('#lib-title', 'off-list ' + STAMP);
+await pg.fill('#lib-url', 'https://example.com/law');
+await pg.click('#lib-fetch');
+ok(await until(async () => (await pg.textContent('#lib-src-msg')).includes('not on the list'), 10000),
+  'a source off the list gets a sentence: ' + (await pg.textContent('#lib-src-msg')).slice(0, 70));
+ok((await pg.inputValue('#lib-text')) === '', 'and nothing is pasted in its place');
+
+/* ── and a pdf ─────────────────────────────────────────────────── */
+await pg.fill('#lib-title', 'PDF — ' + STAMP);
+await pg.setInputFiles('#lib-file', pdfPath);
+ok(await until(async () => (await pg.inputValue('#lib-text')).includes('zastiti na radu'), 20000),
+  'a pdf becomes text in the drawer');
+ok((await pg.textContent('#lib-chars')).includes(String((await pg.inputValue('#lib-text')).length)),
+  'the count follows the pdf too');
+ok(await until(async () => !(await pg.locator('#lib-file-line').isHidden())), 'the original is kept, and named');
+ok((await pg.textContent('#lib-file-line')).includes('.pdf'),
+  'the line says which file: ' + (await pg.textContent('#lib-file-line')).slice(0, 60));
+await pg.locator('#lib-dialog').screenshot({ path: '/home/vergovic/vixen/.shots/lib-pdf.png' }).catch(() => {});
+await pg.click('#lib-save');
+ok(await until(async () => (await pg.locator('#lib-list .lib-item', { hasText: 'PDF — ' + STAMP }).count()) === 1),
+  'a standard from a pdf is kept like any other');
+/* and it opens again with its source remembered */
+const pdfRow = pg.locator('#lib-list .lib-item', { hasText: 'PDF — ' + STAMP }).first();
+await pdfRow.locator('.name').click();
+ok(await until(async () => (await pg.locator('#lib-edit').isVisible())), 'the pdf standard opens');
+ok((await pg.inputValue('#lib-text')).includes('zastiti na radu'), 'with its text, not a placeholder');
+ok(!(await pg.locator('#lib-file-line').isHidden()), 'and its original still attached');
+await pg.click('#lib-cancel');
+
+/* put the two test standards out of the way: both to the bin, then both gone */
+const MINE = ['NN — ' + STAMP, 'PDF — ' + STAMP];
+const binLine = async () => ((await pg.locator('#lib-bin-line').isHidden())
+  ? '' : (await pg.textContent('#lib-bin-line')));
+const toList = async () => {
+  if ((await binLine()).includes('back to the library')) await pg.locator('#lib-bin-line button').click();
+  await until(async () => (await pg.locator('#lib-edit').isHidden()));
+};
+const toBin = async () => {
+  if (!(await binLine()).includes('back to the library')) await pg.locator('#lib-bin-line button').click();
+  await until(async () => (await pg.locator('#lib-list').isVisible()));
+};
+for (const name of MINE) {
+  if (!(await libOpen())) {
+    await pg.click('#btn-from-lib');
+    await pg.waitForFunction(() => !!document.getElementById('lib-dialog')?.open);
+  }
+  await toList();
+  const r = pg.locator('#lib-list .lib-item', { hasText: name }).first();
+  await r.hover();
+  await r.locator('.del').click();
+  await until(async () => (await pg.locator('#lib-list .lib-item', { hasText: name }).count()) === 0);
+}
+await toBin();
+for (const name of MINE) {
+  const r = pg.locator('#lib-list .lib-item', { hasText: name }).first();
+  await r.hover();
+  await r.locator('.del').click();
+  await until(async () => (await pg.locator('#lib-list .lib-item', { hasText: name }).count()) === 0);
+}
+await pg.click('#lib-x');
 
 /* ── the drawer's ✕ bins, it does not destroy ───────────────────── */
 await pg.click('#btn-from-lib');

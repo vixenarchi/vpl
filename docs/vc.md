@@ -85,13 +85,56 @@ one row of verbs each, and *＋ a new standard*, which steps the list aside — 
 thing at a time, so the row above and the field below cannot both claim to be
 the same document.
 
-## Next: links, batches
+**Where the words come from — three doors, one row.** A field for a link and
+*read it*, a *＋ pdf*, and the plain paste lobby below them.
 
-Still deliberately not built — see `docs/vc-next.md`. PDF upload into the
-library, then a `source_url` with a fetch door and an allowlist (both sources we
-tried send no CORS headers, so a link cannot be read from the browser), then
-bulk as a queue of independent targets (`vc_targets`) with one report each and
-verdict counts on the row, capped at 50.
+- **A link is read through our own door**, `api.terg.hr/fetch`, because
+  `eur-lex.europa.eu` and `narodne-novine.nn.hr` answer with HTML and no CORS
+  headers: a page cannot read them. The door keeps an allowlist of legal sources,
+  follows a redirect but re-checks the host it lands on, refuses anything over
+  3 MB, and strips the HTML to text with no cleverness. Anything off the list
+  gets one sentence — *that source is not on the list — download the pdf and drop
+  it here* — and nothing is pasted in its place. A door that starts crawling is a
+  product; this one reads one page, on demand, and remembers nothing.
+- **A pdf becomes text in the browser** (pdf.js, the same code `vd` uses), and the
+  original goes to `vc-files` under the standard's own id, so page 47 is still
+  page 47. A standard has to exist before its file has somewhere to live, so a
+  file chosen in a fresh draft keeps the standard first and then fills it.
+- **The row says where it came from**: `linked` when a URL is stored, and the
+  original's name and size under the text, openable.
+- No OCR, no crawling, no scheduled re-reading of a law: a standard changes when
+  the person says it changed.
+
+## A batch
+
+*Fifty offers, one list, each with its verdicts.*
+
+A job ad and a pile of CVs is not fifty clicks. `vc_targets` is one row per
+candidate or offer: its own proofs, its own report, its own tally.
+
+- **A batch is a queue, not a loop.** `run all` works the rows **strictly one at
+  a time, in order**, repainting each as it lands. Never in parallel — that is
+  not a performance decision, it is the point of a queue. `stop` finishes the one
+  in flight and says so.
+- **`running` is only true while somebody is looking.** Open the check again and
+  a row that says `running` goes back to `not run yet`, in its own place. There
+  is no scheduler, no cron, no worker: the queue moves because a person pressed a
+  button and stops when they leave.
+- **Counts live on the row** (`n_pass`, `n_fail`, `n_unknown`) so the list sorts
+  without parsing a document; the number is next to the word, never alone.
+- **Cost is said before it is spent**: `3 × 1 call` beside the button.
+- **A hard cap of 50 rows.** Not a technical limit — a promise that this stays a
+  tool and not a document factory.
+- **The nouns come from the template pack.** A batch of CVs checks *uvjeti
+  natječaja* against *kandidati*; an audit checks *standardi* against *dokazi*.
+  `templates.js` carries the words, the screen reads them, and no fifth concept
+  enters the database. The third template is `tender` — a job ad through its
+  candidates, which is the batch's native shape.
+- **Rules stay shared, proofs do not.** A standard added while a row is on the
+  desk belongs to the check, because a rule is the same rule for every row; a
+  proof belongs to that row only.
+- **✕ on a row is a bin.** The row waits with its proofs, can be restored, and
+  only the second press destroys it — and a shared check never shows the bin.
 
 ## What is not here
 
@@ -109,15 +152,26 @@ shared door, the strip counting 3 / 1 / 2, the strip following an edited verdict
 the report surviving a reload, notes and versions, copy, a guest link (strip and
 piles visible, no generate), a phone at 390 px, and cleanup.
 
-`apps/vn/test/vc-lib.mjs` — 29 checks: the drawer opens beside ＋ standard, a
+`apps/vn/test/vc-lib.mjs` — 44 checks: the drawer opens beside ＋ standard, a
 standard is kept with its character count, keeping it does not put it in the
 check, *add* copies the whole text and says where it came from, ✕ bins rather
 than destroys, the bin counts it and can give it back, editing or deleting the
-standard never touches the copy, and a guest has no door to the drawer.
+standard never touches the copy, a link becomes the text through the door (and a
+source off the list gets a sentence, not a silence), a pdf becomes text while the
+original is kept and named, and a guest has no door to the drawer.
+
+`apps/vn/test/vc-batch.mjs` — 40 checks: a tender check names its own piles, rows
+are numbered and renamed in place, each row keeps its own proofs while the rules
+stay shared, `run all` makes one call per row one after another (each call
+carrying only its own candidate), the tallies land on the row, one report per row
+with its own versions, `stop` finishes the one in flight and says so, ✕ on a row
+bins it and restores it, and a phone at 354 px does not scroll sideways.
 
 ```
 PORT=8105 OAUTH_PORT=0 ./serve vc
 VC_URL=http://127.0.0.1:8105 node vc-check.mjs
 VC_URL=http://127.0.0.1:8105 node vc-lib.mjs
+VC_URL=http://127.0.0.1:8105 node vc-batch.mjs
 VC_URL=https://vc.<your-domain> node vc-check.mjs       # production
+./tools/test-vc.sh                                     # all three
 ```
