@@ -202,15 +202,6 @@
         </div>
         <ul id="notes" class="notes"></ul>
         <p id="notes-none" class="notes-none muted">nothing on the wall yet.</p>
-        <div class="bin-foot">
-          <button id="btn-bin" class="bin-btn" type="button" aria-pressed="false"
-                  title="open the recycle bin">
-            <span class="bin-icon" aria-hidden="true">♲</span>
-            <span class="bin-label">recycle bin</span>
-            <span id="bin-count" class="bin-count"></span>
-          </button>
-          <button id="btn-bin-empty" class="bin-empty" type="button" hidden>empty all</button>
-        </div>
         <div class="panel-foot">
           <span id="notes-msg" class="msg"></span>
           <button class="ghost next" data-next="exploration" type="button">next stop: explore →</button>
@@ -276,6 +267,18 @@
           <button id="sim-save" class="primary w-only" type="button">save</button>
         </div>
       </section>
+
+      <!-- the bin is the column's, not one stage's: a note can be lost from
+           any stage, so its way back must not change with the stage -->
+      <div class="bin-foot column-foot">
+        <button id="btn-bin" class="bin-btn" type="button" aria-pressed="false"
+                title="open the recycle bin">
+          <span class="bin-icon" aria-hidden="true">♲</span>
+          <span class="bin-label">recycle bin</span>
+          <span id="bin-count" class="bin-count"></span>
+        </button>
+        <button id="btn-bin-empty" class="bin-empty" type="button" hidden>empty all</button>
+      </div>
     </main>
 
     <section id="welcome" class="welcome">

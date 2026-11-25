@@ -585,11 +585,23 @@ function paintBin() {
   $('#btn-bin-empty').hidden = !S.showingBin || !n;
 }
 
+
+/* Opening the bin from halfway down a long list showed a tinted list and
+ * nothing else: the banner that names the place was above the fold. The place
+ * announces itself when you enter it. */
+function scrollBinIntoView() {
+  requestAnimationFrame(() => {
+    const b = document.querySelector('.bin-banner, .trash-banner, #binview .bin-banner');
+    if (b) b.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
+}
+
 function toggleBin() {
   if (!canWrite()) return;
   S.showingBin = !S.showingBin;
   S.stage = 'ideation';
   paintAll();
+  if (S.showingBin) scrollBinIntoView();
 }
 
 async function restoreNote(n) {

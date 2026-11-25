@@ -318,6 +318,10 @@ dialog.settings .set-foot [data-a='forget'] { color: var(--danger); }
  */
 .bin-banner {
   display: block;
+  /* the bin is a place, and the sign on the door must be visible while you are
+   * anywhere in it — a banner that scrolled away with the first screenful left
+   * people looking at a tinted list with no explanation */
+  position: sticky; top: 0; z-index: 2;
   margin: 0.5rem 0.5rem 0.3rem; padding: 0.4rem 0.55rem;
   font-size: 0.74rem; line-height: 1.35; color: var(--ink-2);
   background: var(--paper); border-radius: 6px;
@@ -334,6 +338,9 @@ dialog.settings .set-foot [data-a='forget'] { color: var(--danger); }
   box-shadow: inset 3px 0 0 var(--mark);
 }
 .bin-foot {
+  /* and the way in and out stays where a hand is: pinned to the bottom of the
+   * column rather than parked under the last row of a long list */
+  position: sticky; bottom: 0; z-index: 3;
   display: flex; align-items: center; gap: 0.35rem; flex: 0 0 auto;
   border-top: 1px solid var(--line); padding: 0.4rem;
   background: var(--paper-2);

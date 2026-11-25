@@ -363,6 +363,16 @@ function binRowHTML(a) {
     </li>`;
 }
 
+
+/* Opening the bin from halfway down a long list used to show a tinted list and
+ * nothing else: the banner that names the place was above the fold. The place
+ * announces itself when you enter it. */
+function scrollBinIntoView() {
+  requestAnimationFrame(() => {
+    const b = document.querySelector('.bin-banner');
+    if (b) b.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
+}
 async function toggleBin() {
   if (!S.project) return;
   S.binMode = !S.binMode;
@@ -371,6 +381,7 @@ async function toggleBin() {
   }
   renderArtifacts();
   paintBin();
+  if (S.binMode) scrollBinIntoView();
 }
 
 async function restoreInput(a) {

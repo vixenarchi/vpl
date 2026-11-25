@@ -114,7 +114,10 @@ body { font-family: var(--round); background: var(--paper-page); }
 .proj-none { padding: 0.5rem 0.7rem; font-size: 0.76rem; color: var(--ink-2); }
 
 /* ── the funnel page ──────────────────────────────────────────────── */
-.funnel { padding: 0.9rem 1.4rem 3rem; overflow-y: auto; min-width: 0; }
+/* No inner scroll: the page scrolls, so a sticky footer inside this column can
+ * actually stick. An `overflow-y: auto` on a box with no height is not a scroll
+ * container — it only stops `position: sticky` from working. */
+.funnel { padding: 0.9rem 1.4rem 3rem; min-width: 0; }
 
 .proj-title { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
 .title {
@@ -644,3 +647,10 @@ body.guest #projects { display: none; }
 .notes .in-bin .row-restore { margin-left: auto; }
 .notes .in-bin .kill { margin-left: 0.15rem; }
 .bin-foot { margin-top: 0.4rem; }
+
+/* the column's own footer: the bin is not one stage's furniture */
+.bin-foot.column-foot {
+  margin: 1rem 1.4rem 1.4rem;
+  border: 1px solid var(--line); border-radius: var(--radius);
+}
+@media (max-width: 640px) { .bin-foot.column-foot { margin: 0.8rem 0.85rem 1rem; } }

@@ -167,9 +167,12 @@ pg.on('pageerror', (e) => errors.push(e.message));
 pg.on('dialog', (d) => d.accept());
 
 await pg.goto(BASE, { waitUntil: 'networkidle' });
-await pg.fill('#email', EMAIL);
-await pg.fill('#pass', PASS);
-await pg.click('#btn-login');
+/* an app that remembers a session may open straight onto the desk */
+if (await pg.locator('#gate').isVisible()) {
+  await pg.fill('#email', EMAIL);
+  await pg.fill('#pass', PASS);
+  await pg.click('#btn-login');
+}
 await pg.waitForSelector('#app', { state: 'visible', timeout: 25000 });
 await pg.waitForTimeout(1400);
 

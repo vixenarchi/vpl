@@ -828,6 +828,17 @@ async function emptyBin() {
   } catch (e) { flash(e.message); }
 }
 
+
+/* Opening the bin from halfway down a long list showed a tinted list and
+ * nothing else: the banner that names the place was above the fold. The place
+ * announces itself when you enter it. */
+function scrollBinIntoView() {
+  requestAnimationFrame(() => {
+    const b = document.querySelector('.bin-banner, .trash-banner, #binview .bin-banner');
+    if (b) b.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
+}
+
 async function toggleBin() {
   if (!S.project) return;
   S.binMode = !S.binMode;
@@ -837,6 +848,7 @@ async function toggleBin() {
     try { S.bin = await db.listReqs(S.project.id, { bin: true }); } catch { S.bin = []; }
   }
   paintSheet();
+  if (S.binMode) scrollBinIntoView();
 }
 
 /* ── the brief ────────────────────────────────────────────────────── */
