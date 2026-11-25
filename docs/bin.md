@@ -46,6 +46,17 @@ One block in `packages/shell/tokens.css`, so the seven cannot drift:
 - **`.row-restore`** — `restore` is a word, not an icon, and it sits where the
   ✕ sits in the live list.
 
+- **It has to be findable.** A button at the end of a long column is a button
+  halfway down a page nobody scrolls. `.bin-foot` is `position: sticky; bottom:
+  0`, so it sits on screen while the pile scrolls past it, and `.bin-banner` is
+  sticky at the top for the same reason. Opening the bin also scrolls the place
+  into view — a tinted list with its sign above the fold is not an explanation.
+  In vi the button was inside the *ideation panel*, so it existed on one stage
+  out of five; it is the column's footer now.
+- **Sticky needs a real scroller.** `overflow-y: auto` on a box with no height
+  is not a scroll container — it only stops `position: sticky` from working,
+  because the box itself is as tall as its content. vi's `.funnel` dropped it.
+
 **Colour is never the only signal.** The open bin is a filled button *and* a
 banner with a count *and* a tinted pane with an edge — three of the four
 survive a black-and-white screenshot.

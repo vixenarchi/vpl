@@ -1327,3 +1327,39 @@ signals rather than internals: `aria-pressed` **and** a changed word **and** a
 computed background that is not the paper's **and** a banner with a number in
 it. A bin that is only a different shade passes none of those, which is the
 point.
+
+## 2026-11 · the bin you could not find
+
+"One bin in eight apps" shipped and the answer came back immediately: *I still
+don't see it*. Both reasons were real, and neither was the CSS being wrong.
+
+- **vi's bin lived inside the ideation panel.** vi is five stages in one column
+  and only one stage is on screen — the bin had been placed in that stage's
+  `<section>`, so it existed on exactly one of five pages and vanished with the
+  stage. The bin is the *column's*, not a stage's: moved out, under all five.
+- **in vd, vc and va the button was at the end of the inputs column** — y≈1900
+  in an 800 px window. Nobody scrolls to find out whether they can undo. The
+  foot is `position: sticky; bottom: 0` and the banner `top: 0`; opening the bin
+  scrolls the place into view.
+
+`position: sticky` and `overflow-y: auto` do not mix: a box without a height is
+not a scroll container, it is merely a box that turns off sticky for everything
+inside it. vi's `.funnel` had carried that line since the funnel was written,
+harmlessly, until the day something inside it needed to stick.
+
+And one self-inflicted wound worth writing down because `node --check` will not
+catch it: inserting a helper function above `openBin` in vz matched the tail of
+`async function openBin` and produced
+
+```
+async
+/* …comment… */
+function scrollBinIntoView() { … }
+function openBin() { … await … }
+```
+
+`async` on its own line is a valid *identifier expression statement*, so the
+file parses — and then `await` inside a now-sync function is a runtime parse
+error, so vz booted to a blank page ("Unexpected reserved word"). Syntax checks
+that only prove "it parses" say nothing about whether the code is what you meant
+to write. The suite caught it because the app never reached its gate.
