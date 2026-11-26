@@ -147,6 +147,9 @@ Run the proof with `./tools/test-all.sh`, or one at a time from `apps/vn/test`
 - **A header is only worth what the page still does under it.** Prove the walk,
   not the string: sign in, open, settings, theme, and pdf.js's worker.
   → `csp-check`
+- **A limit nobody can see is not evidence.** The answer carries the count
+  (`X-Vpl-Limit: 12/60`), so the bound can be read from a terminal instead of
+  believed. → `door-check`, and a `curl` in `docs/security.md`
 - **A dotted origin entry must match the bare host as well as the subdomains** —
   `'.vpl-vi.pages.dev'` did not cover `vpl-vi.pages.dev`. → `door-check`
 - **A redirect is a new address, and it gets the same question** before it is

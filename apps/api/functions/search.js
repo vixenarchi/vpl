@@ -13,8 +13,7 @@
  */
 
 import { corsFor } from './_origins.js';
-import { refusal, tooMany } from './_door.js';
-import { take } from './_limit.js';
+import { refusal } from './_door.js';
 
 const PROVIDERS = {
   tavily: {
@@ -74,8 +73,6 @@ export async function onRequestPost({ request }) {
    * relay with no server can honestly do about that. */
   const early = refusal(request, { route: '/search', maxBytes: 16384 });
   if (early) return early;
-  const gate = await take(globalThis.caches?.default, request, { route: '/search', limit: 20, window: 60 });
-  if (!gate.ok) return tooMany(request, gate.retryAfter);
   const allow = corsFor(request);
   if (!allow) return json({ error: 'this origin may not use the proxy' }, 403, request);
 

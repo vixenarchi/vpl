@@ -74,6 +74,12 @@ away, so that is what the doors do now:
   `/chat` and `/vp` 60, `/fetch` 30), counted in the edge cache. Per-colo and
   eventually consistent: a speed bump on abuse, not a quota anybody is billed
   for. It is written down as a speed bump, not as a lock.
+- `_middleware.js` — the count happens once, at the edge, for all four doors, and
+  **every door answer carries it**: `X-Vpl-Limit: 1/60`, or `unbounded` when the
+  edge has no cache or no address to count. A limit nobody can see is not
+  evidence; this one can be read from a terminal. Measured on the live project:
+  33 calls to `/fetch` from one address → 30 answers, then `429` with
+  `retry-after: 60`, and a `/chat` call reporting `1/60`.
 - Nothing secret lives behind a door: the key is the caller's own, and a `vp`
   credit is spent before the provider is called. The worst a relay can do is
   spend the caller's own quota.
@@ -242,7 +248,9 @@ password = the name. Override with `AUTHZ_OWNER` / `AUTHZ_GUEST` / `AUTHZ_THIRD`
   cannot move it to another document, and the words that were allowed did land.
 - `authz-matrix.mjs` — the whole grid, six apps × two roles × a stranger.
 - `authz-confirm.mjs` — 18 proofs, one per finding in §2026-11-26.
-- `door-check.mjs` — 26: the four refusals, the bound, the origin list.
+- `door-check.mjs` — 26: the four refusals, the bound, the origin list. The
+  count's arithmetic is proved here with a fake cache; the live behaviour is
+  proved by the `X-Vpl-Limit` header.
 - `csp-check.mjs` — 128: the header in all eight, and a browser walk under it.
 - `fetch-check.mjs` — 15: the redirect walk, with a recorded `fetch` and no network.
 

@@ -1808,3 +1808,15 @@ half — that an off-list redirect made **one** request, not two.
 
 The gate is **53 groups**. What is left of the review is one item, and it is a
 decision rather than a bug: the model key lives in `localStorage`.
+
+### and the bound has to be visible
+
+The first version of the rate limit was a silent `try/catch` that allowed
+everything when the cache refused — and it did, so the live door answered 33
+requests in a row and my own claim ("sixty a minute") was false while the test
+was green. The test could not see it: a fake cache always works. What fixed it
+was the smallest possible observability: the count moved into `_middleware.js`
+(one count, not four), and every door answer now carries `X-Vpl-Limit: 1/60` or
+`unbounded`. Then a `for` loop in a terminal answered the question in five
+seconds: 30 answers, then `429` with `retry-after: 60`. **A claim about the edge
+needs a header, not a unit test.**

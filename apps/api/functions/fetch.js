@@ -16,8 +16,7 @@
  */
 
 import { corsFor } from './_origins.js';
-import { refusal, tooMany } from './_door.js';
-import { take } from './_limit.js';
+import { refusal } from './_door.js';
 
 /* Sources a compliance check actually cites. A suffix matches its subdomains;
  * anything not on this list gets one sentence back. */
@@ -95,8 +94,6 @@ export async function onRequestPost({ request }) {
    * relay with no server can honestly do about that. */
   const early = refusal(request, { route: '/fetch', maxBytes: 8192 });
   if (early) return early;
-  const gate = await take(globalThis.caches?.default, request, { route: '/fetch', limit: 30, window: 60 });
-  if (!gate.ok) return tooMany(request, gate.retryAfter);
   const origin = corsFor(request);
   if (request.headers.get('Origin') && !origin) {
     return json({ error: 'this address is not on the list that may call me' }, 403, '');
