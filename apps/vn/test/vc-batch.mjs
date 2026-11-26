@@ -251,6 +251,90 @@ await until(async () => (await pg.locator('#standards .art.tgt-bin').count()) ==
 chk('the list is whole again', await until(async () => (await pg.locator('#targets .tgt').count()) === before, 8000),
   String(await pg.locator('#targets .tgt').count()));
 
+/* ── choosing is how a subset is said ────────────────────────────────
+ * A run covers everything the list holds unless a person narrows it: the tick
+ * on a row is the narrowing, and an unticked list means "all of it". The tick
+ * is on rules and proofs too, so a run can be one rule against three
+ * candidates, or three rules against one. */
+console.log('\nthe tick says what the run covers');
+/* both bins are in the rail: a place belongs on the left, not under the last
+ * row of work */
+const bins = await pg.evaluate(() => {
+  const rail = document.getElementById('projects');
+  const a = document.getElementById('btn-bin');
+  const b = document.getElementById('btn-job-bin');
+  const at = (e) => { const r = e.getBoundingClientRect(); return { x: Math.round(r.x), w: Math.round(r.width), h: Math.round(r.height) }; };
+  return { row: rail.contains(a) ? at(a) : null, job: rail.contains(b) ? at(b) : null,
+    railRight: Math.round(rail.getBoundingClientRect().right),
+    inWork: !!document.querySelector('.work .bin-foot') };
+});
+chk('the row bin sits in the rail, on the left', !!bins.row && bins.row.x + bins.row.w <= bins.railRight,
+  JSON.stringify(bins.row));
+chk('the check bin sits beside it, and both are words not just a mark',
+  !!bins.job && bins.job.x + bins.job.w <= bins.railRight
+  && (await txt('#btn-job-bin')).includes('checks') && (await txt('#btn-bin')).includes('inputs'),
+  `${await txt('#btn-job-bin')} / ${await txt('#btn-bin')}`);
+chk('nothing is left of the bar under the work', !bins.inWork);
+
+/* a second rule and a third candidate */
+await pg.click('#btn-add-standard');
+await pg.waitForSelector('#art-dialog[open]', { state: 'attached' });
+await wait(400);
+await pg.fill('#art-title', 'uvjeti — rok');
+await pg.fill('#art-text', 'Isporuka najkasnije 30 dana od potvrde.');
+await pg.click('#art-save');
+await until(async () => (await pg.locator('#standards .art').count()) === 2, 10000);
+await pg.click('#btn-add-target');
+await until(async () => (await pg.locator('#targets .tgt').count()) === 3, 10000);
+chk('two rules, three candidates', (await pg.locator('#standards .art').count()) === 2
+  && (await pg.locator('#targets .tgt').count()) === 3);
+
+/* narrow to the second rule only — a repaint rebuilds the list, so each press
+ * is aimed at the list again rather than at a node that is already gone */
+await pg.locator('#standards .art').nth(1).locator('.pick').click();
+await until(async () => (await txt('#std-count')) === '1 of 2', 6000);
+chk('the rules say how much of them a run will use', (await txt('#std-count')) === '1 of 2', await txt('#std-count'));
+
+/* and run just one row with its own ▶ */
+calls = [];
+await pg.locator('#targets .tgt').nth(2).locator('.tgt-run').click();
+await until(() => calls.length > 0, 15000);
+await until(async () => (await pg.locator('#targets .tgt .tgt-state').nth(2).textContent()) === 'done', 15000);
+const oneBody = calls.map((c) => c.body).join('\n');
+chk('▶ runs one row on its own', calls.length === 1, `${calls.length} call(s)`);
+chk('and only the rules that were ticked travel with it',
+  oneBody.includes('najkasnije 30 dana') && !oneBody.includes('Vozačka dovoljna B kategorije')
+  && !oneBody.includes('Vozačka dozvola B kategorije'), oneBody.slice(0, 120));
+
+/* now two rows of three, untick the rules (an empty tick means all of them) */
+for (let i = 0; i < 2; i += 1) await pg.locator('#standards .art').nth(i).locator('.pick').click();
+await pg.locator('#targets .tgt').nth(0).locator('.tgt-pick').click();
+await pg.locator('#targets .tgt').nth(1).locator('.tgt-pick').click();
+await until(async () => (await txt('#btn-run-all')).startsWith('run 2'), 6000);
+chk('the button says how many rows were chosen', (await txt('#btn-run-all')).startsWith('run 2'), await txt('#btn-run-all'));
+chk('and the line under it says how much of the list that is',
+  (await txt('#tgt-run-msg')).includes('2 of 3'), await txt('#tgt-run-msg'));
+
+calls = [];
+await pg.click('#btn-run-all');
+await until(() => calls.length === 2, 20000);
+await until(async () => {
+  const st = await pg.locator('#targets .tgt .tgt-state').evaluateAll((els) => els.map((e) => e.textContent));
+  return st[0] === 'done' && st[1] === 'done' && st[2] === 'done';
+}, 20000);
+chk('two rows run, in order, one call each', calls.length === 2, `${calls.length} call(s)`);
+const order = await pg.locator('#targets .tgt .tgt-state').evaluateAll((els) => els.map((e) => e.textContent));
+chk('the row nobody ticked kept its last answer', order.filter((x) => x === 'done').length === 3, order.join(' / '));
+
+/* all and none are one press each, and none means everything */
+await pg.click('#btn-tgt-all');
+await until(async () => (await txt('#btn-run-all')).startsWith('run 3'), 6000);
+chk('all ticks every row', (await txt('#btn-run-all')).startsWith('run 3'), await txt('#btn-run-all'));
+await pg.click('#btn-tgt-none');
+await until(async () => (await txt('#btn-run-all')).startsWith('run all'), 6000);
+chk('none goes back to the whole list, which is what a run means by default',
+  (await txt('#btn-run-all')).startsWith('run all'), await txt('#btn-run-all'));
+
 /* ── a phone ──────────────────────────────────────────────────────── */
 console.log('\na phone');
 await pg.setViewportSize({ width: 354, height: 720 });

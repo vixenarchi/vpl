@@ -28,6 +28,11 @@ const S = {
   artifacts: [],       // the check's own pile (rules, and shared proofs)
   tArtifacts: [],      // the selected row's own proofs
   targets: [],         // the batch: one row is one check
+  /* A run covers everything unless a person says otherwise, so the sets start
+   * empty and an empty set means "all". Selecting is how a subset is said. */
+  selT: new Set(),     // rows chosen for the run
+  selStd: new Set(),   // rules chosen for the run
+  selEv: new Set(),    // proofs chosen for the run
   targetBin: [],
   target: null,        // which row is on the desk; null is the check itself
   batch: false,        // a run is in flight (stop is the only verb)
@@ -315,6 +320,9 @@ async function openJob(id) {
    * running, so it is queued again, in its own place */
   if (S.targets.some((t) => t.status === 'running')) db.requeueRunning(id).catch(() => {});
   S.target = S.targets[0]?.id || null;
+  S.selT = new Set();
+  S.selStd = new Set();
+  S.selEv = new Set();
   S.tArtifacts = S.target ? await db.listArtifacts(id, { targetId: S.target }) : [];
   S.bin = await db.listArtifacts(id, { bin: true }).catch(() => []);
   S.outputs = await db.listOutputs(id, { targetId: S.target });
@@ -447,10 +455,15 @@ $('#template').addEventListener('change', async () => {
 function paintBin() {
   const n = S.bin.length + S.targetBin.length;
   const btn = $('#btn-bin');
+  /* the switch is a chip in the rail now, so it has no room for a sentence: the
+   * number and the filled state carry it, the title says the words, and the
+   * banner inside the list names the place once you are in it */
+  btn.hidden = !S.project;
+  btn.classList.toggle('on', S.binMode);
   btn.setAttribute('aria-pressed', String(S.binMode));
   btn.title = S.binMode ? 'close the recycle bin and go back to the inputs'
-    : n ? `open the recycle bin (${n})` : 'the recycle bin is empty';
-  $('.bin-label', btn).textContent = S.binMode ? 'back to the inputs' : 'recycle bin';
+    : n ? `the recycle bin of inputs (${n})` : 'the recycle bin of inputs is empty';
+  btn.setAttribute('aria-label', btn.title);
   $('#bin-count').textContent = n ? String(n) : '';
   $('#bin-banner').hidden = !S.binMode;
   $('#bin-banner-note').textContent = n
@@ -492,13 +505,16 @@ function targetRow(t, i) {
       + `<span class="verdict unknown"><b>${c.unknown}</b> unknown</span>`
     : t.error ? `<span class="tgt-why">${esc(t.error.slice(0, 80))}</span>`
       : '';
-  return `<li class="tgt st-${t.status}${on ? ' on' : ''}" data-id="${t.id}">
-      <button class="tgt-pick" type="button" aria-pressed="${on}"
-              title="put this one on the desk"><span class="pos">${i + 1}</span></button>
+  const chosen = S.selT.has(t.id);
+  return `<li class="tgt st-${t.status}${on ? ' on' : ''}${chosen ? ' chosen' : ''}" data-id="${t.id}">
+      <button class="tgt-pick" type="button" aria-pressed="${chosen}"
+              title="${chosen ? 'leave this row out of the run' : 'put this row in the run'}"><span class="pos">${chosen ? '✓' : i + 1}</span></button>
       <input class="tgt-name" type="text" value="${esc(t.name || '')}"
              aria-label="name of this row" spellcheck="false"${S.role === 'view' ? ' readonly' : ''}>
       <span class="tgt-state">${t.status === 'queued' ? 'not run yet' : (TGT_WORD[t.status] || esc(t.status))}</span>
       <span class="tgt-tally">${tally}</span>
+      <button class="tgt-run" type="button" title="run just this one" aria-label="run just this one"
+              ${S.role === 'view' || S.batch ? 'disabled' : ''}>▶</button>
       <button class="tgt-del" type="button" title="remove — it waits in the recycle bin"
               ${S.role === 'view' ? 'hidden' : ''}>✕</button>
     </li>`;
@@ -539,15 +555,20 @@ function paintTargets() {
       try { inp.setSelectionRange(caret[0] ?? inp.value.length, caret[1] ?? inp.value.length); } catch { /* readonly */ }
     }
   }
+  const chosen = chosenTargets();
+  const calls = chosen.length;
   const run = $('#btn-run-all');
-  run.disabled = S.batch || S.role === 'view' || !S.targets.length;
-  run.textContent = S.batch ? 'running…' : `run all ${S.targets.length || ''}`.trim();
+  run.disabled = S.batch || S.role === 'view' || !calls;
+  run.textContent = S.batch ? 'running…'
+    : (S.selT.size ? `run ${calls} chosen` : `run all ${calls || ''}`).trim();
   run.title = S.batch ? 'one at a time — stop finishes the one in flight'
-    : `${S.targets.length} call${S.targets.length === 1 ? '' : 's'}, one after another`;
+    : `${calls} call${calls === 1 ? '' : 's'}, one after another`;
   $('#btn-stop').hidden = !S.batch;
+  $('#btn-tgt-all').disabled = !S.targets.length || S.batch;
+  $('#btn-tgt-none').disabled = !S.selT.size || S.batch;
   if (!S.batch && !$('#tgt-run-msg').dataset.keep) {
     $('#tgt-run-msg').textContent = S.targets.length
-      ? `${S.targets.length} × 1 call`
+      ? (S.selT.size ? `${calls} of ${S.targets.length} chosen · ${calls} × 1 call` : `${calls} × 1 call`)
       : '';
   }
 }
@@ -619,7 +640,10 @@ async function runRow(row, tpl, rules) {
   await db.updateTarget(row.id, { status: 'running', error: '' });
   row.status = 'running';
   paintTargets();
-  const proofs = await db.listArtifacts(projectId, { targetId: row.id });
+  const all = await db.listArtifacts(projectId, { targetId: row.id });
+  /* one choice covers the whole batch: the rows you ticked in dokazi are the
+   * proofs every row is measured against, and an empty tick means all of them */
+  const proofs = S.selEv.size ? all.filter((a) => S.selEv.has(a.id)) : all;
   const messages = engine.buildMessages({
     template: tpl, project: S.project, artifacts: [...rules, ...proofs], notes: '',
   });
@@ -643,9 +667,19 @@ async function runRow(row, tpl, rules) {
   return out;
 }
 
+/* An empty set means "all of them": a person who has not chosen anything asked
+ * for the whole list, and a person who has chosen something asked for that. */
+function chosenTargets() {
+  return S.selT.size ? S.targets.filter((t) => S.selT.has(t.id)) : [...S.targets];
+}
+function chosenRules() {
+  const all = S.artifacts.filter((a) => a.kind === 'standard');
+  return S.selStd.size ? all.filter((a) => S.selStd.has(a.id)) : all;
+}
+
 let STOP_BATCH = false;
 
-async function runBatch() {
+async function runBatch(only = null) {
   if (S.batch || !S.project || S.role === 'view') return;
   const tpl = templateById(S.project.template);
   const n = tpl.nouns;
@@ -654,16 +688,20 @@ async function runBatch() {
     openAi();
     return;
   }
-  const rules = S.artifacts.filter((a) => a.kind === 'standard');
+  const rules = chosenRules();
   if (!rules.length) {
     msg('#tgt-run-msg', `no ${n.rules} yet — each row needs something to be measured against`, 'bad');
     return;
   }
-  if (S.targets.length > MAX_TARGETS) {
+  const queue = only ? [only] : chosenTargets();
+  if (!queue.length) {
+    msg('#tgt-run-msg', 'no rows chosen', 'bad');
+    return;
+  }
+  if (queue.length > MAX_TARGETS) {
     msg('#tgt-run-msg', `${MAX_TARGETS} is the cap`, 'bad');
     return;
   }
-  const queue = [...S.targets];
   S.batch = true;
   STOP_BATCH = false;
   paintTargets();
@@ -778,7 +816,12 @@ function artRow(a) {
   const line = a.file_name
     ? `${a.file_name} · ${fmtSize(a.file_size)}`
     : n ? `${n.toLocaleString()} words` : 'no text';
-  li.innerHTML = `<span class="kind">${esc(a.kind)}</span>`
+  const picked = (a.kind === 'standard' ? S.selStd : S.selEv).has(a.id);
+  li.className = 'art' + (picked ? ' chosen' : '');
+  li.innerHTML = `<button class="pick${picked ? ' on' : ''}" type="button"
+      aria-pressed="${picked}" title="${picked ? 'leave this out of the run' : 'put this in the run'}"
+      >${picked ? '✓' : '·'}</button>`
+    + `<span class="kind">${esc(a.kind)}</span>`
     + `<span class="what"><button class="name" type="button">${esc(a.title || 'untitled input')}</button>`
     + `<span class="line">${esc(line)}</span></span>`
     + `<span class="tools w-only">`
@@ -820,8 +863,9 @@ function renderArtifacts() {
   $('#ev-none').textContent = S.target
     ? 'nothing here yet — this row is checked against the rules and nothing else.'
     : 'no evidence yet. a report will be honest and useless.';
-  $('#std-count').textContent = std.length ? String(std.length) : '';
-  $('#ev-count').textContent = ev.length ? String(ev.length) : '';
+  const say = (set, rows) => (set.size ? `${set.size} of ${rows.length}` : rows.length ? String(rows.length) : '');
+  $('#std-count').textContent = say(S.selStd, std);
+  $('#ev-count').textContent = say(S.selEv, ev);
   paintBin();
 }
 
@@ -845,6 +889,15 @@ for (const sel of ['#standards', '#evidence']) $(sel).addEventListener('click', 
 
   if (e.target.closest('[data-back]')) return restoreInput(a);
   if (e.target.closest('[data-purge]')) return purgeInput(a);
+
+  /* the tick narrows the run: rules and proofs both, one choice for the batch */
+  if (e.target.closest('.pick')) {
+    const set = a.kind === 'standard' ? S.selStd : S.selEv;
+    if (set.has(a.id)) set.delete(a.id); else set.add(a.id);
+    renderArtifacts();
+    paintTargets();
+    return;
+  }
 
   if (e.target.closest('.del')) {
     /* ✕ removes it from the job, not from the world: the words go to the bin */
@@ -1466,8 +1519,25 @@ $('#targets').addEventListener('click', async (e) => {
   const t = S.targets.find((x) => x.id === li.dataset.id);
   if (!t) return;
   if (e.target.closest('.tgt-del')) return binTargetRow(t);
+  /* three verbs on one row, and the button says which: the number ticks it for
+   * the run, ▶ runs it alone, and the rest of the row puts it on the desk */
+  if (e.target.closest('.tgt-run')) return runBatch(t);
+  if (e.target.closest('.tgt-pick')) {
+    if (S.selT.has(t.id)) S.selT.delete(t.id); else S.selT.add(t.id);
+    paintTargets();
+    return;
+  }
   if (S.target !== t.id) await selectTarget(t.id);
 });
+
+$('#btn-tgt-all').onclick = () => {
+  S.selT = new Set(S.targets.map((t) => t.id));
+  paintTargets();
+};
+$('#btn-tgt-none').onclick = () => {
+  S.selT = new Set();
+  paintTargets();
+};
 $('#targets').addEventListener('change', async (e) => {
   const inp = e.target.closest('.tgt-name');
   if (!inp) return;

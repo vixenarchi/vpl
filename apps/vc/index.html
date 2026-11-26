@@ -68,9 +68,17 @@
   <div class="body">
     <nav id="projects" class="projects" aria-label="checks">
       <div class="proj-head">
-        <span>checks</span>
+        <span class="grow"></span>
+        <!-- Both bins live here, on the left, because a place with a name belongs
+             in the rail and not under the last row of work: the row bin used to
+             sit at the bottom of the work column, under the candidates, where it
+             read as one more piece of the check. Two bins need two words — ♲
+             twice is a puzzle, and a word is what keeps colour from being the
+             only signal. -->
+        <button id="btn-bin" class="job-bin" type="button" aria-pressed="false" hidden
+                title="the recycle bin of inputs"><span aria-hidden="true">♲</span><span class="bin-word">inputs</span><span id="bin-count"></span></button>
         <button id="btn-job-bin" class="job-bin" type="button" aria-pressed="false"
-                title="checks in the recycle bin"><span aria-hidden="true">♲</span><span id="job-bin-count"></span></button>
+                title="the recycle bin of checks"><span aria-hidden="true">♲</span><span class="bin-word">checks</span><span id="job-bin-count"></span></button>
       </div>
       <!-- A check is the biggest thing a person can lose here, so it goes to the
            bin like everything else, and the sign on the door is in the rail. -->
@@ -118,8 +126,9 @@
           </div>
           <p id="std-note" class="side-note muted">the rules — a policy, a checklist, a law's paragraph.</p>
           <div id="bin-banner" class="bin-banner" hidden>
-            <span class="bin-banner-title">recycle bin</span>
+            <span class="bin-banner-title">recycle bin · inputs</span>
             <span id="bin-banner-note" class="bin-banner-note">nothing in it</span>
+            <button id="btn-bin-empty" class="bin-empty" type="button" hidden>empty all</button>
           </div>
           <ul id="standards" class="artifacts"></ul>
           <p id="std-none" class="muted none-line" hidden>no rules yet — without them there is nothing to check against.</p>
@@ -138,6 +147,9 @@
             <div class="tgt-foot">
               <button id="btn-run-all" class="w-only" type="button">run all</button>
               <button id="btn-stop" class="ghost w-only" type="button" hidden>stop</button>
+              <span class="grow"></span>
+              <button id="btn-tgt-all" class="ghost" type="button" title="every row">all</button>
+              <button id="btn-tgt-none" class="ghost" type="button" title="no rows">none</button>
               <span id="tgt-run-msg" class="muted"></span>
             </div>
           </div>
@@ -154,15 +166,6 @@
           <ul id="evidence" class="artifacts"></ul>
           <p id="ev-none" class="muted none-line" hidden>no evidence yet. a report will be honest and useless.</p>
 
-          <div class="bin-foot">
-            <button id="btn-bin" class="bin-btn" type="button" aria-pressed="false"
-                    title="open the recycle bin">
-              <span class="bin-icon" aria-hidden="true">♲</span>
-              <span class="bin-label">recycle bin</span>
-              <span id="bin-count" class="bin-count"></span>
-            </button>
-            <button id="btn-bin-empty" class="bin-empty" type="button" hidden>empty all</button>
-          </div>
           <p id="art-msg" class="msg" aria-live="polite"></p>
           <input id="file-input" type="file" multiple hidden
                  accept=".pdf,.txt,.md,.markdown,.csv,.tsv,.json,.yaml,.yml,.xml,.html,.sql,.log,image/*,text/*">

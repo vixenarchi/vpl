@@ -133,10 +133,20 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
 /* ── the pile of inputs ───────────────────────────────────────────── */
 .artifacts { list-style: none; margin: 0; padding: 0; }
 .art {
-  display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 0.1rem 0.5rem; align-items: baseline;
+  display: grid; grid-template-columns: 1.9rem auto minmax(0, 1fr) auto;
+  gap: 0.1rem 0.4rem; align-items: baseline;
   padding: 0.42rem 0.3rem; border-bottom: 1px solid var(--rule);
 }
+/* a tick on every rule and every proof: a run covers all of them unless a
+ * person narrows it, and narrowing is a press, not a filter nobody can see */
+.art .pick {
+  align-self: center; min-height: 30px; min-width: 1.9rem; border: 1px solid transparent;
+  border-radius: 3px; background: none; cursor: pointer; font-family: var(--mono);
+  font-size: 0.72rem; color: var(--ink-3); line-height: 1;
+}
+.art .pick:hover { background: var(--paper-3); color: var(--ink); border-color: var(--rule); }
+.art .pick.on { background: var(--mark); border-color: var(--mark); color: var(--paper); font-weight: 700; }
+.art.chosen { background: color-mix(in srgb, var(--mark) 6%, transparent); }
 .art:hover { background: var(--paper-2); }
 .art .kind {
   font-family: var(--mono); font-size: 0.67rem; text-transform: uppercase;
@@ -456,17 +466,25 @@ body[data-guest='1'] .brief { pointer-events: none; }
   display: grid; gap: 0.1rem; max-height: 15rem; overflow-y: auto;
 }
 .tgt {
-  display: grid; grid-template-columns: 1.9rem minmax(4rem, 1fr) auto auto auto;
+  display: grid; grid-template-columns: 1.9rem minmax(3rem, 1fr) auto auto auto auto;
   align-items: center; gap: 0.35rem; padding: 0.1rem 0.2rem;
   border: 1px solid transparent; border-radius: 3px; font-size: 0.8rem;
 }
 .tgt:hover { background: var(--paper-2); }
 .tgt.on { background: var(--paper-2); border-color: var(--rule-strong); }
 .tgt-pick {
-  min-height: 30px; min-width: 1.9rem; border: 0; background: none; cursor: pointer;
-  font-family: var(--mono); font-size: 0.72rem; color: var(--ink-3);
+  min-height: 30px; min-width: 1.9rem; border: 1px solid transparent; background: none;
+  cursor: pointer; font-family: var(--mono); font-size: 0.72rem; color: var(--ink-3);
   border-radius: 3px; display: flex; align-items: center; justify-content: center;
 }
+.tgt.chosen .tgt-pick { background: var(--mark); border-color: var(--mark); color: var(--paper); font-weight: 700; }
+.tgt.chosen { background: color-mix(in srgb, var(--mark) 6%, transparent); }
+.tgt-run {
+  min-height: 30px; min-width: 1.5rem; border: 0; background: none; cursor: pointer;
+  color: var(--ink-3); font-size: 0.7rem;
+}
+.tgt-run:hover:not(:disabled) { color: var(--mark); }
+.tgt-run:disabled { opacity: 0.35; cursor: default; }
 .tgt.on .tgt-pick { color: var(--mark); font-weight: 600; }
 .tgt-pick:hover { background: var(--paper-3); color: var(--ink); }
 .tgt-name {
@@ -531,6 +549,11 @@ body[data-guest='1'] .brief { pointer-events: none; }
  * The switch sits in the rail's head, the sentence opens the list, and a binned
  * row has two doors: restore, or delete for good. Colour is never the only
  * signal — the sentence counts, the button fills, the row keeps its mark. */
+.proj-head .grow { flex: 1; }
+.proj-head .job-bin { color: var(--ink-2); border-color: var(--rule-strong); }
+.proj-head .job-bin .bin-word {
+  font-size: 0.66rem; letter-spacing: 0.04em; text-transform: none; margin: 0 0.1rem;
+}
 .job-bin {
   margin-left: auto; display: inline-flex; align-items: center; gap: 0.2rem;
   border: 1px solid var(--line); background: var(--paper); color: var(--ink-3);

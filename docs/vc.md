@@ -175,3 +175,34 @@ VC_URL=http://127.0.0.1:8105 node vc-batch.mjs
 VC_URL=https://vc.<your-domain> node vc-check.mjs       # production
 ./tools/test-vc.sh                                     # all three
 ```
+
+## v1.6 — the tick says what the run covers
+
+A batch answers the same rules against several candidates, and a person rarely
+wants all of it: sometimes one row, sometimes two of three, sometimes one rule
+against everything. That choice is now a tick, and an **empty tick means all of
+it** — a list nobody narrowed is a list that runs whole.
+
+- **Two bins, both in the rail, both with a word.** `♲ inputs` (the rules and
+  proofs of the open check) and `♲ checks` (the checks themselves). The row bin
+  used to sit at the bottom of the work column, under the candidates, where it
+  read as one more piece of the check; a place with a name belongs on the left.
+  Two ♲ glyphs alone would be a puzzle, so each carries its word and its number.
+- **A tick on every row, every rule, every proof.** It is the same control in all
+  three lists: press to include, press again to leave out. The count beside the
+  heading says how much a run will use (`2 of 3`), the button says what it will
+  do (`run 2 chosen`), and the line under it says how much of the list that is.
+- **▶ runs one row on its own**, without touching the ticks.
+- **The rules and the proofs travel only when ticked.** A run narrowed to one
+  rule sends that rule's text and no other; the proofs are filtered per row, so
+  each candidate still gets only its own.
+- **`all` and `none` are one press each**, and `none` returns to "everything",
+  which is what `run all` means by default.
+- **The run button is never covered.** The bar that held the row bin was the
+  thing sitting over the foot of the candidate list on a short column; it is gone
+  with the bin.
+
+`vc-batch.mjs` grew eleven assertions for this: both bins inside the rail, both
+carrying a word, no bin left in the work column, the count lines, ▶ running one,
+only the ticked rule in the request body, two of three chosen, `all`/`none`.
+
