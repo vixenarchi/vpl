@@ -162,8 +162,15 @@ migration: **none in this matrix**, and all seven shut, while `share-check` 23,
 ## How to ask again
 
 ```
-./tools/test-all.sh          # 40 groups, incl. the three below
+./tools/test-all.sh          # 50 groups, incl. the five below
 ```
+
+The authorization grid needs **three accounts** on the project — an owner, a
+guest it shares with, and a third party nobody invited — because two cannot tell
+"the owner's editor" from "a stranger". Defaults are the throwaway accounts the
+other laptop made: `xxx123@vpl.local`, `yyy123@vpl.local`, `zzz123@vpl.local`,
+password = the name. Override with `AUTHZ_OWNER` / `AUTHZ_GUEST` / `AUTHZ_THIRD`
+(and `_PASS`). Without them the groups exit 78 and the run is **not** green.
 
 - `md-check.mjs` — 27, including the three payloads from VN-1.
 - `va-sec.mjs` — 4: an editor cannot queue a job, cannot write `task.md`, can
