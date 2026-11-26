@@ -8,7 +8,7 @@
  */
 
 import * as db from './lib/supabase.js';
-import { render as renderMd, hint, cleanHtml } from './lib/markdown.js';
+import { render as renderMd, hint, cleanHtml, safeEditorHtml, primeSanitizer } from './lib/markdown.js';
 import { mdToHtml, htmlToMd, wrapInBox } from './lib/editor.js';
 import * as ai from './vendor/ai.js';
 import * as settings from './vendor/settings.js';
@@ -225,6 +225,9 @@ boot();
 async function boot() {
   wire();
   paintThemeButtons();
+  /* the sanitiser is primed before any note can be opened, so the editable
+   * surface is cleaned synchronously — see lib/markdown.js:safeEditorHtml */
+  primeSanitizer();
 
   let fitTimer = 0;
   window.addEventListener('resize', () => {
@@ -1462,7 +1465,7 @@ function paintWrite() {
 
   const body = S.current.body || '';
   if (useSrc) el.mdSource.value = body;
-  else el.editable.innerHTML = mdToHtml(body);
+  else el.editable.innerHTML = safeEditorHtml(mdToHtml(body));
 }
 
 /* The surface on screen is the truth before we leave it. */
@@ -2568,7 +2571,7 @@ async function runAgent(e) {
 
 function agentInto(where) {
   if (!agentAnswer) return;
-  const html = mdToHtml(agentAnswer);
+  const html = safeEditorHtml(mdToHtml(agentAnswer));
   if (where === 'end') el.editable.insertAdjacentHTML('beforeend', html);
   else el.editable.innerHTML = html;
   el.agentOut.hidden = true;
@@ -2680,6 +2683,11 @@ async function showWhoHint(email) {
     whoHint('no account with this address yet — the invitation will wait.', 'wait');
     return;
   }
+
+  /* The database answers a name and a date only for an address you already
+   * share with; for anybody else it says "that account exists" and nothing more
+   * (20261219000000). So the line is built from what actually arrived. */
+  if (!hint.made) return whoHint('this address has an account.', 'known');
 
   const age = accountAge(hint.made);
   const made = new Date(hint.made).getTime();

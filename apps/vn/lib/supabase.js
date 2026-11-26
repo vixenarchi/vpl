@@ -188,15 +188,16 @@ export async function listShares() {
   return data;
 }
 
-/* limit(1) rather than maybeSingle(): the object+json variant answers a
- * missing row with 406, which the browser logs as a failed request even
- * though it is the normal "this link is dead" case. */
+/* A code is handed to a function, never used as a filter on a table: a filter
+ * on a table means the table can be read, and a table of codes is a list of
+ * everybody's public links. `vn_link_info` answers with the one root this code
+ * opens (or nothing). No account needed, and nothing to enumerate. */
 export async function getShareByCode(code) {
   const db = await client();
-  const { data, error } = await db.from('vn_shares')
-    .select(SHARE_FIELDS).eq('code', code).limit(1);
+  const { data, error } = await db.rpc('vn_link_info', { p_code: code });
   if (error) throw error;
-  return data?.[0] ?? null;
+  const row = Array.isArray(data) ? data[0] : data;
+  return row ?? null;
 }
 
 /* The rows behind a link: a security definer function handed the code, so a

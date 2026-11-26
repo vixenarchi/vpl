@@ -103,6 +103,13 @@ done
 run "va · canvas" node va-canvas.mjs
 run "va · hand-off" node va-handoff.mjs
 
+# ── 3b. the security regressions, one per finding that crossed a line ─
+# These are not the audit: they are the four questions a person may ask again
+# after any change — may an editor start a machine, may an editor take a row,
+# may a stranger read the codes, may a note carry a way in.
+run "va · who may queue" env VA_URL="${VA_URL:-http://127.0.0.1:${PORT[va]}}" node va-sec.mjs
+run "vd · a row is not a field" env VD_URL="${VD_URL:-http://127.0.0.1:${PORT[vd]}}" node owner-guard.mjs
+
 # ── 4. the floor under every control, in all eight ───────────────────
 for app in vn vi vr vz vd vc vp va; do
   if [ "$PROD" = "1" ]; then

@@ -261,6 +261,61 @@ check(modeBtn && /[◐☀]/.test(modeBtn.text),
 check(modeBtn && modeBtn.size >= 13, 'and the icon is big enough to read', String(modeBtn && modeBtn.size));
 await page.keyboard.press('Escape');
 
+/* ── a link is an address, not a way in ─────────────────────────────
+ * VN-1: the editor's own markdown-to-html let a note carry
+ * `[x](" autofocus onfocus="alert(1)" x=")` — a quote closed href="…" early
+ * and the rest of it became attributes that run on open. The note is written
+ * straight into the database here, because the point is a note somebody else
+ * could have written. */
+const PAYLOADS = [
+  '[x](javascript:alert%281%29)',
+  '[x](" autofocus onfocus="alert(1)" x=")',
+  'plain <img src=x onerror=alert(1)> text',
+];
+const xssId = await page.evaluate(async (body) => {
+  const db = await import('/lib/supabase.js');
+  const n = await db.createNote({ title: 'xss probe', body, parent_id: null });
+  await db.updateNote(n.id, { body });
+  return n.id;
+}, PAYLOADS.join('\n\n'));
+
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForSelector('#app', { state: 'visible', timeout: 25000 });
+await page.waitForTimeout(900);
+await page.evaluate(async (id) => {
+  const db = await import('/lib/supabase.js');
+  await db.openNote(id);
+}, xssId).catch(() => {});
+/* open it the way a person would: through the list */
+await page.locator(`[data-id="${xssId}"]`).click();
+await page.waitForTimeout(600);
+
+const surface = await page.evaluate(() => {
+  const ed = document.getElementById('editable');
+  if (!ed) return { html: '', bad: ['no editor'] };
+  const bad = [];
+  for (const el of ed.querySelectorAll('*')) {
+    for (const a of el.attributes) {
+      if (/^on/i.test(a.name)) bad.push(`${el.tagName} ${a.name}`);
+      if ((a.name === 'href' || a.name === 'src') && /^\s*javascript:/i.test(a.value)) bad.push(`${el.tagName} ${a.name}=${a.value}`);
+    }
+  }
+  const title = document.getElementById('title')?.value ?? '';
+  return { html: ed.innerHTML.slice(0, 400), bad, text: ed.textContent, title };
+});
+check(surface.bad.length === 0, 'a note cannot carry a way in: no on* and no javascript: in the editor',
+  JSON.stringify(surface.bad) + ' ' + surface.html);
+check(surface.title === 'xss probe', 'the probe note is the one on screen', JSON.stringify(surface.title));
+check(/onerror=alert/.test(surface.text), 'an address nobody meant is dropped, the words stay',
+  JSON.stringify(surface.text.slice(0, 200)));
+check(!/javascript:/i.test(surface.html), 'javascript: never reaches the editor at all',
+  surface.html);
+
+await page.evaluate(async (id) => {
+  const db = await import('/lib/supabase.js');
+  await db.deleteNote(id);
+}, xssId).catch(() => {});
+
 /* ── tidy ─────────────────────────────────────────────────────────── */
 await page.evaluate(async (probe) => {
   const db = await import('/lib/supabase.js');

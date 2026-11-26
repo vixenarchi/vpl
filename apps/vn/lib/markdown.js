@@ -105,6 +105,38 @@ const KEEP = {
   BLOCKQUOTE: 'blockquote', HR: 'hr',
 };
 
+/* ── the editable surface's own html ─────────────────────────────────
+ * The writing surface builds its html itself (lib/editor.js) and does not go
+ * through marked. That is not a reason to skip the sanitiser: this is the same
+ * page, with the same key in localStorage, and a note can arrive from somebody
+ * else's pen. The list of what the editor may contain is fixed and small.
+ *
+ * The libs are primed once at boot so this stays synchronous: a sanitizer that
+ * has to be awaited is a sanitizer that a call site will forget to await. */
+const EDITOR_TAGS = ['p', 'br', 'strong', 'em', 's', 'code', 'pre', 'a',
+  'h1', 'h2', 'h3', 'h4', 'ul', 'ol', 'li', 'blockquote', 'hr',
+  'div', 'span', 'button'];
+const EDITOR_ATTR = ['href', 'class', 'data-lang', 'data-act', 'type', 'title',
+  'contenteditable'];
+
+let PURIFY_READY = null;
+
+export async function primeSanitizer() {
+  try { PURIFY_READY = (await libs()).purify; } catch { /* offline: the editor's html is built by us */ }
+  return !!PURIFY_READY;
+}
+
+export function safeEditorHtml(html) {
+  const text = String(html ?? '');
+  if (!PURIFY_READY) return text;
+  return PURIFY_READY.sanitize(text, {
+    ALLOWED_TAGS: EDITOR_TAGS,
+    ALLOWED_ATTR: EDITOR_ATTR,
+    /* a link that survives must survive as a real address */
+    ALLOWED_URI_REGEXP: /^(?:https?|mailto):/i,
+  });
+}
+
 export async function cleanHtml(html) {
   const { purify } = await libs();
   /* style is allowed through the sanitiser only so the emphasis it carries

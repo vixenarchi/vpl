@@ -34,7 +34,8 @@ function loadScript(src) {
 }
 
 const C = 'id,owner_id,label,credits,valid_until,revoked,redeemed_by,redeemed_at,created_at';
-const K = 'id,code_id,owner_id,holder_id,label,credits_left,valid_until,calls,revoked,created_at,last_used_at';
+/* no owner_id: the person paying is not the holder's business (VP-2) */
+const K = 'id,code_id,holder_id,label,credits_left,valid_until,calls,revoked,created_at,last_used_at';
 const H = 'id,key_id,app,model,in_tokens,out_tokens,ms,status,created_at';
 
 /* ── auth ─────────────────────────────────────────────────────────── */
@@ -95,9 +96,11 @@ export async function listCodes() {
   return data;
 }
 
+/* A revoke is a function, not an UPDATE: the client no longer has the right to
+ * write a row of a code or a key, only to throw one switch. */
 export async function revokeCode(id) {
   const db = await client();
-  const { error } = await db.from('vp_codes').update({ revoked: true }).eq('id', id);
+  const { error } = await db.rpc('vp_revoke_code', { p_id: id });
   if (error) throw error;
 }
 
@@ -119,7 +122,7 @@ export async function listKeys() {
 
 export async function revokeKey(id) {
   const db = await client();
-  const { error } = await db.from('vp_keys').update({ revoked: true }).eq('id', id);
+  const { error } = await db.rpc('vp_revoke_key', { p_id: id });
   if (error) throw error;
 }
 

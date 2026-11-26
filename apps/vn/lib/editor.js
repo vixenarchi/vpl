@@ -30,11 +30,24 @@ const INLINE = [
   [/\*\*([^*]+)\*\*/g, '<strong>$1</strong>'],
   [/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>'],
   [/~~([^~]+)~~/g, '<s>$1</s>'],
-  [/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>'],
+  /* A link is a decision, and it is a decision about an address: only the three
+   * schemes a person means are let through. `javascript:` is text with square
+   * brackets around it, not a link. The href has already been through esc(), so
+   * a quote inside it cannot leave the attribute. */
+  [/\[([^\]]+)\]\(([^)]+)\)/g, (m, text, href) => {
+    const url = href.trim().replace(/&amp;/g, '&');
+    if (!/^(https?:|mailto:)/i.test(url)) return text;
+    return `<a href="${href.trim()}">${text}</a>`;
+  }],
 ];
 
+/* Quotes are escaped too. Without that a markdown link whose address contains a
+ * quote closes `href="…"` early and everything after it becomes attributes —
+ * `[x](" autofocus onfocus="alert(1)" x=")` is a note that runs code when it is
+ * opened. Escaping settles it at the source, for every rule, not just links. */
 function esc(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function inline(s) {

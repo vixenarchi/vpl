@@ -134,10 +134,19 @@ export async function onRequestPost({ request, env }) {
     return json({ error: 'use a vp key here, not a provider key' }, 401, request);
   }
 
+  /* A credit is spent before the provider is called, so a request that is too
+   * big to forward must be refused BEFORE the spend — otherwise the holder pays
+   * for a request the door drops. The numbers are the door's, not the model's. */
+  const tooBig = Number(request.headers.get('content-length') || 0) > 1_000_000;
+  if (tooBig) return json({ error: 'that request is too big for this door (1 MB)' }, 413, request);
+
   let body;
   try { body = await request.json(); } catch { return json({ error: 'send json' }, 400, request); }
   if (!Array.isArray(body?.messages) || !body.messages.length) {
     return json({ error: 'no messages' }, 400, request);
+  }
+  if (body.messages.length > 200) {
+    return json({ error: 'too many messages in one call (200 is the ceiling)' }, 413, request);
   }
 
   const hash = await sha256hex(token);

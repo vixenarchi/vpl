@@ -887,7 +887,12 @@ function taskFor(job, refs) {
 
 async function handOver() {
   const p = S.project;
-  if (!p || S.role === 'view') return;
+  /* A job is code on a machine, not a paragraph: only the desk's owner hands
+   * one over, and the database says the same thing (va_jobs_add). */
+  if (!p || S.role !== 'owner') {
+    if (S.role === 'edit') toast('an editor writes text — the owner hands work to an agent');
+    return;
+  }
   const texts = S.artifacts.filter((a) => (a.text || '').trim());
   if (!texts.length) return toast('the pile is empty — paste the brief first');
   const btn = $('#btn-hand');
@@ -927,7 +932,13 @@ function paintJobs() {
   const list = $('#jobs');
   const mine = S.jobs || [];
   list.innerHTML = '';
+  /* the hand-over is the owner's: an editor sees the panel's work but not the
+   * button that starts a machine (va_jobs_add in the database agrees) */
   $('#handoff').hidden = S.role === 'view' || !S.project;
+  $('#btn-hand').hidden = S.role !== 'owner';
+  if (S.role !== 'owner') {
+    $('#hand-msg').textContent = 'the owner of this desk hands work to an agent';
+  }
   if (!mine.length) return;
   for (const j of mine) {
     const li = document.createElement('li');
