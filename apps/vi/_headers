@@ -1,3 +1,26 @@
+# vpl · what every answer from this app carries
+#
+# The policy is the same in all eight, and `serve.py` sends it too, so what is
+# tested locally is what is deployed. Why each allowance is there (C8 in
+# docs/security.md — "every XSS would be the model key", because the key lives in
+# localStorage):
+#
+#   script-src        jsdelivr: marked, DOMPurify, pdf.js, and supabase-js's UMD
+#                     build. 'wasm-unsafe-eval' is pdf.js's decoder, not eval().
+#   style-src         'unsafe-inline' is for the five `style="--x:9%"` attributes
+#                     in vi's funnel drawing; without it the drawing collapses.
+#   font-src          vi's three Google faces.
+#   connect-src       Supabase REST/auth/storage, the suite's own door, jsdelivr.
+#   worker-src        the pdf.js worker, a module loaded from the CDN.
+#   frame/object/base the app never frames, never embeds, never rebases a url.
+#
+# A change here that an app needs must also land in serve.py, or the local suite
+# tests a page that does not exist in production.
+
 /*
   Cache-Control: no-store
   X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.terg.hr https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'

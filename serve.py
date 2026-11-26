@@ -70,11 +70,30 @@ def source_allowed(host):
     return any(h == src or h.endswith('.' + src) for src in SOURCES)
 
 
+# The same policy every deployed app sends (`apps/<app>/_headers`, C8 in
+# docs/security.md). It lives here too on purpose: a suite that runs against a
+# page with no CSP would never notice a change that production refuses.
+CSP = ("default-src 'self'; "
+       "script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; "
+       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+       "font-src 'self' data: https://fonts.gstatic.com; "
+       "img-src 'self' data: blob: https:; "
+       "connect-src 'self' https://*.supabase.co wss://*.supabase.co "
+       "https://api.terg.hr https://cdn.jsdelivr.net; "
+       "worker-src 'self' blob: https://cdn.jsdelivr.net; "
+       "frame-src 'none'; object-src 'none'; base-uri 'self'; "
+       "form-action 'self'; frame-ancestors 'none'")
+
+
 class NoCache(SimpleHTTPRequestHandler):
     def end_headers(self):
         self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
         self.send_header('Pragma', 'no-cache')
         self.send_header('Expires', '0')
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('X-Frame-Options', 'DENY')
+        self.send_header('Referrer-Policy', 'strict-origin-when-cross-origin')
+        self.send_header('Content-Security-Policy', CSP)
         super().end_headers()
 
     def log_message(self, fmt, *args):

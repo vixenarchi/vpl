@@ -1745,3 +1745,49 @@ Both exit 78 without their accounts.
 What this says about the way we work here: the owner's-eye view is the biased
 one. A test that signs in as the person who owns everything can never find a
 sharing bug, and it had been "green" for a month.
+
+---
+
+## 2026-12-24 — the relay and the header
+
+The last two of the security review's findings, and they were both "low" for the
+same reason: nobody could see the exploit from inside.
+
+**C7/VP-4, the relay.** The doors answered the origin list and nothing else, and
+an origin is a header — a program sends what it likes. The obvious fix, an HMAC
+minted by the page, is theatre: the secret would be in the page. So the doors now
+**bound** what they give away instead of pretending to know who is asking:
+`_door.js` refuses anything that is not a POST (405), has no `Origin` (403), is
+not json (415), or is over the route's cap (413) — before reading a body, in one
+file the four doors share, because `vp` had been accepting a megabyte of JSON and
+a form post. `_limit.js` counts sixty calls a minute per address and route in the
+edge cache: per-colo, eventually consistent, a speed bump documented as a speed
+bump. Nothing secret lives behind a door, so the worst a relay can do is spend
+the caller's own quota.
+
+Writing the test found a real bug: the origin list's dotted entries matched
+`abc.vpl-vi.pages.dev` but **not** the stable `vpl-vi.pages.dev`, so the suite's
+own Pages addresses were refused by its own doors. One line, one assertion.
+
+**C8, the header.** No app had a CSP, and the model key and the session are in
+`localStorage` — which makes any XSS in any app a stolen key, not a stolen
+paragraph. All eight now send one policy (`apps/<app>/_headers`), and `serve.py`
+sends it too, so the local suite tests the page that is deployed: jsdelivr for
+the four libraries, no `'unsafe-inline'` for scripts, no `'unsafe-eval'`, and
+`object-src`, `base-uri`, `frame-ancestors` and `form-action` closed.
+
+The first thing the policy refused was the app's own theme boot — four lines of
+inline `<script>` in eight `index.html` files, the thing that stops the flash of
+the wrong theme. It is one file now, `packages/shell/theme.js`, copied into every
+`vendor/` by `stage.sh` and loaded blocking before the stylesheet. Eight copies
+of a script became one copy of a file, and the policy stayed strict, which is the
+shape this repository keeps arriving at: **the shell is a copy, and the checks are
+what make a copy safe.**
+
+`csp-check.mjs` does not read the header and call it a day — it walks each app
+(sign in, open, settings, theme) and then imports pdf.js and starts its worker,
+the one path in the suite that needs `worker-src` and `'wasm-unsafe-eval'`, and
+counts the browser's own "Refused to…" lines: zero, in all eight, 128 assertions.
+`door-check.mjs` proves the refusals and the bound with no network at all.
+
+The gate is **52 groups**.

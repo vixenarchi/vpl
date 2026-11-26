@@ -54,6 +54,69 @@ in the origin that holds the model key and the session.
 - The editable surface is cleaned through DOMPurify (`safeEditorHtml`), primed at
   boot so no call site can forget to await it.
 
+## The relay, and the header
+
+Two findings were "low" and both were about the same thing: the suite trusted a
+thing a caller can write.
+
+**C7/VP-4 · `Origin` is not authentication.** The doors answered the origin list
+and nothing else, so any program could send `Origin: https://vn.terg.hr` and use
+`api.terg.hr` as its own proxy. The tempting fix — a timestamp plus an HMAC
+minted by the page — is theatre: the secret would be in the page, and the page is
+public. What a relay with no server can honestly do is **bound** what it gives
+away, so that is what the doors do now:
+
+- `_door.js` — every door refuses before it reads a body: not a POST (405), no
+  `Origin` at all (403: a door is for pages, and a page always has one), not
+  `application/json` (415), over the route's cap (413). One file, so the four
+  doors cannot drift; `vp` used to accept a megabyte of JSON and a form post.
+- `_limit.js` — sixty calls a minute per address and route (`/search` 20,
+  `/chat` and `/vp` 60, `/fetch` 30), counted in the edge cache. Per-colo and
+  eventually consistent: a speed bump on abuse, not a quota anybody is billed
+  for. It is written down as a speed bump, not as a lock.
+- Nothing secret lives behind a door: the key is the caller's own, and a `vp`
+  credit is spent before the provider is called. The worst a relay can do is
+  spend the caller's own quota.
+
+Found while testing that: the origin list's dotted entries (`'.vpl-vi.pages.dev'`)
+matched `abc.vpl-vi.pages.dev` but **not** the stable `vpl-vi.pages.dev`, so the
+suite's own Pages addresses were refused by the doors. `vpl.pages.dev` (vn's
+oldest address) worked only because it is listed with the full name. One line in
+`corsFor`, one assertion in `door-check`.
+
+**C8 · there was no CSP, and the key is in `localStorage`.** Every app carried
+`Cache-Control` and `nosniff` and nothing else, so any XSS in any app was not a
+stolen paragraph — it was the model key and the session. All eight now send the
+same policy (`apps/<app>/_headers`), and `serve.py` sends it too, so the local
+suite tests the page that is deployed:
+
+- `script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net` — the four
+  libraries and nothing else; no `'unsafe-inline'`, no `'unsafe-eval'`.
+- `style-src` allows `'unsafe-inline'` for five `style="--x:9%"` attributes in
+  vi's funnel drawing. Style injection is not script execution, and that is the
+  only reason it is there.
+- `connect-src` names Supabase, the door and the CDN; `worker-src` the pdf worker;
+  `object-src`, `base-uri`, `frame-ancestors`, `form-action` are closed.
+
+The first thing the policy refused was the app's own theme boot: a four-line
+inline `<script>` in each of the eight `index.html`. It is now
+`packages/shell/theme.js` (a copy in every `vendor/`), loaded blocking before the
+stylesheet — one file instead of eight copies and eight hashes, and the flash of
+the wrong theme is still gone.
+
+One thing it found that is not in this repository: on **`vn.terg.hr`** the edge
+injects Cloudflare's Web Analytics beacon (`static.cloudflareinsights.com`) into
+the page. The policy blocks it — a third-party script is against a rule of this
+suite — so it costs nothing but a console line, and the check names the host
+rather than failing on it. The fix is a switch in the Cloudflare dashboard (Web
+Analytics off for the zone); until then `csp-check` says so in its output.
+
+`csp-check.mjs` proves the policy is *usable*, not merely present: it walks all
+eight — sign in, open, settings, theme, then imports pdf.js and starts its worker
+— and counts the browser's own "Refused to…" lines. **Zero**, in all eight, 128
+assertions. `door-check.mjs` proves the four refusals and the bound with 26, no
+network at all.
+
 ## The systematic one
 
 **C2 · a row could change hands.** Six apps had `with check (share_role(id) =
@@ -162,7 +225,7 @@ migration: **none in this matrix**, and all seven shut, while `share-check` 23,
 ## How to ask again
 
 ```
-./tools/test-all.sh          # 50 groups, incl. the five below
+./tools/test-all.sh          # 52 groups, incl. the seven below
 ```
 
 The authorization grid needs **three accounts** on the project — an owner, a
@@ -179,8 +242,10 @@ password = the name. Override with `AUTHZ_OWNER` / `AUTHZ_GUEST` / `AUTHZ_THIRD`
   cannot move it to another document, and the words that were allowed did land.
 - `authz-matrix.mjs` — the whole grid, six apps × two roles × a stranger.
 - `authz-confirm.mjs` — 18 proofs, one per finding in §2026-11-26.
+- `door-check.mjs` — 26: the four refusals, the bound, the origin list.
+- `csp-check.mjs` — 128: the header in all eight, and a browser walk under it.
 
-Still open, and known: `Origin` is not authentication (C7/VP-4 — a non-browser
-client can claim any allow-listed origin), there is no CSP (C8), `/fetch` follows
-a redirect before re-checking the host (VC-3), and the model key lives in
-`localStorage`. Those are the next layer, not this one.
+Still open, and known: `/fetch` follows a redirect before re-checking the host
+(VC-3), and the model key lives in `localStorage` — CSP is the second line there,
+not the first. The relay is bounded rather than authenticated (C7/VP-4), which is
+the honest shape for a proxy with no server behind it.

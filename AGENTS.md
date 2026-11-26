@@ -51,6 +51,7 @@ apps/<app>/vendor/ a COPY of packages/shell — git-ignored, made by tools/stage
 packages/shell/    the shared shell: tokens.css ai.js settings.js who.js
                    dock.js notices.js words.js engine.js
 apps/api/          the one origin the browser talks to: chat, search, fetch, vp
+                   (_door.js: the four refusals; _limit.js: the bound)
 tools/vpl-api.mjs  the API an agent uses: a token, then get/post/patch/delete
 skills/            two skills an agent can run as it stands: notes, and the
                    seven project apps (each SKILL.md + one script)
@@ -67,7 +68,7 @@ the rest of the repo is gone. Apps do not import each other, do not write each
 other's tables, and **never link to a sibling**. Advertising stays a copy you
 paste, never a pointer.
 
-## Twelve rules that bite
+## Thirteen rules that bite
 
 Each of these has been broken in this repository, and each is enforced by a test.
 The full list with reasons is `docs/rules.md`.
@@ -103,6 +104,9 @@ The full list with reasons is `docs/rules.md`.
 12. **A share is the owner's decision, and a bin is the owner's too.** Policies
     are OR'd, so a narrower rule added beside a wide one changes nothing — drop
     the old ones first. `authz-matrix`, `authz-confirm`.
+13. **No inline scripts, and every page carries the same CSP.** An inline boot
+    script is what a strict policy refuses; the shell's `theme.js` exists for
+    that reason. `csp-check` walks the page under the policy.
 
 ## The style of the code
 

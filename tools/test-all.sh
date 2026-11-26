@@ -143,6 +143,10 @@ run "va · hand-off" node va-handoff.mjs
 # Six apps, two roles, a third account that must see nothing. The grid walks
 # every cell; the confirmations walk the seven findings one at a time, so a
 # regression says which one came back. Both exit 78 without the accounts.
+# C7/VP-4 (a door is a relay with a bound, not a lock) and C8 (the policy every
+# page carries) — no network, one browser walk per app
+run "doors · four refusals + the bound" node door-check.mjs
+run "csp · the policy, in all eight" node csp-check.mjs
 run "authz · the grid" node authz-matrix.mjs
 run "authz · one proof per finding" node authz-confirm.mjs
 

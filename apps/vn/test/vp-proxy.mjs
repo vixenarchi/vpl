@@ -60,13 +60,24 @@ const providerKey = await ask({ ...CORS, authorization: 'Bearer sk-real-key' }, 
 ok(providerKey.status === 401 && /vp key/i.test(providerKey.body.error),
   'a provider key is not a vp key');
 
-/* a server calling with a key has no Origin: that is allowed, and the key is
- * the credential. A browser always sends one, and a wrong one is refused. */
+/* C7/VP-4: an Origin is required, because a door is for pages. This used to say
+ * the opposite — "a server with no Origin is allowed, the key is the
+ * credential" — and that made the door an open relay for anything that could
+ * send an HTTP request. The key is still the credential; the Origin is what a
+ * page always has and a program has to lie about. */
 spendAnswer = { ok: false, status: 200, body: [{ ok: false, reason: 'that key is not one of ours' }] };
 const serverCall = await ask({ 'content-type': 'application/json', authorization: 'Bearer vp_x' },
   { model: 'm', messages: msgs });
-ok(serverCall.status !== 403 || !/origin/.test(serverCall.body.error),
-  'a caller with no Origin (a server, an app\'s own /api/chat) is not refused for that');
+ok(serverCall.status === 403 && /origin/i.test(serverCall.body.error || ''),
+  'a caller with no Origin is refused, and told why', `${serverCall.status} ${JSON.stringify(serverCall.body)}`);
+
+const notJson = await ask({ ...CORS, 'content-type': 'text/plain', authorization: 'Bearer vp_x' },
+  { model: 'm', messages: msgs });
+ok(notJson.status === 415, 'a form post is refused before the spend (415)', String(notJson.status));
+
+const tooBig = await ask({ ...CORS, 'content-length': '4000000', authorization: 'Bearer vp_x' },
+  { model: 'm', messages: msgs });
+ok(tooBig.status === 413, 'a body over the cap is refused before the spend (413)', String(tooBig.status));
 
 const noMessages = await ask({ ...CORS, authorization: 'Bearer vp_x' }, { model: 'm' });
 ok(noMessages.status === 400, 'no messages, no call');

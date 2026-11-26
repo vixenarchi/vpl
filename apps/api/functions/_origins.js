@@ -4,9 +4,11 @@
  * question, and three copies of a security decision drift apart. Edit this list
  * to your own addresses; nothing else in the proxy needs changing.
  *
- * An entry with a leading dot matches any subdomain (`'.example.pages.dev'`),
- * a full entry must match exactly. Local development is always allowed: a page
- * at http://127.0.0.1:8102 is a page.
+ * An entry with a leading dot matches that host *and* any subdomain
+ * (`'.example.pages.dev'` covers `example.pages.dev` and `abc123.example.pages.dev`
+ * — a Pages project answers on both, and the stable one was the address that
+ * did not match). A full entry must match exactly. Local development is always
+ * allowed: a page at http://127.0.0.1:8102 is a page.
  *
  * The keys the doors carry are the caller's own, so a wrong origin can only
  * spend its own quota — but an open relay is still an open relay, and a list is
@@ -44,6 +46,8 @@ export function corsFor(request) {
   let host = '';
   try { host = new URL(origin).hostname.toLowerCase(); } catch { return ''; }
   const local = host === '127.0.0.1' || host === 'localhost' || host === '0.0.0.0';
-  const ok = local || ORIGINS.some((o) => (o.startsWith('.') ? host.endsWith(o) : origin === o));
+  const ok = local || ORIGINS.some((o) => (o.startsWith('.')
+    ? host === o.slice(1) || host.endsWith(o)
+    : origin === o));
   return ok ? origin : '';
 }

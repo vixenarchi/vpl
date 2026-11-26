@@ -16,6 +16,8 @@
  */
 
 import { corsFor } from './_origins.js';
+import { refusal, tooMany } from './_door.js';
+import { take } from './_limit.js';
 
 const SUPABASE = 'https://ebhrjstllsazywbxnbqt.supabase.co';
 
@@ -123,6 +125,13 @@ function completionsUrl(base) {
 }
 
 export async function onRequestPost({ request, env }) {
+  /* the four things every door refuses, and then the bound: see _door.js and
+   * _limit.js. Origin is not authentication (C7/VP-4) — this is what a
+   * relay with no server can honestly do about that. */
+  const early = refusal(request, { route: '/vp', maxBytes: 1048576 });
+  if (early) return early;
+  const gate = await take(globalThis.caches?.default, request, { route: '/vp', limit: 60, window: 60 });
+  if (!gate.ok) return tooMany(request, gate.retryAfter);
   const origin = request.headers.get('Origin');
   if (origin && !corsFor(request)) {
     return json({ error: 'this origin may not use the door' }, 403, request);

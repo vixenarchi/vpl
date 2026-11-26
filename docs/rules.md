@@ -136,6 +136,19 @@ Run the proof with `./tools/test-all.sh`, or one at a time from `apps/vn/test`
   → `authz-confirm`
 - **Closing a hole can lock out a colleague** — `va_jobs` back to "your own row"
   locked the worker out of claiming a job. → `va-handoff`
+- **`Origin` is not authentication.** A program sends what it likes, so a door
+  needs a *bound*, not a lock: an Origin is required (a page always has one), a
+  body is json and capped, and an address gets a rate. → `door-check`
+- **A refusal must be readable by the page it refuses**, or the person sees a
+  network error instead of the sentence. → `door-check`
+- **No `'unsafe-inline'` for scripts, ever** — and an inline boot script is
+  exactly what a strict policy refuses, so the shell carries `theme.js`.
+  → `csp-check`
+- **A header is only worth what the page still does under it.** Prove the walk,
+  not the string: sign in, open, settings, theme, and pdf.js's worker.
+  → `csp-check`
+- **A dotted origin entry must match the bare host as well as the subdomains** —
+  `'.vpl-vi.pages.dev'` did not cover `vpl-vi.pages.dev`. → `door-check`
 
 
 ## The apps that think in batches and jobs

@@ -14,6 +14,8 @@
  */
 
 import { corsFor } from './_origins.js';
+import { refusal, tooMany } from './_door.js';
+import { take } from './_limit.js';
 
 const ALLOWED = [
   'api.openai.com',
@@ -73,6 +75,13 @@ export async function onRequestOptions({ request }) {
 }
 
 export async function onRequestPost({ request }) {
+  /* the four things every door refuses, and then the bound: see _door.js and
+   * _limit.js. Origin is not authentication (C7/VP-4) — this is what a
+   * relay with no server can honestly do about that. */
+  const early = refusal(request, { route: '/chat', maxBytes: 524288 });
+  if (early) return early;
+  const gate = await take(globalThis.caches?.default, request, { route: '/chat', limit: 60, window: 60 });
+  if (!gate.ok) return tooMany(request, gate.retryAfter);
   const allow = corsFor(request);
   if (!allow) {
     return json({ error: 'this origin may not use the proxy' }, 403, request);
