@@ -322,8 +322,12 @@ check(await until(async () => (await binCount()) === binBefore), 'restore takes 
 
 await leaveBin();
 await snap('after-leave-1');
-const back = await liveCount();
-check(back === before, 'and the row is on the list again', `${before} → ${back}`);
+/* The question is not "how many rows" — a list can hold rows from an earlier
+ * run, and a count is a fact about the whole list. The question is whether *this
+ * row* came back, so the row is what is looked for. */
+const backText = await until(async () => (await pg.locator(spec.live).allTextContents()).join(' ').includes(STAMP)
+  || (await pg.locator(spec.live).allTextContents()).join(' ').includes(TEXT), 8000);
+check(backText, 'and the row is on the list again', `${before} → ${await liveCount()}`);
 
 /* ── for good is for good ──────────────────────────────────────────── */
 /* the second half starts from the list as it is now, not as it was before the

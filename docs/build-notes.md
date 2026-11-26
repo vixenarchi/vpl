@@ -1551,3 +1551,32 @@ Two lessons, both cheap:
   page looks right, and only the message nobody can see is missing. `chrome-check`
   now lists every id twice and fails, in all eight apps. It would have caught
   these three on the day they were written.
+
+## 2026-11-25 — a policy is about a row; the bug was about a column
+
+RLS answers "may this person touch this row". Four findings in the review were
+the same mistake wearing different clothes: the code treated a permission on a
+row as a permission on its **fields**, and each time the field was the one that
+mattered — `credits_left` (money), `user_id` (whose document it is), `name` (who
+somebody is), and, in `va`, the `task.md` that a model with a shell reads.
+
+The fix has the same shape in all four: **stop writing the row, write one thing
+through a function; refuse the rest with a trigger.** A `with check` cannot do
+this job at all — by the time it runs, the column already holds the new value.
+
+Two things went wrong on the way and both are worth the ink:
+
+- **A policy whose `using` reads a column the caller may not read fails closed.**
+  Taking `owner_id` away from `vp`'s holders looked like tightening a hole; it
+  silently broke the charges ledger for everybody, holder and issuer alike,
+  because the policy expression is evaluated with the caller's privileges. The
+  answer is not to put the column back — it is to ask the question in one
+  function that runs as its owner (`vp_can_see_key`).
+- **A guard must name the write it permits.** `vp_codes_guard` refused every
+  update by a person. Redeeming a slip *is* an update by a person
+  (`redeemed_by = auth.uid()`), so the button stopped working and the failure
+  looked like a broken app rather than a rule. The guard now permits the one
+  forward step, and says so in a sentence.
+
+Also learned: `create policy … for insert … as restrictive` is a syntax error —
+`as restrictive` comes **before** `for`. It fails at the push, not in review.
