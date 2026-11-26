@@ -17,12 +17,14 @@
  *   8. the page never gains a horizontal scrollbar because of it
  *
  *   APP=vr PORT=8101 VPL_EMAIL=… VPL_PASS=… node rail-check.mjs
+ *   APP=vr BASE_URL=https://vpl-vr.pages.dev node rail-check.mjs   (a deployment)
  */
 import { chromium } from 'playwright';
 
 const APP = process.env.APP || 'vi';
 const PORT = process.env.PORT || 8100;
-const BASE = `http://127.0.0.1:${PORT}/`;
+/* BASE_URL wins, so the same suite can be asked of a deployment */
+const BASE = process.env.BASE_URL ? `${process.env.BASE_URL.replace(/\/$/, '')}/` : `http://127.0.0.1:${PORT}/`;
 const EMAIL = process.env.VPL_EMAIL;
 const PASS = process.env.VPL_PASS;
 
