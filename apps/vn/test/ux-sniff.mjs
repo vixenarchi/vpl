@@ -34,7 +34,7 @@ const SMALL_HIT = 30;      // px, below this a control is a coin toss on a phone
 const SMALL_TYPE = 10.5;   // px, below this the words are decoration
 
 const audit = ({ SMALL_HIT, SMALL_TYPE }) => {
-  const out = { small: [], tiny: [], unnamed: [], overflow: 0, rings: 0, ringsTested: 0 };
+  const out = { small: [], tiny: [], unnamed: [], overflow: 0, rings: 0, ringsTested: 0, pageScroll: 0 };
   const visible = (el) => {
     const r = el.getBoundingClientRect();
     const cs = getComputedStyle(el);
@@ -76,6 +76,11 @@ const audit = ({ SMALL_HIT, SMALL_TYPE }) => {
     if (px && px < SMALL_TYPE) out.tiny.push(`${px}px «${el.textContent.trim().slice(0, 24)}»`);
   }
   out.overflow = Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  /* One thing scrolls at a time, and it is the work column. A page that scrolls
+   * carries the bar and the rail off the top of the screen — which is how a bin
+   * banner "in the middle" happens, and how a person loses sight of who is
+   * signed in while reading. */
+  out.pageScroll = Math.max(0, document.documentElement.scrollHeight - innerHeight);
   return out;
 };
 
@@ -143,6 +148,7 @@ for (const app of list) {
   console.log(`  type under ${SMALL_TYPE}px:      ${(phone.tiny.length ? phone.tiny.slice(0, 4).join(' · ') : 'none')}`);
   console.log(`  unnamed controls:           ${phone.unnamed.length ? phone.unnamed.slice(0, 4).join(' · ') : 'none'}`);
   console.log(`  sideways on a phone:        ${phone.overflow ? phone.overflow + 'px' : 'no'}`);
+  console.log(`  the page scrolls by:        ${desk.pageScroll ? desk.pageScroll + 'px' : 'nothing'}`);
   console.log(`  console:                    ${r.errors.length ? r.errors[0].slice(0, 80) : 'quiet'}`);
   if (desk.overflow) console.log(`  sideways on the desk:       ${desk.overflow}px`);
 }
@@ -150,6 +156,6 @@ for (const app of list) {
 await br.close();
 
 const total = rows.reduce((n, r) => n + (r.phone?.work.small.length || 0) + (r.phone?.work.tiny.length || 0)
-  + (r.phone?.work.overflow ? 1 : 0) + (r.work.overflow ? 1 : 0), 0);
+  + (r.phone?.work.overflow ? 1 : 0) + (r.work.overflow ? 1 : 0) + (r.work.pageScroll ? 1 : 0), 0);
 console.log(`\nux-sniff: ${rows.length} app(s), ${total} measurable problem(s)`);
 process.exit(total > 0 ? 1 : 0);

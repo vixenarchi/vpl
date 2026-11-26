@@ -32,6 +32,8 @@ const S = {
   artifacts: [],
   bin: [],             // inputs in the recycle bin
   binMode: false,
+  jobBin: false,
+  jobsBinned: 0,
   outputs: [],
   jobs: [],
   role: null,          // owner | edit | view | null
@@ -215,8 +217,14 @@ async function enterApp() {
 
 /* ── the rail ─────────────────────────────────────────────────────── */
 async function loadProjects() {
-  S.projects = await db.listProjects();
+  S.projects = await db.listProjects({ bin: S.jobBin });
+  /* the count on the switch is how a person knows there is a way back, so it is
+   * read whether the bin is open or not — one small query, and only when shut */
+  S.jobsBinned = S.jobBin
+    ? S.projects.length
+    : await db.listProjects({ bin: true }).then((r) => r.length).catch(() => S.jobsBinned || 0);
   renderRail();
+  paintJobBin();
 }
 
 function renderRail() {
@@ -224,35 +232,89 @@ function renderRail() {
   list.innerHTML = '';
   for (const p of S.projects) {
     const li = document.createElement('li');
-    li.className = 'proj-row' + (p.id === S.project?.id ? ' on' : '');
+    li.className = 'proj-row' + (p.id === S.project?.id ? ' on' : '') + (S.jobBin ? ' bin-row' : '');
     li.dataset.id = p.id;
     const tpl = templateById(p.template);
     const mine = p.user_id === S.session?.user?.id;
-    li.innerHTML = `<button class="pick" type="button">${esc(p.title || 'untitled job')}</button>`
-      + `<span class="tpl" title="${esc(tpl.label)}">${esc(tpl.id)}</span>`
-      + (mine ? '<button class="kill" type="button" title="delete the job">✕</button>' : '');
+    /* in the bin a row has two doors and no pick: put it back, or end it */
+    li.innerHTML = S.jobBin
+      ? `<span class="pick bin-row-name">${esc(p.title || 'untitled job')}</span>`
+        + `<span class="tpl" title="${esc(tpl.label)}">${esc(tpl.id)}</span>`
+        + '<span class="tools">'
+        + '<button class="row-restore" type="button" data-back title="put it back">restore</button>'
+        + '<button class="kill" type="button" data-purge title="delete it for good">✕</button>'
+        + '</span>'
+      : `<button class="pick" type="button">${esc(p.title || 'untitled job')}</button>`
+        + `<span class="tpl" title="${esc(tpl.label)}">${esc(tpl.id)}</span>`
+        + (mine ? '<button class="kill" type="button" title="move the job to the recycle bin">✕</button>' : '');
     list.append(li);
   }
   $('#proj-none').hidden = S.projects.length > 0;
+  $('#proj-none').textContent = S.jobBin ? 'nothing in the bin.' : 'no jobs yet. one job is one picture you have to draw in words.';
 }
 
 $('#proj-list').addEventListener('click', async (e) => {
   const kill = e.target.closest('.kill');
+  const back = e.target.closest('[data-back]');
+  const purge = e.target.closest('[data-purge]');
   const row = e.target.closest('.proj-row');
   if (!row) return;
   const id = row.dataset.id;
+  if (back) {
+    const p = S.projects.find((x) => x.id === id);
+    await db.restoreProject(id);
+    /* restoring leaves the bin and opens what was restored: a job that comes
+     * back into a list you are not looking at is a job that came back silently */
+    S.jobBin = false;
+    await loadProjects();
+    await openJob(id).catch(() => {});
+    toast('“' + (p?.title || 'the job') + '” is back');
+    return;
+  }
+  if (purge) {
+    const p = S.projects.find((x) => x.id === id);
+    if (!confirm(`delete “${p?.title || 'this job'}” for good?`)) return;
+    await db.deleteProject(id);
+    await loadProjects();
+    return;
+  }
   if (kill) {
     const p = S.projects.find((x) => x.id === id);
-    if (!confirm(`delete “${p?.title || 'this job'}” and everything in it?`)) return;
-    await db.deleteProject(id);
+    /* ✕ bins. A job holds a whole document, so it keeps its words and the
+     * rail's bin is the way back; nothing is destroyed from the live list. */
+    await db.binProject(id);
     if (S.project?.id === id) S.project = null;
     await loadProjects();
     if (S.projects[0]) await openJob(S.projects[0].id);
     else renderWelcome();
+    toast('“' + (p?.title || 'the job') + '” is in the recycle bin');
     return;
   }
   await openJob(id);
 });
+
+/* The bin in the rail: a switch, a count, a sentence, and an emptying that asks
+ * with a number in it. */
+function paintJobBin() {
+  const btn = $('#btn-job-bin');
+  if (!btn) return;
+  const n = S.jobsBinned || 0;
+  btn.setAttribute('aria-pressed', String(S.jobBin));
+  btn.classList.toggle('on', S.jobBin);
+  btn.title = S.jobBin ? 'back to the jobs' : 'the recycle bin of jobs (' + n + ')';
+  $('#job-bin-count').textContent = n ? String(n) : '';
+  $('#job-bin-banner').hidden = !S.jobBin;
+  $('#job-bin-note').textContent = S.jobBin
+    ? (n ? `${n} job${n === 1 ? '' : 's'} binned — restore one, or delete it for good`
+         : 'nothing in it — a deleted job waits here')
+    : '';
+  $('#proj-list').classList.toggle('bin-mode', S.jobBin);
+}
+
+$('#btn-job-bin').onclick = async () => {
+  S.jobBin = !S.jobBin;
+  await loadProjects();
+};
 
 $('#btn-new').onclick = async () => {
   const p = await db.createProject('untitled job', DEFAULT_TEMPLATE);

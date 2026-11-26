@@ -525,3 +525,14 @@ body.guest #projects { display: none; }
 .ai-acc-note, .ai-acc-msg { flex-basis: 100%; margin: 0; font-size: .8rem; opacity: .72; }
 .ai-acc-msg { opacity: .9; }
 .ai-acc-msg:empty { display: none; }
+
+/* ── one thing scrolls: the work column ───────────────────────────────
+ * The page itself does not scroll. When it did, reading to the bottom of a
+ * document carried the bar and the rail off the top of the screen — and a bin
+ * banner in the rail became a banner nobody could find. The frame is the
+ * window; the column of work scrolls inside it; the bar, the rail and the dock
+ * stay where they are. */
+.app { height: 100dvh; overflow: hidden; }
+.app > .body { min-height: 0; }
+.body > * { min-height: 0; }
+.spec { overflow-y: auto; overscroll-behavior: contain; }

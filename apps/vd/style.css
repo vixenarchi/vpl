@@ -74,7 +74,7 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
 }
 .proj-row:hover .pick { background: none; }
 .proj-row .tpl {
-  font-family: var(--mono); font-size: 0.62rem; color: var(--ink-3);
+  font-family: var(--mono); font-size: 0.66rem; color: var(--ink-3);
   padding-right: 0.15rem; letter-spacing: 0.02em;
 }
 .proj-row .kill { opacity: 0; font-size: 0.72rem; padding: 0.1rem 0.3rem; border: none; background: none; color: var(--ink-3); }
@@ -141,7 +141,7 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
 }
 .art:hover { background: var(--paper-2); }
 .art .kind {
-  font-family: var(--mono); font-size: 0.6rem; text-transform: uppercase;
+  font-family: var(--mono); font-size: 0.66rem; text-transform: uppercase;
   letter-spacing: 0.08em; color: var(--ink-3);
   border: 1px solid var(--rule-strong); border-radius: 2px; padding: 0 0.2rem;
   white-space: nowrap;
@@ -351,3 +351,34 @@ body[data-guest='1'] .brief { pointer-events: none; }
 .ai-acc-note, .ai-acc-msg { flex-basis: 100%; margin: 0; font-size: .8rem; opacity: .72; }
 .ai-acc-msg { opacity: .9; }
 .ai-acc-msg:empty { display: none; }
+
+/* ── one thing scrolls: the work column ───────────────────────────────
+ * The page itself does not scroll. When it did, reading to the bottom of a
+ * document carried the bar and the rail off the top of the screen — and a bin
+ * banner in the rail became a banner nobody could find. The frame is the
+ * window; the column of work scrolls inside it; the bar, the rail and the dock
+ * stay where they are. */
+.app { height: 100dvh; overflow: hidden; }
+.app > .body { min-height: 0; }
+.body > * { min-height: 0; }
+.spec { overflow-y: auto; overscroll-behavior: contain; }
+
+/* ── the bin of jobs, in the rail ─────────────────────────────────────
+ * The switch sits in the rail's head, the sentence opens the list, and a binned
+ * row has two doors: restore, or delete for good. Colour is never the only
+ * signal — the sentence counts, the button fills, the row keeps its mark. */
+.job-bin {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 0.2rem;
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink-3);
+  border-radius: 4px; padding: 0 0.4rem; min-height: 1.9rem; min-width: 1.9rem;
+  justify-content: center; font-size: 0.72rem; letter-spacing: 0; cursor: pointer;
+}
+.job-bin:hover { color: var(--ink); border-color: var(--line-strong); }
+.job-bin.on { background: var(--mark); border-color: var(--mark); color: var(--paper); font-weight: 700; }
+.job-bin #job-bin-count:not(:empty) { font-variant-numeric: tabular-nums; }
+.proj-row .bin-row-name {
+  flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 0.4rem 0.2rem 0.4rem 0.5rem; font-size: 0.84rem; color: var(--ink-2);
+}
+.proj-row .tools { display: flex; align-items: center; gap: 0.15rem; }
+.proj-row.bin-row { background: color-mix(in srgb, var(--mark) 7%, transparent); box-shadow: inset 2px 0 0 var(--mark); }

@@ -33,7 +33,7 @@ function loadScript(src) {
   });
 }
 
-const P = 'id,user_id,title,brief,template,created_at,updated_at';
+const P = 'id,user_id,title,brief,template,deleted_at,created_at,updated_at';
 const A = 'id,project_id,user_id,kind,title,text,file_path,file_name,file_size,file_mime,pos,from_standard,target_id,deleted_at,created_at,updated_at';
 const T = 'id,project_id,user_id,name,status,error,n_pass,n_fail,n_unknown,pos,deleted_at,created_at,updated_at';
 const ST = 'id,user_id,title,kind,source_url,text,file_path,file_name,file_size,file_mime,chars,deleted_at,created_at,updated_at';
@@ -105,12 +105,32 @@ export async function watchAuth(cb) {
 }
 
 /* ── jobs ─────────────────────────────────────────────────────────── */
-export async function listProjects() {
+/* A job in the bin is still a job: same row, same words, deleted_at set. The
+ * rail asks for the live ones, the bin asks for the other side. */
+export async function listProjects({ bin = false } = {}) {
   const db = await client();
-  const { data, error } = await db.from('vc_projects').select(P)
+  let q = db.from('vc_projects').select(P);
+  q = bin ? q.not('deleted_at', 'is', null) : q.is('deleted_at', null);
+  const { data, error } = await q.order('deleted_at', { ascending: false })
     .order('updated_at', { ascending: false });
   if (error) throw error;
   return data;
+}
+
+export async function binProject(id) {
+  return updateProject(id, { deleted_at: new Date().toISOString() });
+}
+
+export async function restoreProject(id) {
+  return updateProject(id, { deleted_at: null });
+}
+
+/* "empty the bin" is the only call that removes a job without a name being read
+ * out loud, and it is behind a question that says how many jobs it takes. */
+export async function emptyProjectBin() {
+  const db = await client();
+  const { error } = await db.from('vc_projects').delete().not('deleted_at', 'is', null);
+  if (error) throw error;
 }
 
 export async function createProject(title = 'untitled job', template = 'offer') {

@@ -203,6 +203,31 @@ await pg.click('#proj-list .proj-row.on .kill');
 await pg.waitForTimeout(1200);
 ok(await until(async () => !(await pg.textContent('#proj-list')).includes('vc-check ' + STAMP)), 'the check is deleted');
 
+/* ✕ must not be final: the job goes to the bin in the rail, comes back, and
+ * only a second, named question ends it. */
+ok(await until(async () => ((await pg.textContent('#job-bin-count')) || '').trim().length > 0, 8000),
+  '✕ puts the check in the bin in the rail, and the button counts it');
+await pg.click('#btn-job-bin');
+ok(await until(async () => pg.evaluate(() => document.querySelector('#btn-job-bin').getAttribute('aria-pressed') === 'true'), 6000),
+  'the bin opens as a place, and says so');
+ok(await until(async () => /binned|nothing in it/.test(await pg.textContent('#job-bin-note')), 6000),
+  'a sentence at the top names it and counts what is in it');
+ok(await until(async () => (await pg.textContent('#proj-list')).includes(STAMP), 8000),
+  'the binned check is there to restore');
+await pg.locator('#proj-list [data-back]').first().click();
+ok(await until(async () => ((await pg.inputValue('#proj-title')) || '').includes(STAMP), 10000),
+  'restoring opens the thing it brought back');
+ok(await until(async () => pg.evaluate(() => document.querySelector('#btn-job-bin').getAttribute('aria-pressed') === 'false'), 8000),
+  'restoring leaves the bin and opens what came back');
+/* and the way out of the bin for good: bin it again, purge it */
+await pg.locator('#proj-list .proj-row.on .kill').click({ force: true });
+await pg.waitForTimeout(900);
+await pg.click('#btn-job-bin');
+await until(async () => pg.locator('#proj-list [data-purge]').count(), 6000);
+await pg.locator('#proj-list [data-purge]').first().click();
+ok(await until(async () => !(await pg.textContent('#proj-list')).includes(STAMP), 8000),
+  'deleting for good takes it out of the bin');
+
 ok(errors.length === 0, 'no console or page errors');
 if (errors.length) console.log(errors.slice(0, 4).join('\n'));
 

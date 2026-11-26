@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>vi · vpl</title>
+<title>vi · ideas</title>
 <meta name="theme-color" content="#fbf6ea">
 <link rel="icon" href="icons/v.svg" type="image/svg+xml">
 
@@ -73,6 +73,12 @@
     <nav id="projects" class="projects" aria-label="projects">
       <div class="proj-head">
         <span>projects</span>
+      </div>
+      <!-- the bin is the suite's, and it belongs to the rail: a sign on the door
+           you can see from anywhere, above the list so it covers no row -->
+      <div id="bin-banner" class="bin-banner" hidden>
+        <span class="bin-banner-title">recycle bin</span>
+        <span id="bin-banner-note" class="bin-banner-note">nothing in it</span>
       </div>
       <ul id="proj-list" class="proj-list"></ul>
       <p id="proj-none" class="proj-none muted">no funnels yet. one project is one funnel.</p>
@@ -196,10 +202,6 @@
           <button class="primary" type="submit">add</button>
           <button id="notes-ai" class="ghost w-only" type="button" title="let the model add a few">add with AI</button>
         </form>
-        <div id="bin-banner" class="bin-banner" hidden>
-          <span class="bin-banner-title">recycle bin</span>
-          <span id="bin-banner-note" class="bin-banner-note">nothing in it</span>
-        </div>
         <ul id="notes" class="notes"></ul>
         <p id="notes-none" class="notes-none muted">nothing on the wall yet.</p>
         <div class="panel-foot">

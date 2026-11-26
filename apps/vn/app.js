@@ -1325,6 +1325,17 @@ async function openCreated(note) {
 
   if (location.hash === '#/n/' + note.id) route({ force: true });
   else location.hash = '#/n/' + note.id;
+
+  /* A new note is written at the top of the list, and the list is as long as
+   * somebody's work. Pressing ＋ while a note in the middle is open used to
+   * write a row nobody could see, at the top, above the fold — it looked like
+   * the button did nothing. The row comes into view, and the caret goes in the
+   * title: an untitled note is not yet a note. */
+  S.freshId = note.id;
+  requestAnimationFrame(() => {
+    const row = el.listItems.querySelector(`[data-id="${note.id}"]`);
+    if (row) row.scrollIntoView({ block: 'nearest' });
+  });
 }
 
 async function newNote() {

@@ -258,10 +258,23 @@ check(await until(async () => (await liveCount()) === before - 1), 'pressing ✕
 check(await until(async () => /\S/.test((await pg.textContent(spec.count)) || '')), 'and the bin button carries the count');
 
 await pg.click(spec.btn);
-await pg.waitForTimeout(1000);
+/* Opening the bin is a query against the server, and the answer arrives when it
+ * arrives. Reading the count on a timer made this suite flaky on a slow round
+ * trip (a green run one minute, 9/14 the next) — so wait for the number. */
+await until(async () => (await binCount()) === binBefore + 1, 8000);
 
 const inBin = await binCount();
 check(inBin === binBefore + 1, 'the bin holds the row it took', `${binBefore} → ${inBin}`);
+
+/* the clothes are painted in the same frame as the state, but the fill is a
+ * class the app sets after its own repaint — so wait for the shape, then judge it */
+await until(async () => pg.evaluate((btn) => {
+  const b = document.querySelector(btn);
+  const st = getComputedStyle(b);
+  return b.getAttribute('aria-pressed') === 'true'
+    && st.backgroundColor !== 'transparent' && st.backgroundColor !== 'rgba(0, 0, 0, 0)'
+    && st.backgroundColor !== getComputedStyle(document.body).backgroundColor;
+}, spec.btn), 6000);
 
 const state = await pg.evaluate(({ btn, banner }) => {
   const b = document.querySelector(btn);
@@ -313,10 +326,14 @@ const back = await liveCount();
 check(back === before, 'and the row is on the list again', `${before} → ${back}`);
 
 /* ── for good is for good ──────────────────────────────────────────── */
+/* the second half starts from the list as it is now, not as it was before the
+ * first half ran — reading `before` again here is what keeps the arithmetic
+ * honest on a rerun against a project that already had rows */
+const before2 = await liveCount();
 await discard(spec.live, spec.del);
-await pg.waitForTimeout(1300);
+await until(async () => (await liveCount()) === before2 - 1, 8000);
 await pg.click(spec.btn);
-await pg.waitForTimeout(1000);
+await until(async () => (await binCount()) === binBefore + 1, 8000);
 await pg.locator(spec.binRow).first().locator(spec.purge).first().click();
 await pg.waitForTimeout(1300);
 if (await pg.locator('#purge-go').isVisible().catch(() => false)) {
@@ -327,7 +344,7 @@ check((await binCount()) === binBefore, 'deleting for good takes it out of the b
 
 await leaveBin();
 const afterPurge = await liveCount();
-check(afterPurge === before - 1, 'and it does not come back to the list', `${before - 1} expected, ${afterPurge} there`);
+check(afterPurge === before2 - 1, 'and it does not come back to the list', `${before2 - 1} expected, ${afterPurge} there`);
 
 check(errors.length === 0, 'no page errors', errors.slice(0, 2).join(' | '));
 

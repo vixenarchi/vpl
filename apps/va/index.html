@@ -69,6 +69,14 @@
     <nav id="projects" class="projects" aria-label="jobs">
       <div class="proj-head">
         <span>jobs</span>
+        <button id="btn-job-bin" class="job-bin" type="button" aria-pressed="false"
+                title="jobs in the recycle bin"><span aria-hidden="true">♲</span><span id="job-bin-count"></span></button>
+      </div>
+      <!-- A job is the biggest thing a person can lose here, so it goes to the
+           bin like everything else, and the sign on the door is in the rail. -->
+      <div id="job-bin-banner" class="bin-banner" hidden>
+        <span class="bin-banner-title">recycle bin · jobs</span>
+        <span id="job-bin-note" class="bin-banner-note">nothing in it</span>
       </div>
       <ul id="proj-list" class="proj-list"></ul>
       <p id="proj-none" class="proj-none muted">no jobs yet. one job is one picture you have to draw in words.</p>
