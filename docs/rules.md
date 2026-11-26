@@ -120,6 +120,23 @@ Run the proof with `./tools/test-all.sh`, or one at a time from `apps/vn/test`
   visible only at push.
 - **Trim a column from a grant only after every policy that reads it is
   rewritten.** → `vp-check` (a ledger that 403'd for everybody)
+- **Policies are OR'd, so adding a narrower rule fixes nothing.** Drop what is
+  there, then write the four you mean. → `authz-matrix`
+- **Ask "are you the owner?" or "may you edit?", never "is this row yours?"** A
+  guest's name on a row is not a right to the document. → `authz-matrix`
+- **A share is a permission on a document, not on the rows you happened to
+  write.** The read rule must name the project's owner, or their guest's work
+  vanishes. → `authz-confirm` (BUG-5)
+- **A column is a trigger, not a policy.** `deleted_at`, a verdict's counts, a
+  note's place in the tree. → `authz-confirm`, `bin-check`
+- **Only the owner mints a share.** An `owner_id` from the client is a claim, not
+  a fact. → `authz-confirm` (BUG-1)
+- **A code is a read for the person holding it**, not for everybody with an
+  account (`s.code is not null` with no reference to the caller is a hole).
+  → `authz-confirm`
+- **Closing a hole can lock out a colleague** — `va_jobs` back to "your own row"
+  locked the worker out of claiming a job. → `va-handoff`
+
 
 ## The apps that think in batches and jobs
 

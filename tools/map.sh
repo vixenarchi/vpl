@@ -72,6 +72,14 @@ echo "the API an agent uses — the apps' own API, as a person with a token"
 echo "  the surface                 POST /auth/v1/token, /rest/v1/<table>, /storage/v1/object/<bucket>/<project_id>/<file>, /rest/v1/rpc/<fn>"
 
 echo
+echo "the skills an agent can run as they stand (SKILL.md + one script each)"
+for d in skills/*/SKILL.md; do
+  [ -f "$d" ] || continue
+  name=$(sed -n 's/^name: *//p' "$d" | head -1)
+  desc=$(sed -n 's/^description: *//p' "$d" | head -1 | cut -c1-96)
+  printf '  %-12s %s\n' "$name" "$desc"
+done
+
 echo "the shell every app is painted with — a copy, never an import"
 purpose() {                   # purpose <file> — the first line of its own header
   sed -n '1,4p' "$1" | tr -d '\r' \

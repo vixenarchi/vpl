@@ -393,7 +393,15 @@ function paintSpec() {
 
   renderArtifacts();
   paintOutput();
-  $('#btn-first-generate').hidden = S.role === 'view';
+  /* a job runs code on the owner's desk, and the database refuses anybody
+   * else's job (VA-1, `va_jobs_add`). A button that cannot do what it says is
+   * worse than a button that is not there, so a guest does not get one — and
+   * the message says who does. */
+  const runs = S.role === 'owner';
+  $('#btn-first-generate').hidden = !runs;
+  $('#btn-generate').hidden = !runs;
+  if (!runs && S.project) msg('#gen-msg', 'the owner starts a job here — you can edit the pile and the answer', '');
+  else if (runs) msg('#gen-msg', '', '');
 }
 
 function growBrief(el) {
@@ -1081,7 +1089,11 @@ function paintBusy(on, t0 = 0) {
 
 async function generate() {
   if (S.busy || !S.project) return;
-  if (S.role === 'view') return;
+  if (S.role !== 'owner') {
+    /* the sentence, not a silent return: a press that does nothing is a bug */
+    msg('#gen-msg', 'the owner starts a job here — you can edit the pile and the answer', 'bad');
+    return;
+  }
   const tpl = templateById(S.project.template);
   if (!S.artifacts.length) {
     msg('#gen-msg', 'nothing to read yet — add an input first', 'bad');

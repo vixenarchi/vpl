@@ -172,19 +172,26 @@ if (NAME === 'vn' || NAME === 'vi') {
     ok(after.length > before.length + 10, 'and the note grew (' + before.length + ' → ' + after.length + ')');
     await pg.waitForTimeout(1000);   // let the autosave land before the next check
   } else {
-    /* with no project open it must say so, not pretend */
+    /* vi. The question is "is a funnel open", not "does the wall have cards": an
+     * empty funnel is still a funnel, and pressing *use it* there pins the first
+     * idea instead of explaining. Counting cards made an empty funnel look like
+     * no funnel, and the suite failed on data rather than on code. */
+    const open = await pg.evaluate(() => {
+      const w = document.getElementById('welcome');
+      return !!w && w.hidden;              // the welcome screen is hidden == a funnel is open
+    });
     const cards = await pg.locator('#notes li').count();
     const said = async () => (await pg.textContent('#dock .dock-msg') || '').trim();
     const prev = await said();
     await pg.click('#dock [data-use]');
-    /* Wait for a *new* sentence, not merely for some sentence: the dock still
-     * holds the answer to the question above, so "not empty" would pass on the
-     * wrong text and fail a run for the wrong reason. */
-    const fresh = async () => until(async () => {
-      const t = await said();
-      return t.length > 3 && t !== prev ? t : false;
-    }, 12000);
-    if (cards === 0) {
+    if (!open) {
+      /* Wait for a *new* sentence, not merely for some sentence: the dock still
+       * holds the answer to the question above, so "not empty" would pass on the
+       * wrong text and fail a run for the wrong reason. */
+      const fresh = async () => until(async () => {
+        const t = await said();
+        return t.length > 3 && t !== prev ? t : false;
+      }, 12000);
       const why = await fresh() || await (async () => {
         /* a production click can land before the dock is listening; asking again
          * is what a person does, and it is cheaper than a flaky suite */
@@ -193,9 +200,11 @@ if (NAME === 'vn' || NAME === 'vi') {
       })();
       ok(/project/i.test(why || ''), 'with no wall open it explains instead of pretending: “' + (why || '') + '”');
     } else {
-      await until(async () => (await pg.locator('#notes li').count()) !== cards, 5000);
-      const grown = await pg.locator('#notes li').count();
-      ok(grown === cards + 1, 'pressing it pins one more idea (' + cards + ' → ' + grown + ')');
+      const grown = await until(async () => {
+        const n = await pg.locator('#notes li').count();
+        return n > cards ? n : false;
+      }, 8000);
+      ok(grown && grown === cards + 1, 'pressing it pins one more idea (' + cards + ' → ' + (grown || cards) + ')');
     }
   }
 } else if (NAME === 'vp') {

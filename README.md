@@ -33,6 +33,9 @@ Each app is documented in `docs/`: `vi.md`, `vr.md`, `vz.md`, `vd.md`, `vc.md`,
   that proves it. Rule, reason, proof.
 - **`docs/cookbook.md`** — recipes: run one app, add a table, add a settings tab,
   add a bin, add a ninth app, deploy, back up.
+- **`skills/`** — two skills an agent can run as it stands: `vpl-notes` (a note,
+  its body, a share) and `vpl-apps` (a project, its rows, a share). Symlink them
+  into an agent's skills folder and the work is six commands.
 - **`docs/api.md`** — the way an agent works without a browser: sign in with the
   person's account, then read and write the same rows the apps do
   (`node tools/vpl-api.mjs login …; get / post / patch / delete / rpc`). There is

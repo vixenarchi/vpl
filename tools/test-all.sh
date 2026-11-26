@@ -139,7 +139,14 @@ run "api · the agent's surface" node api-check.mjs
 run "va · canvas" node va-canvas.mjs
 run "va · hand-off" node va-handoff.mjs
 
-# ── 3b. the security regressions, one per finding that crossed a line ─
+# ── 3b. the authorization grid, from the other laptop ─────────────────
+# Six apps, two roles, a third account that must see nothing. The grid walks
+# every cell; the confirmations walk the seven findings one at a time, so a
+# regression says which one came back. Both exit 78 without the accounts.
+run "authz · the grid" node authz-matrix.mjs
+run "authz · one proof per finding" node authz-confirm.mjs
+
+# ── 3c. the security regressions, one per finding that crossed a line ─
 # These are not the audit: they are the four questions a person may ask again
 # after any change — may an editor start a machine, may an editor take a row,
 # may a stranger read the codes, may a note carry a way in.

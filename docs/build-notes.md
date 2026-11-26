@@ -1687,3 +1687,61 @@ else, which is why the first attempt looked like a permissions mystery.
 
 The gate is now **48 groups** (seven more for `rail-check`, one for `api-check`),
 and `api-check` runs with no browser at all.
+
+---
+
+## 2026-11-26/12-23 — the other laptop, and why its list was worth more than mine
+
+A second agent was given one ordinary job on a Windows machine, with no access
+to this repository — only the deployed apps and the public REST API. It came
+back with seven authorization findings and two runnable skills. Five of the
+seven were one mistake wearing different tables, and none of them were visible
+from inside the house, where every test signs in as the owner.
+
+**What it found.** A guest could mint a share, with `edit`, for a third party —
+the policy asked whether `owner_id` was the caller, and `owner_id` is a column
+the client sends. An editor could bin the owner's project, and destroy rows for
+good in five tables. A `view` guest could insert an idea. A row a guest wrote was
+invisible to the project's owner — the read policy asked "is this row yours?" and
+the answer for the owner was no. A guest could re-parent and re-order somebody
+else's note. An editor could write a compliance verdict with no run behind it.
+And, found while fixing those: `vr_themes` and `vr_vocab` said *if anybody holds
+a link code for this document, everyone with an account may read this table*.
+
+**The migration** (`20261224000000_the_other_laptops_findings`) drops every
+policy on eighteen tables before writing anything. That is the lesson worth
+keeping: **policies are OR'd**, so a narrower rule added beside a wide one
+changes nothing, and a hole looks closed until somebody walks through the old
+door. Then four questions per table, answered the same way everywhere: read = me
+or the project's owner or anybody it was shared with; insert = me into a project
+I own or may edit; update = the owner or an editor; delete = me or the owner (an
+editor bins, never destroys). Columns that are decisions rather than content —
+`deleted_at`, a note's `parent_id`/`position`, a control's three counts — are
+triggers, because a policy cannot see a column.
+
+**Two of the fixes were not in the database.** `va_jobs` insert is owner-only
+(VA-1, from December), so `apps/va` stopped offering a guest a generate button
+that the database would refuse, and says *the owner starts a job here* instead —
+a button that cannot do what it says is worse than no button. And the worker's
+ability to claim a job had to stay `va_can_edit`: my first rewrite narrowed it to
+"your own row or the owner's" and `va-handoff.mjs` failed in one run, which is
+exactly what the gate is for. Two migrations later, the story is: the insert is
+the owner's, the claiming is the colleague's, and `va_jobs_guard` is the limit.
+
+**The skills.** `skills/vpl-notes` and `skills/vpl-apps` — a `SKILL.md` plus one
+script each — are the other half of the kit, and the more useful half for a
+person: *write a note called X, put a table in it, share it with an address* is
+now six commands from a cold start. They are in the repository, symlinked into
+`~/.agents/skills/`, and their traps are the traps the other agent actually hit
+(`vn_shares` names `owner_id`, not `user_id`; `tools/vpl-api.mjs post vn_shares`
+fails with `PGRST204` because that tool fills `user_id` into every row; a share
+for an address with no account is `pending` and grants nothing).
+
+**The two scripts became gate groups**: `authz-matrix.mjs` walks the grid (six
+apps, `view` then `edit`, plus a third account that must see nothing) and
+`authz-confirm.mjs` proves the seven one at a time, so a regression names itself.
+Both exit 78 without their accounts.
+
+What this says about the way we work here: the owner's-eye view is the biased
+one. A test that signs in as the person who owns everything can never find a
+sharing bug, and it had been "green" for a month.
