@@ -1791,3 +1791,20 @@ counts the browser's own "Refused to…" lines: zero, in all eight, 128 assertio
 `door-check.mjs` proves the refusals and the bound with no network at all.
 
 The gate is **52 groups**.
+
+## the same day, one more — a redirect is a new address
+
+VC-3 was the last of the review's findings that was still true: `/fetch` used
+`redirect: 'follow'` and asked about the host afterwards. The body was never
+returned, so it was "only" a blind request — but a blind request to
+`169.254.169.254` is how a metadata endpoint is asked a question, and "did it
+answer" is the answer.
+
+The door now walks redirects itself: `redirect: 'manual'`, each hop's protocol
+and host checked **before** it is fetched, three hops as the limit, and the
+answer says where it actually read. `fetch-check.mjs` proves it by replacing
+`fetch` with a recorder, which is also how the test can assert the important
+half — that an off-list redirect made **one** request, not two.
+
+The gate is **53 groups**. What is left of the review is one item, and it is a
+decision rather than a bug: the model key lives in `localStorage`.

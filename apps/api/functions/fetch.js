@@ -31,6 +31,7 @@ const SOURCES = [
 ];
 
 const MAX_BYTES = 3 * 1024 * 1024;
+const MAX_HOPS = 3;
 const TIMEOUT_MS = 15000;
 
 function allowed(host) {
@@ -118,18 +119,48 @@ export async function onRequestPost({ request }) {
   const stop = new AbortController();
   const timer = setTimeout(() => stop.abort(), TIMEOUT_MS);
   let res;
+  let at = u;
   try {
-    res = await fetch(u.toString(), {
-      redirect: 'follow',
-      signal: stop.signal,
-      headers: {
-        /* a plain, honest agent: a site that does not want to be read this way
-         * will say so, and the person gets a sentence instead of a mystery */
-        'user-agent': 'vpl-vc/1.0 (compliance check; +https://terg.hr)',
-        accept: 'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.1',
-        'accept-language': 'hr,en;q=0.8',
-      },
-    });
+    /* Redirects are walked here, one at a time, and every hop is checked BEFORE
+     * it is fetched. `redirect: 'follow'` fetched the target first and asked
+     * afterwards (VC-3), which turns one allowed source into a blind request to
+     * any host a redirect names — including one inside the network. A hop limit
+     * keeps a chain of redirects from being a slow loop. */
+    for (let hop = 0; ; hop++) {
+      res = await fetch(at.toString(), {
+        redirect: 'manual',
+        signal: stop.signal,
+        headers: {
+          /* a plain, honest agent: a site that does not want to be read this way
+           * will say so, and the person gets a sentence instead of a mystery */
+          'user-agent': 'vpl-vc/1.0 (compliance check; +https://terg.hr)',
+          accept: 'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.1',
+          'accept-language': 'hr,en;q=0.8',
+        },
+      });
+      const isRedirect = res.status >= 300 && res.status < 400;
+      if (!isRedirect) break;
+      const where = res.headers.get('location');
+      if (!where) break;
+      if (hop + 1 > MAX_HOPS) {
+        clearTimeout(timer);
+        return json({ error: `it redirected more than ${MAX_HOPS} times` }, 422, origin);
+      }
+      let next;
+      try { next = new URL(where, at); } catch {
+        clearTimeout(timer);
+        return json({ error: 'it redirected to something that is not a web address' }, 422, origin);
+      }
+      if (next.protocol !== 'https:') {
+        clearTimeout(timer);
+        return json({ error: 'it redirected away from https' }, 422, origin);
+      }
+      if (!allowed(next.hostname)) {
+        clearTimeout(timer);
+        return json({ error: 'it redirected somewhere that is not on the list' }, 422, origin);
+      }
+      at = next;
+    }
   } catch (err) {
     clearTimeout(timer);
     const why = err?.name === 'AbortError' ? 'it took longer than 15 seconds' : 'could not reach it';
@@ -139,7 +170,7 @@ export async function onRequestPost({ request }) {
 
   if (!res.ok) return json({ error: `the source answered ${res.status}` }, 502, origin);
 
-  const finalHost = new URL(res.url || u.toString()).hostname;
+  const finalHost = new URL(res.url || at.toString()).hostname;
   if (!allowed(finalHost)) {
     return json({ error: 'it redirected somewhere that is not on the list' }, 422, origin);
   }

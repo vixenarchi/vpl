@@ -225,7 +225,7 @@ migration: **none in this matrix**, and all seven shut, while `share-check` 23,
 ## How to ask again
 
 ```
-./tools/test-all.sh          # 52 groups, incl. the seven below
+./tools/test-all.sh          # 53 groups, incl. the eight below
 ```
 
 The authorization grid needs **three accounts** on the project — an owner, a
@@ -244,8 +244,20 @@ password = the name. Override with `AUTHZ_OWNER` / `AUTHZ_GUEST` / `AUTHZ_THIRD`
 - `authz-confirm.mjs` — 18 proofs, one per finding in §2026-11-26.
 - `door-check.mjs` — 26: the four refusals, the bound, the origin list.
 - `csp-check.mjs` — 128: the header in all eight, and a browser walk under it.
+- `fetch-check.mjs` — 15: the redirect walk, with a recorded `fetch` and no network.
 
-Still open, and known: `/fetch` follows a redirect before re-checking the host
-(VC-3), and the model key lives in `localStorage` — CSP is the second line there,
-not the first. The relay is bounded rather than authenticated (C7/VP-4), which is
+**VC-3 · `/fetch` fetched the redirect target before checking it.** One allowed
+source could name any host — an address inside a network is the interesting one —
+and the request had already been made; the body was never returned, but "did that
+address answer" is a fact worth having. The door now walks redirects itself
+(`redirect: 'manual'`), checking the protocol and the host of each hop *before*
+fetching it, with three hops as the limit. Proved by `fetch-check.mjs`, which
+replaces `fetch` with a recorder: an off-list redirect is refused **and never
+fetched**, an http: redirect is refused, a chain of on-list hops is followed in
+order, a loop stops, and 3 MB is still a sentence. VC-4 (no request cap, no rate
+limit on `/fetch`) was closed by `_door.js` and `_limit.js` earlier in this
+section.
+
+Still open, and known: the model key lives in `localStorage` — CSP is the second
+line there, not the first. The relay is bounded rather than authenticated (C7/VP-4), which is
 the honest shape for a proxy with no server behind it.

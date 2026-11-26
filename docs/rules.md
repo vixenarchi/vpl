@@ -149,6 +149,9 @@ Run the proof with `./tools/test-all.sh`, or one at a time from `apps/vn/test`
   → `csp-check`
 - **A dotted origin entry must match the bare host as well as the subdomains** —
   `'.vpl-vi.pages.dev'` did not cover `vpl-vi.pages.dev`. → `door-check`
+- **A redirect is a new address, and it gets the same question** before it is
+  fetched. `redirect: 'follow'` asks afterwards, which is a request already made.
+  → `fetch-check`
 
 
 ## The apps that think in batches and jobs

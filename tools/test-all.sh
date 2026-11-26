@@ -147,6 +147,8 @@ run "va · hand-off" node va-handoff.mjs
 # page carries) — no network, one browser walk per app
 run "doors · four refusals + the bound" node door-check.mjs
 run "csp · the policy, in all eight" node csp-check.mjs
+# VC-3: /fetch follows a redirect only after checking where it goes
+run "fetch · the redirect walk" node fetch-check.mjs
 run "authz · the grid" node authz-matrix.mjs
 run "authz · one proof per finding" node authz-confirm.mjs
 
