@@ -13,7 +13,7 @@ it. The house has one way of doing that, and this page is it.
 
 ```bash
 ./serve vn                  # local, no-store headers (ports below)
-./tools/test-all.sh         # the gate: 39 groups, ~15 minutes, starts its own servers
+./tools/test-all.sh         # the gate: 40 groups, ~25 minutes, starts its own servers
 ./deploy vn                 # Cloudflare Pages, one project per app
 ```
 

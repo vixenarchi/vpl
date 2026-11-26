@@ -89,7 +89,7 @@ looked like a broken app. The guard now allows exactly the one forward step.
 ## How to ask again
 
 ```
-./tools/test-all.sh          # 37 groups, incl. the three below
+./tools/test-all.sh          # 40 groups, incl. the three below
 ```
 
 - `md-check.mjs` — 27, including the three payloads from VN-1.

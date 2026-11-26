@@ -1580,3 +1580,52 @@ Two things went wrong on the way and both are worth the ink:
 
 Also learned: `create policy … for insert … as restrictive` is a syntax error —
 `as restrictive` comes **before** `for`. It fails at the push, not in review.
+
+## 2026-12-15 — an agent is a reader too
+
+The house has always proved its rules; it had never made them *addressable*. A
+suite named `bin-check.mjs` tells you that you broke the bin. Nothing told you
+that the bin was a chip in the rail's head, or why, or which other forty rules
+were standing behind the page you were about to edit.
+
+Four documents and two commands:
+
+- **`AGENTS.md`** — the page an assistant reads first: three commands, ten rules
+  that bite (each with the test that catches it), where things live, what never
+  to do. `CLAUDE.md` is one line pointing at it, because Claude Code looks for
+  that name and Codex, Copilot and Cursor look for the other.
+- **`docs/rules.md`** — the index. Every rule as *rule — why — proof*, grouped by
+  what you are touching. `build-notes.md` stays the chronology; this is the
+  lookup table.
+- **`docs/cookbook.md`** — recipes with the commands in them: add a table, add a
+  settings tab, add a bin, add a ninth app, deploy, back up.
+- **`prompts/`** — three prompts that end with *read the summary line; do not
+  claim what you did not run*.
+- **`tools/map.sh`** — the map, generated: tables (including vn's, which arrived
+  by `rename`), ports, the shell, the doors, every suite with its own header.
+- **`tools/stage.sh --check`** — eight apps hold a copy of `packages/shell`.
+  Editing the shell and forgetting to stage means every suite judges the old look
+  and passes. That silence is now a red line, first in the gate.
+
+Two ways the gate had been lying, both older than the agent work and both found
+while writing it down:
+
+1. **A missing test account exited 0.** A suite that never ran was counted as a
+   pass by anything reading an exit code, which is exactly what an assistant
+   does. Now it exits 78 (EX_CONFIG), the runner counts it as *skipped*, the
+   summary prints it, and a run with a skip in it is **not green**.
+   `VPL_ALLOW_ANON=1` restores the quiet behaviour for people who want it.
+2. **`chrome-check` waited for *some* sentence from the dock.** The dock still
+   held the answer to the previous question, so a slow neighbour — nine servers
+   on one machine — looked exactly like an app that had answered wrongly. It
+   waits for a *new* sentence now. `bin-check` likewise asks a second time before
+   calling a swallowed ✕ click a break.
+
+Also this pass: `vn`'s bin moved from the foot of the tree into the rail's head,
+and the head became the drop zone, so all eight apps answer the same question the
+same way — and `dnd-check` (24) and `touch-check` (9, rotted and repaired, it had
+been waiting for a `#btn-list` that has not existed for months) are in the gate so
+a moved target cannot change silently.
+
+The gate is **40 groups**. It was 37 an hour ago and 35 before that; the number
+is not the point, the fact that nothing is skipped is.
