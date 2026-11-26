@@ -76,26 +76,24 @@
 
     <!-- note tree, recycle bin pinned to the bottom -->
     <nav id="list" class="list" aria-label="notes">
+      <!-- the bin is a chip in the rail's head, like the other seven: a place
+           belongs where it can be seen from anywhere, and the head is also the
+           drop zone — a drag across it is a request to move the note in -->
       <div class="list-head">
         <input id="q" type="search" placeholder="filter… (Ctrl+K)" aria-label="filter notes">
+        <button id="btn-bin" class="job-bin" type="button" aria-pressed="false"
+                title="the recycle bin of notes"><span aria-hidden="true">♲</span><span class="bin-word">notes</span><span id="bin-count"></span></button>
       </div>
 
       <div id="trash-banner" class="trash-banner" hidden>
         <span class="trash-banner-title">recycle bin</span>
         <span id="trash-banner-note" class="trash-banner-note">nothing in it</span>
+        <button id="btn-bin-empty" class="bin-empty" type="button" hidden>empty all</button>
       </div>
 
       <ul id="list-items" class="list-items" role="tree"></ul>
       <p id="list-empty" class="list-empty" hidden>no notes yet.</p>
 
-      <div class="list-foot">
-        <button id="btn-trash" class="trash" title="recycle bin" aria-label="recycle bin">
-          <span class="trash-icon" aria-hidden="true">♲</span>
-          <span class="trash-label">recycle bin</span>
-          <span id="trash-count" class="trash-count"></span>
-        </button>
-        <button id="btn-bin-empty" class="bin-empty" type="button" hidden>empty all</button>
-      </div>
     </nav>
 
     <!-- the note -->

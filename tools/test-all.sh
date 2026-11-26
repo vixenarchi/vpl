@@ -82,6 +82,10 @@ if [ -n "${VPL_EMAIL:-}" ] && [ -n "${VPL_PASS:-}" ]; then
   run "vn · mode" env PORT="${PORT[vn]}" node mode-check.mjs
   run "vn · markdown" env PORT="${PORT[vn]}" node md-check.mjs
   run "vn · dock" env PORT="${PORT[vn]}" node dock-check.mjs
+  # the bin is a drop target as well as a button, and only a real drag proves
+  # the target still takes a note — a moved bin is silent otherwise
+  run "vn · drag" env PORT="${PORT[vn]}" node dnd-check.mjs
+  run "vn · touch" env PORT="${PORT[vn]}" node touch-check.mjs
   for a in vd vc va; do
     run "${a} · dock" env APP="${a}" PORT="${PORT[$a]}" node dock-apps.mjs
   done

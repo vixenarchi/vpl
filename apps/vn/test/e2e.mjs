@@ -228,12 +228,12 @@ try {
       .length);
   check('no delete confirmation dialog', confirmDialogs === 0, `${confirmDialogs} confirm dialog(s)`);
 
-  const binCount = await page.textContent('#trash-count');
+  const binCount = await page.textContent('#bin-count');
   check('the recycle bin shows a count', (binCount || '').trim() !== '',
     JSON.stringify(binCount));
 
   /* the note is in the bin, not gone */
-  await page.click('#btn-trash');
+  await page.click('#btn-bin');
   await page.waitForTimeout(500);
   const binTitles = await page.locator('#list-items .li-title').allTextContents();
   check('the deleted note is in the recycle bin',
@@ -252,7 +252,7 @@ try {
 
   /* Restoring leaves the bin and returns to the live list. */
   const liveAgain = await page.locator('#list-items .li-title').allTextContents();
-  const binEmpty = (await page.textContent('#trash-count') || '').trim() === '';
+  const binEmpty = (await page.textContent('#bin-count') || '').trim() === '';
   check('restore puts the note back in the list',
     liveAgain.some((t) => t.trim() === (titleBefore || '').trim()),
     JSON.stringify(liveAgain));

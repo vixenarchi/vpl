@@ -105,16 +105,18 @@ async function relations() {
   });
 }
 
-/* a drag held mid-air: returns the bin's label while the note hovers it */
+/* a drag held mid-air: returns the bin's word while the note hovers it. The
+ * zone is the rail's head strip, not the chip: a 30 px sign is a promise, the
+ * strip is a place a hand can find mid-drag */
 async function dragToBin(title, hold = false) {
   const src = await row(title).boundingBox();
-  const dst = await page.locator('#btn-trash').boundingBox();
+  const dst = await page.locator('.list-head').boundingBox();
   await page.mouse.move(src.x + src.width / 2, src.y + src.height / 2);
   await page.mouse.down();
   await page.mouse.move(src.x + src.width / 2, src.y + src.height / 2 + 8, { steps: 5 });
   await page.mouse.move(dst.x + dst.width / 2, dst.y + dst.height / 2, { steps: 12 });
   await page.waitForTimeout(200);
-  const label = await page.textContent('.trash-label');
+  const label = await page.textContent('#btn-bin .bin-word');
   await page.mouse.up();
   if (!hold) await page.waitForTimeout(1600);
   return label;
@@ -221,10 +223,10 @@ check('dropping a note on the bin moves it to the bin',
 check('a binned note disappears from the tree',
   (await page.locator('#list-items .tree-row:has(.li-title:text-is("A1"))').count()) === 0);
 check('the bin count shows one note',
-  (await page.textContent('#trash-count')).trim() === '1');
+  (await page.textContent('#bin-count')).trim() === '1');
 
 /* now drag it back out of the bin */
-await page.click('#btn-trash');
+await page.click('#btn-bin');
 await page.waitForTimeout(500);
 const labelOutOfBin = await dragToBin('A1');
 check('the bin says a binned note comes back out',
@@ -235,10 +237,10 @@ check('dropping a binned note on the bin restores it',
   state.includes('A1 <- ROOT') && !state.includes('A1 <- ROOT [bin]'), JSON.stringify(state));
 check('a restored note keeps its parent',
   state.includes('A1 <- ROOT'), JSON.stringify(state));
-check('restoring empties the bin count', (await page.textContent('#trash-count')).trim() === '');
+check('restoring empties the bin count', (await page.textContent('#bin-count')).trim() === '');
 
 /* a restore leaves you in the bin, so the note is drawn in the tree again */
-await page.click('#btn-trash');
+await page.click('#btn-bin');
 await page.waitForTimeout(400);
 check('the restored note is drawn again',
   (await page.locator('#list-items .tree-row:has(.li-title:text-is("A1"))').count()) === 1,
@@ -250,7 +252,7 @@ await page.waitForFunction(() => document.getElementById('title').value === 'A1'
 await page.click('#btn-del');
 await page.waitForTimeout(1500);
 
-await page.click('#btn-trash');
+await page.click('#btn-bin');
 await page.waitForTimeout(500);
 await page.click('#list-items .tree-row:has(.li-title:text-is("A1"))');
 await page.waitForFunction(() => document.getElementById('btn-del').textContent.trim() === 'restore',
@@ -268,7 +270,7 @@ check('restoring the open note gives the editor back',
   !afterRestore.locked && afterRestore.del === 'delete' && !afterRestore.child,
   JSON.stringify(afterRestore));
 
-await page.click('#btn-trash');           // leave the bin view
+await page.click('#btn-bin');           // leave the bin view
 await page.waitForTimeout(400);
 
 /* ── dragging is off in a filtered list ───────────────────────────── */

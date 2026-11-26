@@ -53,7 +53,7 @@ const binBefore = await page.evaluate(() => ({
 }));
 check(!binBefore.banner, 'the list is not dressed as the bin while you are in notes');
 
-await page.click('#btn-trash');
+await page.click('#btn-bin');
 await page.waitForTimeout(500);
 const binOn = await page.evaluate(() => ({
   bg: getComputedStyle(document.getElementById('list')).backgroundColor,
@@ -67,7 +67,7 @@ check(binOn.banner && /recycle bin/i.test(binOn.text), 'the bin says it is the b
 check(binOn.cls.includes('trash-mode'), 'the pane carries a trash-mode class');
 check(/bin/i.test(binOn.placeholder), 'the filter offers to filter the bin', binOn.placeholder);
 
-await page.click('#btn-trash');
+await page.click('#btn-bin');
 await page.waitForTimeout(400);
 const binOff = await page.evaluate(() => ({
   bg: getComputedStyle(document.getElementById('list')).backgroundColor,

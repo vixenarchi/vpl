@@ -157,7 +157,7 @@ await rp.click('#btn-del');
 await rp.waitForTimeout(1200);
 
 /* the reader's bin: a copy left behind would pile up on every run */
-await rp.click('#btn-trash');
+await rp.click('#btn-bin');
 await rp.waitForTimeout(600);
 await rp.click('#btn-bin-empty');
 await rp.waitForTimeout(500);

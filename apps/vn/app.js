@@ -38,8 +38,8 @@ const el = {
   agentMsg: $('agent-msg'),
 
   list: $('list'), q: $('q'), listItems: $('list-items'), listEmpty: $('list-empty'),
-  btnTrash: $('btn-trash'), trashCount: $('trash-count'),
-  trashLabel: document.querySelector('.trash-label'),
+  btnBin: $('btn-bin'), binCount: $('bin-count'), binWord: document.querySelector('#btn-bin .bin-word'),
+  listHead: document.querySelector('.list-head'),
 
   main: $('main'),
   viewNone: $('view-none'), viewNote: $('view-note'),
@@ -407,7 +407,7 @@ function wire() {
     paintList();
   });
 
-  el.btnTrash.addEventListener('click', toggleTrash);
+  el.btnBin.addEventListener('click', toggleTrash);
   wireBinDrop();
 
   /* Empty space below the tree means the top level: dropping there lifts a
@@ -850,22 +850,23 @@ function paintVisibility(n) {
 
 function paintTrashCount() {
   const n = S.trash.length;
-  el.trashCount.textContent = n ? String(n) : '';
+  el.binCount.textContent = n ? String(n) : '';
   el.binEmpty.hidden = !S.showingTrash || !n;
   el.binEmpty.textContent = 'empty all';
   el.binEmpty.title = n === 1 ? 'delete the one note in the bin for good'
     : 'delete all ' + n + ' notes in the bin for good';
   el.binEmpty.setAttribute('aria-label', el.binEmpty.title);
-  el.btnTrash.classList.toggle('active', S.showingTrash);
-  el.btnTrash.setAttribute('aria-pressed', String(S.showingTrash));
-  el.btnTrash.title = S.showingTrash
+  el.btnBin.classList.toggle('active', S.showingTrash);
+  el.btnBin.setAttribute('aria-pressed', String(S.showingTrash));
+  el.btnBin.classList.toggle('on', S.showingTrash);
+  el.btnBin.title = S.showingTrash
     ? 'close the recycle bin and go back to the notes'
-    : n ? `open the recycle bin (${n})` : 'the recycle bin is empty';
-  el.btnTrash.setAttribute('aria-label', el.btnTrash.title);
+    : n ? `the recycle bin of notes (${n})` : 'the recycle bin of notes is empty';
+  el.btnBin.setAttribute('aria-label', el.btnBin.title);
   el.trashBannerNote.textContent = n
     ? `${n} note${n === 1 ? '' : 's'} in the bin — restore one, or delete it for good`
     : 'nothing in it — a deleted note waits here';
-  el.trashLabel.textContent = S.showingTrash ? 'back to notes' : 'recycle bin';
+  el.binWord.textContent = 'notes';
 }
 
 function markListCurrent(id) {
@@ -1076,7 +1077,7 @@ function startTouchHold(e, li, row, n) {
   const mark = (x, y) => {
     const hit = document.elementFromPoint(x, y);
 
-    if (el.btnTrash.contains(hit)) {
+    if (el.listHead.contains(hit)) {
       clearDropMarks();
       setBinTarget(binDirection(S.dragId));
       return;
@@ -1117,7 +1118,7 @@ function startTouchHold(e, li, row, n) {
     lifted = false;
 
     const from = S.dragId;
-    const binDir = el.btnTrash.dataset.drop;
+    const binDir = el.btnBin.dataset.drop;
     const marked = el.listItems.querySelector('[data-drop]');
     /* read the zone before the marks are cleared: clearDropMarks deletes the
      * attribute, and reading it afterwards is how a drop silently became a
@@ -1207,22 +1208,24 @@ function binDirection(id) {
 }
 
 function setBinTarget(dir) {
-  if ((el.btnTrash.dataset.drop || null) === dir) return;
+  if ((el.btnBin.dataset.drop || null) === dir) return;
 
-  if (dir) el.btnTrash.dataset.drop = dir;
-  else delete el.btnTrash.dataset.drop;
+  if (dir) el.btnBin.dataset.drop = dir;
+  else delete el.btnBin.dataset.drop;
 
-  el.btnTrash.classList.toggle('drop-active', !!dir);
+  el.btnBin.classList.toggle('drop-active', !!dir);
   /* the drag speaks through the label; when the drag ends the label returns to
    * whatever the bin is — open or closed */
-  el.trashLabel.textContent = dir === 'trash' ? 'move to bin'
-    : dir === 'restore' ? 'restore from bin'
-    : S.showingTrash ? 'back to notes' : 'recycle bin';
+  el.binWord.textContent = dir === 'trash' ? 'move to bin'
+    : dir === 'restore' ? 'restore from bin' : 'notes';
 }
 
 function wireBinDrop() {
+  /* the head is the zone and the chip is the sign: a chip is a 30 px promise,
+   * a strip across the rail is a place a hand can actually find mid-drag */
+  const zone = el.listHead;
   for (const ev of ['dragenter', 'dragover']) {
-    el.btnTrash.addEventListener(ev, (e) => {
+    zone.addEventListener(ev, (e) => {
       if (!S.dragId || !dragEnabled()) return;
       const dir = binDirection(S.dragId);
       if (!dir) return;
@@ -1234,12 +1237,12 @@ function wireBinDrop() {
     });
   }
 
-  el.btnTrash.addEventListener('dragleave', (e) => {
-    if (e.relatedTarget && el.btnTrash.contains(e.relatedTarget)) return;
+  zone.addEventListener('dragleave', (e) => {
+    if (e.relatedTarget && zone.contains(e.relatedTarget)) return;
     setBinTarget(null);
   });
 
-  el.btnTrash.addEventListener('drop', (e) => {
+  zone.addEventListener('drop', (e) => {
     if (!S.dragId) return;
     e.preventDefault();
     e.stopPropagation();

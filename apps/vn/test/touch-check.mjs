@@ -83,7 +83,7 @@ const centre = async (title) => {
  * and the button toggles rather than opens */
 const openList = async () => {
   if (!(await page.evaluate(() => document.querySelector('.list').classList.contains('open')))) {
-    await page.click('#btn-list');
+    await page.click('#btn-projects');   /* the drawer's handle on a phone */
   }
   await page.waitForTimeout(650);
 };
@@ -144,7 +144,7 @@ check('a quick swipe scrolls instead of moving a note', (await rows()).join(',')
 
 /* 3. the recycle bin takes a note from a finger too */
 await openList();
-const bin = await page.locator('#btn-trash').boundingBox();
+const bin = await page.locator('.list-head').boundingBox();
 const wentIn = await liftAndDrag(await centre('B'), {
   x: Math.round(bin.x + bin.width / 2),
   y: Math.round(bin.y + bin.height / 2),
@@ -154,7 +154,7 @@ await openList();
 rel = await rows();
 check('a note dropped on the bin with a finger is in the bin', rel.some((r) => r.startsWith('B <-') && r.endsWith('[bin]')),
   JSON.stringify(rel));
-check('the bin label says what it will do', (await page.textContent('.trash-label')).trim() === 'recycle bin');
+check('the bin chip carries a word', (await page.textContent('#btn-bin .bin-word')).trim() === 'notes');
 
 /* 4. a plain tap still opens a note */
 await openList();

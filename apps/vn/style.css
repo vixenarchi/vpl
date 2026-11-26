@@ -13,14 +13,10 @@
   border-right: 2px solid var(--line-strong);
 }
 
-[data-theme='dark'] .list-foot {
+[data-theme='dark'] .list-head {
   border-top: 2px solid var(--line-strong);
   background: #2b2824;
 }
-
-[data-theme='dark'] button.trash { color: var(--ink-2); }
-
-[data-theme='dark'] .trash-icon { color: var(--ink-2); }
 
 [data-theme='dark'] .note-bar { border-bottom: 1px solid var(--line); }
 
@@ -156,7 +152,14 @@ button.google {
   display: flex; flex-direction: column;
   min-height: 0;
 }
-.list-head { padding: 0.5rem; border-bottom: 1px solid var(--line); }
+/* the head holds the filter and the bin: the bin is a chip here in every app,
+ * and this strip is also the drop zone, so it fills while a note is dragged */
+.list-head {
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.5rem; border-bottom: 1px solid var(--line);
+}
+.list-head input { flex: 1 1 auto; min-width: 0; }
+.list-head .job-bin[data-drop] { background: var(--mark); border-color: var(--mark); color: var(--paper); font-weight: 700; }
 .list-head input {
   width: 100%; padding: 0.35rem 0.5rem;
   border: 1px solid transparent; border-radius: var(--radius);
@@ -331,43 +334,11 @@ textarea.body:focus { outline: none; }
 .rendered th, .rendered td { border: 1px solid var(--line); padding: 0.35rem 0.55rem; text-align: left; }
 .rendered img { max-width: 100%; }
 
-/* ── recycle bin, pinned to the bottom of the list ─────────────── */
-.list-foot {
-  display: flex; align-items: center; gap: 0.35rem;
-  flex: 0 0 auto;
-  border-top: 1px solid var(--line);
-  padding: 0.4rem;
-  background: var(--paper-2);
-}
-/* An open bin has to be obvious at a glance: the button under the list is
- * filled with the accent, keeps its word, and shows how many are in there. */
-button.trash {
-  display: flex; align-items: center; gap: 0.45rem;
-  flex: 1 1 auto; min-width: 0; cursor: pointer;
-  border: 1px solid var(--line); border-radius: var(--radius);
-  background: var(--paper); color: var(--ink-2);
-  padding: 0.45rem 0.5rem;
-  font-size: 0.82rem; text-align: left;
-}
-button.trash:hover { background: var(--paper-3); color: var(--ink); border-color: var(--line-strong); }
-button.trash.active {
-  background: var(--mark); color: var(--paper); border-color: var(--mark);
-  font-weight: 600;
-}
-button.trash.active:hover { background: var(--mark); color: var(--paper); }
-.trash-icon { font-size: 0.98rem; line-height: 1; }
-.trash-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.trash-count {
-  flex: none;
-  font-variant-numeric: tabular-nums;
-  font-size: 0.72rem; color: var(--ink-3);
-  min-width: 1.1rem; text-align: right;
-}
-.trash-count:not(:empty) {
+#btn-bin #bin-count:not(:empty) {
   background: var(--paper-3); border-radius: 999px;
-  padding: 0.05rem 0.4rem;
+  padding: 0.05rem 0.35rem;
 }
-button.trash.active .trash-count {
+#btn-bin.on #bin-count {
   background: var(--paper); color: var(--mark); font-weight: 700;
 }
 
@@ -384,15 +355,9 @@ button.trash.active .trash-count {
   color: var(--ink); border-style: solid; background: var(--paper-3);
 }
 
-/* the bin is a drop target in both directions; the label says which one */
-button.trash.drop-active,
-button.trash.drop-active:hover {
-  background: var(--paper-3);
-  color: var(--mark);
-  border-color: var(--mark);
-  box-shadow: inset 0 0 0 1px var(--mark);
-}
-button.trash.drop-active .trash-count { color: var(--mark); }
+/* the bin is a drop target in both directions, and the chip's word says which
+ * one; the strip around it fills so the target is bigger than the sign */
+.list-head:has(.job-bin[data-drop]) { background: var(--mark-wash, var(--paper-2)); }
 
 /* a note in the bin is read-only; its action button becomes "restore" */
 button.restore { color: var(--mark); }

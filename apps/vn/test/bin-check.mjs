@@ -139,7 +139,7 @@ const MAP = {
   },
   vn: {
     row: '#list-items li', live: '#list-items li', binRow: '.trash-mode li',
-    btn: '#btn-trash', banner: '#trash-banner-note', count: '#trash-count',
+    btn: '#btn-bin', banner: '#trash-banner-note', count: '#bin-count',
     del: '#btn-del', restore: '#btn-del', purge: '.row-purge',
     make: async (pg, text) => {
       await pg.click('#btn-new');
@@ -270,7 +270,7 @@ async function snap(tag) {
 async function leaveBin() {
   if (APP === 'vn') {
     const open = await pg.evaluate(() => document.getElementById('list').classList.contains('trash-mode'));
-    if (open) await pg.click('#btn-trash');
+    if (open) await pg.click(spec.btn);
     await pg.waitForTimeout(900);
     return;
   }
