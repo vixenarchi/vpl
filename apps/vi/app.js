@@ -570,19 +570,22 @@ function paintNotes() {
 /* The bin is one button under the wall: it opens, it says how many are inside,
  * and while it is open the wall is a different place in four ways at once. */
 function paintBin() {
-  const btn = $('#btn-bin');
-  if (!btn) return;
   const n = S.bin.length;
+  const btn = $('#btn-bin');
+  /* a chip in the rail, so it carries a word and a number and not a sentence:
+   * the banner inside the list names the place once you are in it */
+  btn.hidden = !S.project;
+  /* vi calls the state showingBin — one name per app, and the chip reads it */
+  btn.classList.toggle('on', S.showingBin);
   btn.setAttribute('aria-pressed', String(S.showingBin));
-  btn.classList.toggle('bin-on', S.showingBin);
   btn.title = S.showingBin ? 'close the recycle bin and go back to the wall'
-    : n ? `open the recycle bin (${n})` : 'the recycle bin is empty';
-  $('.bin-label', btn).textContent = S.showingBin ? 'back to the wall' : 'recycle bin';
+    : n ? `the recycle bin of notes (${n})` : 'the recycle bin of notes is empty';
+  btn.setAttribute('aria-label', btn.title);
   $('#bin-count').textContent = n ? String(n) : '';
   $('#bin-banner').hidden = !S.showingBin;
   $('#bin-banner-note').textContent = n
     ? `${n} note${n === 1 ? '' : 's'} in the bin — restore one, or delete it for good`
-    : 'nothing in it — a deleted note waits here';
+    : 'nothing in it — a removed note waits here';
   $('#btn-bin-empty').hidden = !S.showingBin || !n;
 }
 

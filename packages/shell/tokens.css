@@ -362,6 +362,24 @@ dialog.settings .set-foot [data-a='forget'] { color: var(--danger); }
   border-top: 1px solid var(--line); padding: 0.4rem;
   background: var(--paper-2);
 }
+/* ── the bin switch in the rail ─────────────────────────────────────
+ * A place belongs on the left, and a place needs a word: two bins with the same
+ * glyph are a puzzle, and a bar at the foot of the work column is one more thing
+ * to scroll past (and to cover what is under it). The chip carries a mark, a
+ * word and a number; the banner inside the list names the place in full once
+ * you are in it. */
+.job-bin {
+  display: inline-flex; align-items: center; gap: 0.2rem;
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink-2);
+  border-radius: 4px; padding: 0 0.4rem; min-height: 1.9rem; min-width: 1.9rem;
+  justify-content: center; font-size: 0.72rem; letter-spacing: 0;
+  cursor: pointer; white-space: nowrap;
+}
+.job-bin:hover { color: var(--ink); border-color: var(--line-strong); }
+.job-bin.on { background: var(--mark); border-color: var(--mark); color: var(--paper); font-weight: 700; }
+.job-bin .bin-word { font-size: 0.66rem; letter-spacing: 0.04em; margin: 0 0.1rem; }
+.job-bin span[id$='-count']:not(:empty) { font-variant-numeric: tabular-nums; }
+
 .bin-btn {
   display: flex; align-items: center; gap: 0.45rem;
   flex: 1 1 auto; min-width: 0; cursor: pointer;

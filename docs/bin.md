@@ -102,3 +102,40 @@ the list itself changes; restore takes it out and puts it back; delete-for-good
 removes it and it does not return; no page errors.
 
 `tools/test-all.sh` runs all seven as `vn · bin` … `va · bin`.
+
+## v1.7 — the bin is a chip in the rail, in every app
+
+A place belongs where you can see it from anywhere, and it needs a name. After
+the first real walk through `vc`, the same complaint was found in five more
+apps, so the shape became one shape everywhere:
+
+- **The bin sits in the left column, in words.** `♲ inputs`, `♲ notes`,
+  `♲ rows`, `♲ words`, `♲ checks N`, `♲ jobs N` — a mark, a word, and the number
+  when there is something in it. `vn` keeps its bin at the foot of the tree
+  because it is also a **drag target** (*drop a note on the bin*), and the tree
+  is the thing you drag across.
+- **No bar at the foot of the work column.** `vi`, `vr`, `vd`, `va` and `vz` each
+  had a `.bin-foot` below the sheet, the list or the words — the thing you had to
+  scroll past, and the thing that could sit on top of what was under it (in `vc`
+  it covered the batch button, which is why *run all* did not take a click).
+  `empty all` moved into the banner, so the banner now owns the whole place: the
+  title, the sentence, the noting-for-good.
+- **Two bins do not share a glyph.** `vd`, `va`, `vc` keep the rows bin and the
+  job bin side by side in the rail's head; without a word two `♲` are a puzzle.
+- **The chip is the shell's**, in `packages/shell/tokens.css` (`.job-bin`,
+  `.bin-word`), so the seven apps agree on its height (`1.9rem`, above the 30 px
+  tap floor), its fill when open, and its quietness when empty.
+- **A drawer must stop above the dock.** On a phone the left column slides over
+  the work, and in `vn` it ran to the bottom of the screen — the bin pinned to
+  its foot was **under the chat line**, unreachable. The drawer now ends at
+  `var(--dock-h)`. (`vz`'s bin moved out of the rail's foot for the same reason,
+  and not only on a phone.)
+
+`bin-check.mjs` grew five assertions that are asked of **every** app: the bin has
+a button, it is in the left column, it carries a word, no `.bin-foot` remains
+visible, and `elementFromPoint` over its middle lands on it. `vn`'s passes on the
+left-column test rather than the rail test, because its bin lives in the tree.
+
+Proved in all seven: `bin-check` **19/19** each (vn, vi, vr, vz, vd, vc, va);
+`chrome-check` 48–50/0; `ux-sniff` 0 problems; `vi-check` 20, `vr-check` 59,
+`vz-check` 53, `vd-check` 47, `vc-check` 41, `va-check` 47.

@@ -406,7 +406,9 @@ button.mode:disabled:hover { background: transparent; }
 @media (max-width: 720px) {
   :root { --list-w: 12rem; }
   .list {
-    position: absolute; inset: var(--bar-h) auto 0 0;
+    /* the drawer stops above the dock: a bin pinned to the bottom of a column
+     * that runs to the bottom of the screen is a place under the chat line */
+    position: absolute; inset: var(--bar-h) auto var(--dock-h) 0;
     z-index: 5;
     transform: translateX(-100%);
     transition: transform 0.15s ease;
@@ -1014,7 +1016,9 @@ kbd {
 /* ── narrow screens: the list slides over the note ────────────────── */
 @media (max-width: 46rem) {
   .list {
-    position: absolute; inset: var(--bar-h) auto 0 0;
+    /* above the dock, not behind it: the bin is pinned to the foot of this
+     * column, and the chat line runs across the bottom of the screen */
+    position: absolute; inset: var(--bar-h) auto var(--dock-h) 0;
     z-index: 20; width: min(17rem, 82vw);
     transform: translateX(-100%);
     transition: transform 0.16s ease;

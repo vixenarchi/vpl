@@ -69,17 +69,15 @@
     <nav id="projects" class="projects" aria-label="projects">
       <div class="proj-head">
         <span>projects</span>
+        <span class="grow"></span>
+        <!-- the rail's head, not its foot: a bin at the bottom of the column
+             ends up under the dock, and a place you cannot press is not a place -->
+        <button id="btn-bin" class="job-bin" type="button" aria-pressed="false" hidden
+                title="the recycle bin of words"><span aria-hidden="true">♲</span><span class="bin-word">words</span><span id="bin-count"></span></button>
       </div>
       <ul id="proj-list" class="proj-list"></ul>
       <p id="proj-none" class="proj-none muted">no projects yet. one project is one dictionary.</p>
 
-      <div id="bin-rail" class="bin-rail" hidden>
-        <button id="btn-bin" class="bin-btn" type="button" aria-pressed="false">
-          <span class="bin-icon" aria-hidden="true">♲</span>
-          <span class="bin-label">recycle bin</span>
-          <span id="bin-count" class="bin-count"></span>
-        </button>
-      </div>
     </nav>
 
     <main id="spec" class="spec" hidden>

@@ -470,10 +470,14 @@ function renderArtifacts() {
 function paintBin() {
   const n = S.bin.length;
   const btn = $('#btn-bin');
+  /* a chip in the rail, so it carries a word and a number and not a sentence:
+   * the banner inside the list names the place once you are in it */
+  btn.hidden = !S.project;
+  btn.classList.toggle('on', S.binMode);
   btn.setAttribute('aria-pressed', String(S.binMode));
   btn.title = S.binMode ? 'close the recycle bin and go back to the inputs'
-    : n ? `open the recycle bin (${n})` : 'the recycle bin is empty';
-  $('.bin-label', btn).textContent = S.binMode ? 'back to the inputs' : 'recycle bin';
+    : n ? `the recycle bin of inputs (${n})` : 'the recycle bin of inputs is empty';
+  btn.setAttribute('aria-label', btn.title);
   $('#bin-count').textContent = n ? String(n) : '';
   $('#bin-banner').hidden = !S.binMode;
   $('#bin-banner-note').textContent = n

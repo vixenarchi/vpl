@@ -199,15 +199,16 @@ function renderRail() {
  * filled when the bin is open, with the count in it. */
 function paintProjectsBin() {
   const count = S.bin.length;
-  $('#bin-rail').hidden = !S.project || !!S.guest;
-  $('#bin-count').textContent = count ? String(count) : '';
   const btn = $('#btn-bin');
   if (btn) {
     const open = !$('#binview').hidden;
+    btn.hidden = !S.project || !!S.guest;
+    btn.classList.toggle('on', open);
     btn.setAttribute('aria-pressed', String(open));
-    $('.bin-label', btn).textContent = open ? 'back to the sheet' : 'recycle bin';
     btn.title = open ? 'close the recycle bin and go back to the sheet'
-      : count ? `open the recycle bin (${count})` : 'the recycle bin is empty';
+      : count ? `the recycle bin of words (${count})` : 'the recycle bin of words is empty';
+    btn.setAttribute('aria-label', btn.title);
+    $('#bin-count').textContent = count ? String(count) : '';
     $('#bin-banner-note').textContent = count
       ? `${count} key${count === 1 ? '' : 's'} in the bin — restore one, or empty it for good`
       : 'nothing in it — a removed key waits here';

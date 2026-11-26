@@ -803,17 +803,21 @@ async function purgeRow(id) {
 }
 
 function paintBin() {
-  const btn = $('#btn-bin');
   const n = S.bin.length;
+  const btn = $('#btn-bin');
+  /* a chip in the rail, so it carries a word and a number and not a sentence:
+   * the banner inside the list names the place once you are in it */
+  btn.hidden = !S.project;
+  btn.classList.toggle('on', S.binMode);
   btn.setAttribute('aria-pressed', String(S.binMode));
   btn.title = S.binMode ? 'close the recycle bin and go back to the sheet'
-    : n ? `open the recycle bin (${n})` : 'the recycle bin is empty';
-  btn.querySelector('.bin-label').textContent = S.binMode ? 'back to the sheet' : 'recycle bin';
+    : n ? `the recycle bin of rows (${n})` : 'the recycle bin of rows is empty';
+  btn.setAttribute('aria-label', btn.title);
   $('#bin-count').textContent = n ? String(n) : '';
   $('#bin-banner').hidden = !S.binMode;
   $('#bin-banner-note').textContent = n
     ? `${n} row${n === 1 ? '' : 's'} in the bin — restore one, or delete it for good`
-    : 'nothing in it — a deleted row waits here';
+    : 'nothing in it — a removed row waits here';
   $('#btn-bin-empty').hidden = !S.binMode || !n;
 }
 

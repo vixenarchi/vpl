@@ -73,12 +73,19 @@
     <nav id="projects" class="projects" aria-label="projects">
       <div class="proj-head">
         <span>projects</span>
+        <span class="grow"></span>
+        <!-- The bin is the rail's, not the work column's: a place with a name
+             belongs on the left, and a bar at the foot of the sheet is one more
+             thing to scroll past (and to cover what is under it). -->
+        <button id="btn-bin" class="job-bin" type="button" aria-pressed="false" hidden
+                title="the recycle bin of notes"><span aria-hidden="true">♲</span><span class="bin-word">notes</span><span id="bin-count"></span></button>
       </div>
       <!-- the bin is the suite's, and it belongs to the rail: a sign on the door
            you can see from anywhere, above the list so it covers no row -->
       <div id="bin-banner" class="bin-banner" hidden>
         <span class="bin-banner-title">recycle bin</span>
         <span id="bin-banner-note" class="bin-banner-note">nothing in it</span>
+        <button id="btn-bin-empty" class="bin-empty" type="button" hidden>empty all</button>
       </div>
       <ul id="proj-list" class="proj-list"></ul>
       <p id="proj-none" class="proj-none muted">no funnels yet. one project is one funnel.</p>
@@ -272,15 +279,6 @@
 
       <!-- the bin is the column's, not one stage's: a note can be lost from
            any stage, so its way back must not change with the stage -->
-      <div class="bin-foot column-foot">
-        <button id="btn-bin" class="bin-btn" type="button" aria-pressed="false"
-                title="open the recycle bin">
-          <span class="bin-icon" aria-hidden="true">♲</span>
-          <span class="bin-label">recycle bin</span>
-          <span id="bin-count" class="bin-count"></span>
-        </button>
-        <button id="btn-bin-empty" class="bin-empty" type="button" hidden>empty all</button>
-      </div>
     </main>
 
     <section id="welcome" class="welcome">

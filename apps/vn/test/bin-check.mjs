@@ -178,6 +178,35 @@ await pg.waitForTimeout(1400);
 
 await spec.make(pg, TEXT);
 
+/* The bin is a place, and a place has an address: it sits in the left column
+ * with a word on it, it is not a bar at the foot of the work column, and
+ * nothing is on top of it. This holds in every app, so it is asked of every app
+ * rather than remembered per app. */
+const place = await pg.evaluate(() => {
+  const btn = document.querySelector('#btn-bin') || document.querySelector('#btn-trash');
+  if (!btn) return { none: true };
+  const rail = document.getElementById('projects') || document.querySelector('.list');
+  const work = document.querySelector('main') || document.querySelector('#spec') || document.querySelector('.workspace');
+  const box = btn.getBoundingClientRect();
+  const at = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+  const foot = document.querySelector('.bin-foot');
+  return {
+    text: btn.textContent.replace(/\s+/g, ' ').trim(),
+    inRail: rail ? rail.contains(btn) : false,
+    leftOfWork: work ? box.right <= work.getBoundingClientRect().left + 2 : true,
+    x: Math.round(box.x), y: Math.round(box.y), w: Math.round(box.width), h: Math.round(box.height),
+    hit: at === btn || btn.contains(at),
+    topIs: (at && (at.id || at.className)) || null,
+    foot: !!(foot && foot.offsetParent),
+  };
+});
+check(!place.none, 'the bin has a button at all');
+check(place.inRail || place.leftOfWork, `the bin is in the left column, not in the work (${place.x},${place.y})`);
+check(/[a-z]{3}/i.test(place.text), `the bin carries a word, not only a mark ("${place.text}")`);
+check(!place.foot, 'no bar at the foot of the work column holds the bin');
+check(place.hit && place.w >= 30 && place.h >= 30,
+  `the bin can be pressed where it is (${place.w}×${place.h}, over it: ${place.topIs})`);
+
 const liveCount = () => pg.locator(spec.live).count();
 const binCount = () => pg.locator(spec.binRow).count();
 const before = await liveCount();
