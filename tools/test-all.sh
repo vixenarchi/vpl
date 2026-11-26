@@ -41,25 +41,49 @@ if [ "$PROD" != "1" ]; then
   done
 fi
 
-pass=0; fail=0; failed=()
+pass=0; fail=0; skip=0; skipped=(); failed=()
 run() {                       # run "<label>" <command…>
   local label="$1"; shift
   printf '\n\033[1m%s\033[0m\n' "$label"
-  if "$@" 2>&1 | tail -n 12; then
+  "$@" >/tmp/test-all-last.log 2>&1
+  local code=$?
+  tail -n 12 /tmp/test-all-last.log
+  if [ "$code" = 0 ]; then
     pass=$((pass + 1))
+    return
+  fi
+  # 78 is EX_CONFIG: the suite did not run because no account was set. It is
+  # neither a pass nor a failure, and it must never be counted as a pass — an
+  # agent that reads "0 failed" and believes it is worse off than one that was
+  # never told about a gate at all.
+  if [ "$code" = 78 ]; then
+    skip=$((skip + 1)); skipped+=("$label")
+    printf '   — skipped: not configured (exit 78)\n'
     return
   fi
   # Nine servers, one small machine, and a suite that waits 8 s for a repaint:
   # a single failure is usually a slow neighbour, not a break. A suite that fails
   # twice is a break, and the retry is printed so the first failure is not hidden.
   echo "   — failed once; retrying (a slow neighbour looks exactly like a break)"
-  if "$@" 2>&1 | tail -n 12; then
+  "$@" >/tmp/test-all-last.log 2>&1
+  code=$?
+  tail -n 12 /tmp/test-all-last.log
+  if [ "$code" = 0 ]; then
     pass=$((pass + 1))
     echo "   — passed on the retry"
+  elif [ "$code" = 78 ]; then
+    skip=$((skip + 1)); skipped+=("$label")
+    printf '   — skipped: not configured (exit 78)\n'
   else
     fail=$((fail + 1)); failed+=("$label")
   fi
 }
+
+# ── 0. the shell each app carries is the shell in this repo ─────────
+# Eight apps hold a *copy* of packages/shell. Edit the shell, forget to stage,
+# and every suite below judges the old look and passes. That silence is what this
+# line exists to break.
+run "stage (the shell every app carries)" ./tools/stage.sh --check
 
 # ── 1. every file parses ────────────────────────────────────────────
 syntax=0
@@ -128,6 +152,13 @@ for app in vn vi vr vz vd vc vp va; do
 done
 
 printf '\n\033[1m%s\033[0m\n' "── summary ──────────────────────────────────"
-echo "  $pass passed, $fail failed"
+echo "  $pass passed, $fail failed, $skip skipped"
 for f in "${failed[@]:-}"; do [ -n "$f" ] && echo "  FAILED: $f"; done
+for s in "${skipped[@]:-}"; do [ -n "$s" ] && echo "  SKIPPED: $s (no account — see ~/.config/vpl/test.env)"; done
+# A skip is not a pass. The run is only green when nothing was skipped and
+# nothing failed; VPL_ALLOW_ANON=1 says "I know, I only want the anon suites".
 [ "$fail" = 0 ] || exit 1
+if [ "$skip" != 0 ] && [ "${VPL_ALLOW_ANON:-}" != "1" ]; then
+  echo "  (nothing is green here: $skip group(s) never ran)"
+  exit 1
+fi

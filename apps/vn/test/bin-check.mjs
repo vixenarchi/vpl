@@ -16,7 +16,7 @@ const PASS = process.env.VPL_PASS;
 
 if (!EMAIL || !PASS) {
   console.log('set VPL_EMAIL and VPL_PASS to a test account');
-  process.exit(1);
+  process.exit(78);      // not configured: skipped, never green
 }
 
 let pass = 0;
@@ -283,7 +283,15 @@ async function leaveBin() {
 await discard(spec.live, spec.del);
 await pg.waitForTimeout(1300);
 
-check(await until(async () => (await liveCount()) === before - 1), 'pressing ✕ takes it off the list');
+/* Under load the list repaints between hover and click, and a click can land on
+ * a button that is already gone — no error, no effect. Ask again, the way a
+ * person would, before calling it a break. */
+let gone = await until(async () => (await liveCount()) === before - 1, 6000);
+if (!gone) {
+  await discard(spec.live, spec.del);
+  gone = await until(async () => (await liveCount()) === before - 1, 8000);
+}
+check(gone, 'pressing ✕ takes it off the list' + (gone ? '' : ` (still ${await liveCount()} of ${before})`));
 check(await until(async () => /\S/.test((await pg.textContent(spec.count)) || '')), 'and the bin button carries the count');
 
 await pg.click(spec.btn);

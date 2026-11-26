@@ -174,22 +174,22 @@ if (NAME === 'vn' || NAME === 'vi') {
   } else {
     /* with no project open it must say so, not pretend */
     const cards = await pg.locator('#notes li').count();
+    const said = async () => (await pg.textContent('#dock .dock-msg') || '').trim();
+    const prev = await said();
     await pg.click('#dock [data-use]');
-    /* production writes land on the network, not on the next frame. With no
-     * wall open nothing is written at all, so the wait is for the sentence
-     * that says so — read once, it can be read before it is painted. */
+    /* Wait for a *new* sentence, not merely for some sentence: the dock still
+     * holds the answer to the question above, so "not empty" would pass on the
+     * wrong text and fail a run for the wrong reason. */
+    const fresh = async () => until(async () => {
+      const t = await said();
+      return t.length > 3 && t !== prev ? t : false;
+    }, 12000);
     if (cards === 0) {
-      const why = await until(async () => {
-        const t = (await pg.textContent('#dock .dock-msg') || '').trim();
-        return t.length > 3 ? t : false;
-      }, 12000) || await (async () => {
+      const why = await fresh() || await (async () => {
         /* a production click can land before the dock is listening; asking again
          * is what a person does, and it is cheaper than a flaky suite */
         await pg.click('#dock [data-use]').catch(() => {});
-        return until(async () => {
-          const t = (await pg.textContent('#dock .dock-msg') || '').trim();
-          return t.length > 3 ? t : false;
-        }, 12000);
+        return fresh();
       })();
       ok(/project/i.test(why || ''), 'with no wall open it explains instead of pretending: “' + (why || '') + '”');
     } else {

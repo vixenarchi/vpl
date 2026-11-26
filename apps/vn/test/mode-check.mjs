@@ -14,7 +14,7 @@ const PASS = process.env.VPL_PASS;
 if (!EMAIL || !PASS) {
   console.log('set VPL_EMAIL and VPL_PASS to a test account, e.g.\n' +
     '  VPL_EMAIL=you@example.com VPL_PASS=… node mode-check.mjs');
-  process.exit(1);
+  process.exit(78);      // not configured: skipped, never green
 }
 
 let pass = 0;

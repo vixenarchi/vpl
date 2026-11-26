@@ -25,6 +25,20 @@ Each app is documented in `docs/`: `vi.md`, `vr.md`, `vz.md`, `vd.md`, `vc.md`,
 `vp.md`, `va.md`. The rules the code is written against are in
 `docs/specification.md`; the tour is `docs/start-here.md`.
 
+## Picking this up — by a person or by an agent
+
+- **`AGENTS.md`** — the page an assistant should read first: three commands, ten
+  rules that bite, where things live. `CLAUDE.md` points at it too.
+- **`docs/rules.md`** — every rule that has cost somebody a bug, with the test
+  that proves it. Rule, reason, proof.
+- **`docs/cookbook.md`** — recipes: run one app, add a table, add a settings tab,
+  add a bin, add a ninth app, deploy, back up.
+- **`prompts/`** — three ready prompts (change one thing, add an app, review a
+  diff) for whichever assistant you use.
+- **`./tools/map.sh`** — the generated map: tables, ports, suites.
+- **`./tools/stage.sh --check`** and **`./tools/test-all.sh`** — the two commands
+  that keep the house honest. A skipped group is not a green group.
+
 ## What it deliberately does not do
 
 No teams or roles beyond view and edit. No realtime collaboration. No search

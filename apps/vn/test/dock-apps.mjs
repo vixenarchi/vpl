@@ -14,7 +14,7 @@ const PASS = process.env.VPL_PASS;
 if (!EMAIL || !PASS) {
   console.log('set VPL_EMAIL and VPL_PASS to a test account, e.g.\n' +
     '  APP=vd PORT=8104 VPL_EMAIL=you@example.com VPL_PASS=… node dock-apps.mjs');
-  process.exit(1);
+  process.exit(78);      // not configured: skipped, never green
 }
 if (!['vd', 'vc', 'va'].includes(APP)) {
   console.log('APP must be vd, vc or va');
