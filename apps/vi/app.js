@@ -14,6 +14,7 @@ import * as ai from './vendor/ai.js';
 import * as who from './vendor/who.js';
 import { mountDock, lastField, putInto } from './vendor/dock.js';
 import { mountNotice } from './vendor/notices.js';
+import { mountRail } from './vendor/rail.js';
 import * as settings from './vendor/settings.js';
 import * as engine from './vendor/engine.js';
 import { prompts } from './prompts.js';
@@ -32,6 +33,8 @@ const S = {
   stage: 'ideation',
   bin: [],         // notes in the recycle bin — the same rows, deleted
   showingBin: false,
+  jobBin: false,   // the rail is showing binned funnels instead of live ones
+  funnelsBinned: 0,
   pick: null,      // idea id being explored
   facts: {},       // idea id → the search results this session saw
   busy: false,
@@ -194,12 +197,16 @@ $('#note-form').addEventListener('submit', (e) => { e.preventDefault(); addNote(
 /* ── projects rail ────────────────────────────────────────────────── */
 async function loadProjects() {
   try {
-    S.projects = await db.listProjects();
+    S.projects = await db.listProjects({ bin: S.jobBin });
+    S.funnelsBinned = S.jobBin
+      ? S.projects.length
+      : await db.listProjects({ bin: true }).then((r) => r.length).catch(() => S.funnelsBinned || 0);
   } catch (e) {
     console.error(e);
     S.projects = [];
   }
   paintProjects();
+  paintJobBin();
   // if the person already opened or made a funnel while this list was on its
   // way, that choice wins; the welcome screen must not appear over it.
   if (S.project) return;
@@ -212,17 +219,72 @@ async function loadProjects() {
 function paintProjects() {
   const ul = $('#proj-list');
   ul.innerHTML = '';
+  ul.classList.toggle('bin-mode', S.jobBin);
   S.projects.forEach((p) => {
     const li = document.createElement('li');
     li.className = 'proj-row' + (S.project && p.id === S.project.id ? ' on' : '');
+    if (S.jobBin) {
+      /* a binned funnel has two doors and no pick: put it back, or end it. The
+       * rows inside it are untouched, so a restore loses nothing. */
+      li.innerHTML = `<span class="pick">${esc(p.title)}</span>
+        <button class="row-restore" type="button" title="put it back">restore</button>
+        <button class="kill" type="button" title="delete it for good">✕</button>`;
+      li.querySelector('.row-restore').onclick = () => restoreProject(p);
+      li.querySelector('.kill').onclick = () => purgeProject(p);
+      ul.append(li);
+      return;
+    }
     li.innerHTML = `<button class="pick" type="button">${esc(p.title)}</button>
       <span class="n" title="ideas">·</span>
-      <button class="kill" type="button" title="delete this funnel">✕</button>`;
+      <button class="kill" type="button" title="move this funnel to the recycle bin">✕</button>`;
     li.querySelector('.pick').onclick = () => openProject(p.id);
     li.querySelector('.kill').onclick = () => removeProject(p);
     ul.append(li);
   });
   $('#proj-none').hidden = S.projects.length > 0;
+  $('#proj-none').textContent = S.jobBin
+    ? 'nothing in the bin.'
+    : 'no funnels yet. one project is one funnel.';
+}
+
+/* The rail's own bin: a switch with a count, a sentence inside the list, and an
+ * emptying that says how many funnels it takes. */
+function paintJobBin() {
+  const btn = $('#btn-job-bin');
+  const n = S.funnelsBinned || 0;
+  btn.setAttribute('aria-pressed', String(S.jobBin));
+  btn.classList.toggle('on', S.jobBin);
+  btn.title = S.jobBin ? 'back to the funnels' : `funnels in the recycle bin (${n})`;
+  $('#job-bin-count').textContent = n ? String(n) : '';
+  $('#job-bin-banner').hidden = !S.jobBin;
+  $('#job-bin-note').textContent = S.jobBin
+    ? (n ? `${n} funnel${n === 1 ? '' : 's'} binned — restore one, or delete it for good`
+         : 'nothing in it — a deleted funnel waits here')
+    : '';
+}
+
+$('#btn-job-bin').onclick = async () => {
+  S.jobBin = !S.jobBin;
+  await loadProjects();
+  if (!S.jobBin && !S.project && S.projects[0]) await openProject(S.projects[0].id);
+};
+
+async function restoreProject(p) {
+  if (!isOwner()) return;
+  await db.restoreProject(p.id);
+  /* restoring leaves the bin and opens what came back: a funnel that returns
+   * into a list nobody is looking at returned silently */
+  S.jobBin = false;
+  await loadProjects();
+  await openProject(p.id).catch(() => {});
+  say($('#notes-msg'), `“${p.title}” is back`, 'ok');
+}
+
+async function purgeProject(p) {
+  if (!isOwner()) return;
+  if (!confirm(`delete “${p.title}” and everything in it, for good?`)) return;
+  await db.deleteProject(p.id);
+  await loadProjects();
 }
 
 async function newProject() {
@@ -235,12 +297,16 @@ async function newProject() {
   t.select();
 }
 
+/* ✕ is not "delete". A funnel holds the whole funnel's words, so it goes to the
+ * rail's bin and the list keeps the way back — the same promise the notes get. */
 async function removeProject(p) {
   if (!isOwner()) return;
-  if (!confirm(`delete “${p.title}” and everything in it?`)) return;
-  await db.deleteProject(p.id);
+  await db.binProject(p.id);
   if (S.project && S.project.id === p.id) S.project = null;
   await loadProjects();
+  if (!S.project && S.projects[0]) await openProject(S.projects[0].id);
+  else if (!S.project) showWelcome();
+  say($('#notes-msg'), `“${p.title}” is in the recycle bin`, 'ok');
 }
 
 /* One attribute, one place: CSS hides what this person may not press, and the
@@ -1356,3 +1422,8 @@ const DOCK = mountDock({
   onUse: useFromDock,
 });
 mountNotice({ app: 'vi', column: '#funnel' });
+
+/* The rail is a place where words pile up, so its width is the person's
+ * to choose; the grip on its edge writes --rail-w and this app's layout
+ * already asks for that width. */
+mountRail(document.getElementById('projects'), { app: 'vi' });

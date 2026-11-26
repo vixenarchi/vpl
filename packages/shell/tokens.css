@@ -362,6 +362,35 @@ dialog.settings .set-foot [data-a='forget'] { color: var(--danger); }
   border-top: 1px solid var(--line); padding: 0.4rem;
   background: var(--paper-2);
 }
+
+/* ── the rail's edge ─────────────────────────────────────────────────
+ * A separator you can drag: 7 px of hit area sitting *over* the border, so the
+ * handle costs the layout nothing. Visible on hover, on focus and while the
+ * drag is in progress — never as a permanent grey bar, which would read as a
+ * second border.
+ */
+/* the rail is the grip's containing block, and nothing more: a class here loses
+ * to an app's own media query, where a phone turns the rail into a drawer */
+.vpl-rail { position: relative; }
+.rail-grip {
+  position: absolute; top: 0; right: -4px; width: 9px; height: 100%;
+  z-index: 6; cursor: col-resize; touch-action: none;
+}
+.rail-grip::after {
+  content: ''; position: absolute; inset: 0 3px;
+  background: var(--mark); opacity: 0; transition: opacity 0.12s ease;
+}
+.rail-grip:hover::after,
+.rail-grip:focus-visible::after,
+body.rail-dragging .rail-grip::after { opacity: 0.45; }
+.rail-grip:focus-visible { outline: none; }
+body.rail-dragging { cursor: col-resize; user-select: none; }
+@media (max-width: 720px) {
+  /* on a phone the rail is a drawer over the work, not a column: nothing to
+   * resize, and a 9 px handle under a thumb is an accident waiting to happen */
+  .rail-grip { display: none; }
+}
+
 /* ── the bin switch in the rail ─────────────────────────────────────
  * A place belongs on the left, and a place needs a word: two bins with the same
  * glyph are a puzzle, and a bar at the foot of the work column is one more thing

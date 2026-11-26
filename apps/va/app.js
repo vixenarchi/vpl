@@ -14,6 +14,7 @@ import * as ai from './vendor/ai.js';
 import * as who from './vendor/who.js';
 import { mountDock, lastField, putInto } from './vendor/dock.js';
 import { mountNotice } from './vendor/notices.js';
+import { mountRail } from './vendor/rail.js';
 import * as engine from './vendor/engine.js';
 import * as settings from './vendor/settings.js';
 import { TEMPLATES, DEFAULT_TEMPLATE, templateById } from './templates.js';
@@ -1351,3 +1352,8 @@ const DOCK = mountDock({
   onUse: useFromDock,
 });
 mountNotice({ app: 'va', column: ['#spec', '#welcome'] });
+
+/* The rail is a place where words pile up, so its width is the person's
+ * to choose; the grip on its edge writes --rail-w and this app's layout
+ * already asks for that width. */
+mountRail(document.getElementById('projects'), { app: 'va' });

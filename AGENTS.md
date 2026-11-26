@@ -51,6 +51,7 @@ apps/<app>/vendor/ a COPY of packages/shell — git-ignored, made by tools/stage
 packages/shell/    the shared shell: tokens.css ai.js settings.js who.js
                    dock.js notices.js words.js engine.js
 apps/api/          the one origin the browser talks to: chat, search, fetch, vp
+tools/vpl-api.mjs  the API an agent uses: a token, then get/post/patch/delete
 agent/             the worker that takes a `va` job and writes the answer back
 supabase/migrations/  numbered SQL, one prefix per app
 apps/vn/test/      every app's suite (one folder, so `test-all.sh` is one list)
@@ -64,7 +65,7 @@ the rest of the repo is gone. Apps do not import each other, do not write each
 other's tables, and **never link to a sibling**. Advertising stays a copy you
 paste, never a pointer.
 
-## Ten rules that bite
+## Eleven rules that bite
 
 Each of these has been broken in this repository, and each is enforced by a test.
 The full list with reasons is `docs/rules.md`.
@@ -94,6 +95,9 @@ The full list with reasons is `docs/rules.md`.
    `vp-check`.
 10. **Never delete by content, always by id,** and never change a row's parent by
     a client update — the database refuses that too, by design.
+11. **An agent is a person with a token, not a service with a key.** The API is
+    the one the apps already use (Supabase REST + RLS). The service key is never
+    held by a tool. `api-check`.
 
 ## The style of the code
 
@@ -135,6 +139,8 @@ policy mistakes surface **only at push** — a `create policy` written
 
 ## Where the knowledge is
 
+- **`docs/api.md`** — how an agent does the work without a browser: sign in, the
+  tables, the closed lists, the bin, files, what is refused.
 - `docs/rules.md` — the index: rule, why, which test proves it.
 - `docs/cookbook.md` — recipes: add a table, add a tab, add an app, add a bin.
 - `docs/<app>.md` — what each app is, and what it deliberately is not.

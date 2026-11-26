@@ -1,6 +1,6 @@
 /* vr — the sheet, end to end.
  *
- *   VR_URL=http://127.0.0.1:8100 node vr-check.mjs
+ *   VR_URL=http://127.0.0.1:8101 node vr-check.mjs   (defaults to 8101)
  *
  * Runs as the agent account, makes one document, and deletes it again. No model
  * is needed: this is about the sheet, the keyboard, the colours and the gaps.
@@ -8,7 +8,7 @@
 import { chromium } from 'playwright';
 import { OWNER, GUEST } from './_account.mjs';
 
-const B = process.env.VR_URL || 'http://127.0.0.1:8100';
+const B = process.env.VR_URL || 'http://127.0.0.1:8101';   // vr's own port; 8100 is vi
 let pass = 0, fail = 0;
 const ok = (cond, what) => { cond ? pass++ : fail++; console.log(`  ${cond ? 'ok  ' : 'FAIL'} ${what}`); };
 const until = async (fn, ms = 8000, step = 120) => {

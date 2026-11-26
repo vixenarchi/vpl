@@ -66,7 +66,9 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
 
 .only-narrow { display: none; }
 
-.body { flex: 1; display: grid; grid-template-columns: 14rem minmax(0, 1fr); min-height: 0; }
+.body { flex: 1; display: grid; min-height: 0;
+  /* one place names the rail's width (14rem), and the grip writes the variable */
+  grid-template-columns: var(--rail-w, 14rem) minmax(0, 1fr); }
 
 /* ── documents rail ───────────────────────────────────────────────── */
 .projects {
@@ -79,7 +81,14 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
   padding: 0.65rem 0.6rem 0.4rem;
   font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-3);
 }
-.proj-list { list-style: none; margin: 0; padding: 0 0.4rem 0.6rem; overflow-y: auto; flex: 1; }
+/* Two lists, one rail, each with its own scroll and a share that cannot grow:
+ * a document with many themes used to push the documents list down to a single
+ * row, which reads as "the projects are gone". The list that is being read
+ * (themes) is capped; the list that is being chosen from keeps the rest. */
+.proj-list {
+  list-style: none; margin: 0; padding: 0 0.4rem 0.6rem;
+  overflow-y: auto; flex: 1 1 auto; min-height: 4.5rem;
+}
 .proj-row {
   display: flex; align-items: center; gap: 0.3rem;
   margin: 0 0 0.15rem; border-radius: 4px;
@@ -205,7 +214,16 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
 .add-theme { font-size: 0.75rem; margin-right: 0.5rem; }
 
 /* the tree in the rail */
-.themes { margin-top: 1rem; border-top: 1px solid var(--rule); padding-top: 0.6rem; }
+.themes {
+  margin-top: 1rem; border-top: 1px solid var(--rule); padding-top: 0.6rem;
+  /* A floor as well as a ceiling. With forty documents in the rail the project
+   * list's content is the biggest flex basis here, and without a floor the
+   * themes shrink until only their heading is left — a tree you cannot press is
+   * worse than a short one. */
+  flex: 0 1 auto; max-height: 45%; min-height: 9rem;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.themes .theme-tree { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 .theme-tree { list-style: none; margin: 0.3rem 0 0; padding: 0; }
 .tt-row { display: flex; align-items: center; gap: 0.15rem; border-radius: 3px; }
 .tt-row:hover { background: var(--paper-3); }

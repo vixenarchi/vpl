@@ -33,6 +33,11 @@ Each app is documented in `docs/`: `vi.md`, `vr.md`, `vz.md`, `vd.md`, `vc.md`,
   that proves it. Rule, reason, proof.
 - **`docs/cookbook.md`** — recipes: run one app, add a table, add a settings tab,
   add a bin, add a ninth app, deploy, back up.
+- **`docs/api.md`** — the way an agent works without a browser: sign in with the
+  person's account, then read and write the same rows the apps do
+  (`node tools/vpl-api.mjs login …; get / post / patch / delete / rpc`). There is
+  no vpl service: the API is Supabase REST with row-level security as the whole
+  permission model, and the service key is never used.
 - **`prompts/`** — three ready prompts (change one thing, add an app, review a
   diff) for whichever assistant you use.
 - **`./tools/map.sh`** — the generated map: tables, ports, suites.

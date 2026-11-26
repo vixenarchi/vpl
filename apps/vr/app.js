@@ -13,6 +13,7 @@ import * as ai from './vendor/ai.js';
 import * as who from './vendor/who.js';
 import { mountDock, lastField, putInto } from './vendor/dock.js';
 import { mountNotice } from './vendor/notices.js';
+import { mountRail } from './vendor/rail.js';
 import * as settings from './vendor/settings.js';
 import * as engine from './vendor/engine.js';
 import { prompts } from './prompts.js';
@@ -32,6 +33,8 @@ const S = {
   reqs: [],
   bin: [],          // rows in the recycle bin
   binMode: false,
+  jobBin: false,    // the rail is showing binned documents, not live ones
+  funnelsBinned: 0,
   terms: [],
   role: 'owner',     // owner | edit | view
   guest: null,       // a public link: no session, no writes
@@ -205,12 +208,16 @@ async function enter() {
 
 async function loadProjects() {
   try {
-    S.projects = await db.listProjects();
+    S.projects = await db.listProjects({ bin: S.jobBin });
+    S.funnelsBinned = S.jobBin
+      ? S.projects.length
+      : await db.listProjects({ bin: true }).then((r) => r.length).catch(() => S.funnelsBinned || 0);
   } catch (e) {
     console.error(e);
     S.projects = [];
   }
   paintProjects();
+  paintJobBin();
   const last = (() => { try { return localStorage.getItem('vpl.vr.last'); } catch { return null; } })();
   const pick = S.projects.find((p) => p.id === last) || S.projects[0];
   if (pick) await openProject(pick);
@@ -225,13 +232,49 @@ function showWelcome() {
 
 function paintProjects() {
   const ul = $('#proj-list');
-  ul.innerHTML = S.projects.map((p) => `
-    <li class="proj-row ${S.project && p.id === S.project.id ? 'on' : ''}" data-id="${p.id}">
-      <button class="pick" type="button" title="${esc(p.title)}">${esc(p.title)}</button>
-      <button class="kill o-only" type="button" title="delete this document" data-del-project="${p.id}">✕</button>
-    </li>`).join('');
+  ul.classList.toggle('bin-mode', S.jobBin);
+  ul.innerHTML = S.jobBin
+    ? S.projects.map((p) => `
+      <li class="proj-row bin-row" data-id="${p.id}">
+        <span class="pick" title="${esc(p.title)}">${esc(p.title)}</span>
+        <button class="row-restore" type="button" title="put it back" data-back-project="${p.id}">restore</button>
+        <button class="kill" type="button" title="delete it for good" data-purge-project="${p.id}">✕</button>
+      </li>`).join('')
+    : S.projects.map((p) => `
+      <li class="proj-row ${S.project && p.id === S.project.id ? 'on' : ''}" data-id="${p.id}">
+        <button class="pick" type="button" title="${esc(p.title)}">${esc(p.title)}</button>
+        <button class="kill o-only" type="button" title="move this document to the recycle bin" data-del-project="${p.id}">✕</button>
+      </li>`).join('');
   $('#proj-none').hidden = S.projects.length > 0;
+  $('#proj-none').textContent = S.jobBin
+    ? 'nothing in the bin.'
+    : 'no documents yet. one document is one sheet.';
+  /* a document's themes belong to a live document, not to the bin — and they
+   * come back the moment the rail does */
+  $('#themes').hidden = !!S.jobBin;
 }
+
+/* the rail's bin: a switch with a count, a sentence, and an emptying that says
+ * how many documents it takes — the rows inside them go with them */
+function paintJobBin() {
+  const btn = $('#btn-job-bin');
+  if (!btn) return;
+  const n = S.funnelsBinned || 0;
+  btn.setAttribute('aria-pressed', String(S.jobBin));
+  btn.classList.toggle('on', S.jobBin);
+  btn.title = S.jobBin ? 'back to the documents' : `documents in the recycle bin (${n})`;
+  $('#job-bin-count').textContent = n ? String(n) : '';
+  $('#job-bin-banner').hidden = !S.jobBin;
+  $('#job-bin-note').textContent = S.jobBin
+    ? (n ? `${n} document${n === 1 ? '' : 's'} binned — restore one, or delete it for good`
+         : 'nothing in it — a deleted document waits here')
+    : '';
+}
+
+$('#btn-job-bin').onclick = async () => {
+  S.jobBin = !S.jobBin;
+  await loadProjects();
+};
 
 /* ── a document opens ─────────────────────────────────────────────── */
 async function openProject(p) {
@@ -1543,6 +1586,10 @@ function wireChrome() {
   $('#proj-list').addEventListener('click', (e) => {
     const del = e.target.closest('button[data-del-project]');
     if (del) return removeProject(del.dataset.delProject);
+    const back = e.target.closest('button[data-back-project]');
+    if (back) return restoreProject(back.dataset.backProject);
+    const purge = e.target.closest('button[data-purge-project]');
+    if (purge) return purgeProject(purge.dataset.purgeProject);
     const row = e.target.closest('.proj-row');
     if (!row) return;
     const p = S.projects.find((x) => x.id === row.dataset.id);
@@ -1761,13 +1808,18 @@ async function newProject() {
   } catch (e) { console.error(e); }
 }
 
+/* ✕ is not "delete": a document holds every row and every theme, so it goes to
+ * the rail's bin and the list keeps the way back. Deleting for good is the bin's
+ * own second door, and it asks with the document's name in it. */
 async function removeProject(id) {
   if (!isOwner()) return;
   const p = S.projects.find((x) => x.id === id);
   if (!p) return;
-  if (!confirm(`Delete "${p.title}" and every row in it?`)) return;
   try {
-    await db.deleteProject(id);
+    await db.binProject(id);
+    /* the count on the switch is how a person knows there is a way back, so it
+     * is moved by the same press that moved the row */
+    S.funnelsBinned = (S.funnelsBinned || 0) + 1;
     S.projects = S.projects.filter((x) => x.id !== id);
     if (S.project && S.project.id === id) {
       const next = S.projects[0];
@@ -1775,6 +1827,32 @@ async function removeProject(id) {
       else { S.project = null; showWelcome(); }
     }
     paintProjects();
+    paintJobBin();
+  } catch (e) { console.error(e); }
+}
+
+async function restoreProject(id) {
+  if (!isOwner()) return;
+  const p = S.projects.find((x) => x.id === id);
+  await db.restoreProject(id);
+  /* restoring leaves the bin and opens what came back, so nothing returns
+   * silently into a list nobody is looking at */
+  S.jobBin = false;
+  await loadProjects();
+  const back = S.projects.find((x) => x.id === id);
+  if (back) await openProject(back);
+  void p;
+}
+
+async function purgeProject(id) {
+  if (!isOwner()) return;
+  const p = S.projects.find((x) => x.id === id);
+  if (!confirm(`delete "${p?.title || 'this document'}" and every row in it, for good?`)) return;
+  try {
+    await db.deleteProject(id);
+    S.projects = S.projects.filter((x) => x.id !== id);
+    paintProjects();
+    paintJobBin();
   } catch (e) { console.error(e); }
 }
 
@@ -1818,3 +1896,8 @@ const DOCK = mountDock({
   onUse: useFromDock,
 });
 mountNotice({ app: 'vr', column: '#spec' });
+
+/* The rail is a place where words pile up, so its width is the person's
+ * to choose; the grip on its edge writes --rail-w and this app's layout
+ * already asks for that width. */
+mountRail(document.getElementById('projects'), { app: 'vr' });

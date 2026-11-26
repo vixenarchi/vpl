@@ -66,6 +66,12 @@ echo "the doors (one origin for the browser; providers send no CORS headers)"
 find apps/api/functions -name '*.js' | sort | sed 's/^/  /'
 
 echo
+echo "the API an agent uses — the apps' own API, as a person with a token"
+[ -f tools/vpl-api.mjs ] && printf '  %-22s %s\n' "tools/vpl-api.mjs" "login, me, get, post, patch, delete, rpc"
+[ -f docs/api.md ] && printf '  %-22s %s\n' "docs/api.md" "sign in, tables, closed lists, the bin, files, refusals"
+echo "  the surface                 POST /auth/v1/token, /rest/v1/<table>, /storage/v1/object/<bucket>/<project_id>/<file>, /rest/v1/rpc/<fn>"
+
+echo
 echo "the shell every app is painted with — a copy, never an import"
 purpose() {                   # purpose <file> — the first line of its own header
   sed -n '1,4p' "$1" | tr -d '\r' \

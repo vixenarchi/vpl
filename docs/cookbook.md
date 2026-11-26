@@ -100,6 +100,32 @@ The bin is a shape, not a feature. Copy the shape from `apps/vc`:
 
 Proof: `APP=<app> PORT=<port> node apps/vn/test/bin-check.mjs` → 19/19.
 
+## Do something as a person, without the browser
+
+The API is the apps' own API: Supabase REST with the person's token, so
+row-level security decides exactly as it does in the page. `docs/api.md` is the
+reference; this is the shortest path through it.
+
+```bash
+node tools/vpl-api.mjs login you@example.com        # token cached for an hour
+node tools/vpl-api.mjs me                           # who, and what each app holds
+
+node tools/vpl-api.mjs get vr_reqs 'select=id,title&limit=5'
+node tools/vpl-api.mjs post vn_notes '{"title":"a note","body":"text\n"}'
+node tools/vpl-api.mjs patch vn_notes 'id=eq.<uuid>' '{"deleted_at":null}'   # out of the bin
+node tools/vpl-api.mjs delete vn_notes 'id=eq.<uuid>'                        # for good
+```
+
+Three things that catch a first attempt:
+
+- **`user_id` is in the body**, not a default — the tool fills it, raw HTTP must send it.
+- **A patch or a delete without a filter is refused by the tool**, because it
+  would write or take every row the person owns.
+- **`403 permission denied … GRANT UPDATE`** on a `user_id` patch is the
+  owner-field guard, not a missing grant. Copy the row instead.
+
+Proof: `node apps/vn/test/api-check.mjs` → 18/18, no browser.
+
 ## Add a door to the proxy
 
 ```bash

@@ -45,8 +45,13 @@ const audit = ({ SMALL_HIT, SMALL_TYPE }) => {
    * is the sentence. A button, or a link that stands alone, is a control and is
    * measured. Without this, every prose page looks like a phone full of bugs. */
   const inSentence = (el) => el.tagName === 'A' && !!el.closest('p, dd, dt, figcaption') && !el.classList.contains('quiet');
+  /* a separator is an edge between two places, not a control you aim at: it is
+   * tall as the rail is and thin on purpose, and the size rule is about targets
+   * a finger has to land on. It is still reachable, still named, still keyboard. */
+  const isEdge = (el) => el.getAttribute('role') === 'separator';
   for (const el of hit) {
     if (!visible(el) || el.closest('#dock') || inSentence(el)) continue;
+    if (isEdge(el)) { if (!el.getAttribute('aria-label')) out.unnamed.push('separator'); continue; }
     const r = el.getBoundingClientRect();
     const w = Math.round(r.width);
     const h = Math.round(r.height);

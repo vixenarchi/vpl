@@ -128,6 +128,14 @@ run "va · desk + drawing + hand-off" node va-check.mjs
 for a in vn vi vr vz vd vc va; do
   run "${a} · bin" env APP="${a}" PORT="${PORT[$a]}" node bin-check.mjs
 done
+# the rail is where the work is chosen, and its width is the person's: one grip,
+# a remembered width, the arrow keys, and no grip at all on a phone
+for a in vn vi vr vz vd vc va; do
+  run "${a} · the rail's edge" env APP="${a}" PORT="${PORT[$a]}" node rail-check.mjs
+done
+# the surface an agent uses: a token is a person, a bin is a column, an owner
+# is not a field. no browser at all.
+run "api · the agent's surface" node api-check.mjs
 run "va · canvas" node va-canvas.mjs
 run "va · hand-off" node va-handoff.mjs
 

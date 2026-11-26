@@ -33,7 +33,7 @@ function loadScript(src) {
   });
 }
 
-const P = 'id,user_id,title,context,exploration,simulation,chosen_id,created_at,updated_at';
+const P = 'id,user_id,title,context,exploration,simulation,chosen_id,created_at,updated_at,deleted_at';
 const I = 'id,project_id,text,stage,color,reason,exploration,explored_at,position,created_at,updated_at,deleted_at';
 
 /* ── auth ─────────────────────────────────────────────────────────── */
@@ -105,11 +105,24 @@ export async function watchAuth(cb) {
 }
 
 /* ── projects: one row is one funnel ──────────────────────────────── */
-export async function listProjects() {
+export async function listProjects({ bin = false } = {}) {
   const db = await client();
-  const { data, error } = await db.from('vi_projects').select(P).order('updated_at', { ascending: false });
+  let q = db.from('vi_projects').select(P);
+  q = bin ? q.not('deleted_at', 'is', null) : q.is('deleted_at', null);
+  const { data, error } = await q.order('deleted_at', { ascending: false })
+    .order('updated_at', { ascending: false });
   if (error) throw error;
   return data;
+}
+
+/* a funnel is the biggest thing a person can lose here: ✕ bins it, and the
+ * rail keeps the way back until somebody says "for good" */
+export async function binProject(id) {
+  return updateProject(id, { deleted_at: new Date().toISOString() });
+}
+
+export async function restoreProject(id) {
+  return updateProject(id, { deleted_at: null });
 }
 
 export async function createProject(title = 'untitled funnel') {

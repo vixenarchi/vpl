@@ -163,6 +163,27 @@ Run the proof with `./tools/test-all.sh`, or one at a time from `apps/vn/test`
 - **Gemini behind the `vp` door cannot carry tools** (`thought_signature`).
   → `vp-proxy`
 
+## The API an agent uses
+
+- **The API is the app's own API.** No vpl service, no second database: Supabase
+  REST as the person, with row-level security doing the deciding. A new endpoint
+  would be a second permission model. → `api-check`
+- **A token is a person.** Every call runs as that account, so an agent can do
+  what the person may do — and nothing else. → `api-check`
+- **The service key is never held by a tool.** It bypasses every rule above, so
+  it cannot be the thing an agent carries.
+- **`user_id` is not a default.** The insert policy asks whether the row is you,
+  so the body carries it; without it the answer is `42501`, not a hint.
+- **A patch always has a filter.** Unfiltered writes every row the person owns.
+  The tool refuses one; so does the cookbook. → `api-check`
+- **The owner-field guard looks like a grant error and is not one**
+  (`403 permission denied … GRANT UPDATE`). Do not run the grant; copy the row.
+  → `api-check`
+- **An upload path starts with the project id**, because the storage policy reads
+  it (`*_path_project`). A path starting with the user id is refused.
+- **A bin is one column** (`deleted_at`), so an agent can undo its own mistake,
+  and "for good" is the separate verb that names what it takes. → `api-check`
+
 ## The suite is the argument
 
 - **A group that is not in the test list is green by absence.** Add the suite

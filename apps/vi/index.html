@@ -74,6 +74,8 @@
       <div class="proj-head">
         <span>projects</span>
         <span class="grow"></span>
+        <button id="btn-job-bin" class="job-bin" type="button" aria-pressed="false"
+                title="funnels in the recycle bin"><span aria-hidden="true">♲</span><span class="bin-word">funnels</span><span id="job-bin-count"></span></button>
         <!-- The bin is the rail's, not the work column's: a place with a name
              belongs on the left, and a bar at the foot of the sheet is one more
              thing to scroll past (and to cover what is under it). -->
@@ -82,6 +84,10 @@
       </div>
       <!-- the bin is the suite's, and it belongs to the rail: a sign on the door
            you can see from anywhere, above the list so it covers no row -->
+      <div id="job-bin-banner" class="bin-banner" hidden>
+        <span class="bin-banner-title">recycle bin · funnels</span>
+        <span id="job-bin-note" class="bin-banner-note">nothing in it</span>
+      </div>
       <div id="bin-banner" class="bin-banner" hidden>
         <span class="bin-banner-title">recycle bin</span>
         <span id="bin-banner-note" class="bin-banner-note">nothing in it</span>

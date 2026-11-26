@@ -32,7 +32,7 @@ function loadScript(src) {
   });
 }
 
-const P = 'id,user_id,title,brief,assumptions,scope,created_at,updated_at';
+const P = 'id,user_id,title,brief,assumptions,scope,created_at,updated_at,deleted_at';
 const R = 'id,project_id,user_id,ref,kind,strength,theme,theme_id,category,title,statement,detail,'
         + 'asis,tobe,horizon,source,verification,metric,target,conditions,clause,status,pos,'
         + 'file_path,file_name,file_size,file_mime,deleted_at,created_at,updated_at';
@@ -107,11 +107,24 @@ export async function watchAuth(cb) {
 }
 
 /* ── documents ────────────────────────────────────────────────────── */
-export async function listProjects() {
+export async function listProjects({ bin = false } = {}) {
   const db = await client();
-  const { data, error } = await db.from('vr_projects').select(P).order('updated_at', { ascending: false });
+  let q = db.from('vr_projects').select(P);
+  q = bin ? q.not('deleted_at', 'is', null) : q.is('deleted_at', null);
+  const { data, error } = await q.order('deleted_at', { ascending: false })
+    .order('updated_at', { ascending: false });
   if (error) throw error;
   return data;
+}
+
+/* a document is the container: the rows inside it are only readable through it,
+ * so losing the document is the biggest loss this app can cause. ✕ bins it. */
+export async function binProject(id) {
+  return updateProject(id, { deleted_at: new Date().toISOString() });
+}
+
+export async function restoreProject(id) {
+  return updateProject(id, { deleted_at: null });
 }
 
 export async function createProject(title = 'untitled spec') {

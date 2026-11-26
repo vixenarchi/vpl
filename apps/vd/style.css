@@ -46,7 +46,9 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
 
 .only-narrow { display: none; }
 
-.body { flex: 1; display: grid; grid-template-columns: 14rem minmax(0, 1fr); min-height: 0; }
+.body { flex: 1; display: grid; min-height: 0;
+  /* one place names the rail's width (14rem), and the grip writes the variable */
+  grid-template-columns: var(--rail-w, 14rem) minmax(0, 1fr); }
 
 /* ── the rail of jobs ─────────────────────────────────────────────── */
 .projects {

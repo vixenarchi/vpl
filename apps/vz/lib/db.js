@@ -32,7 +32,7 @@ function loadScript(src) {
   });
 }
 
-const P = 'id,user_id,title,note,hide_values,published,publish_code,created_at,updated_at';
+const P = 'id,user_id,title,note,hide_values,published,publish_code,created_at,updated_at,deleted_at';
 const K = 'id,project_id,key,value,deleted_at,created_at,updated_at';
 const SH = 'id,project_id,owner_id,code,email,role,pending,created_at';
 
@@ -78,12 +78,25 @@ export async function signOut() {
 }
 
 /* ── projects ─────────────────────────────────────────────────────── */
-export async function listProjects() {
+export async function listProjects({ bin = false } = {}) {
   const db = await client();
-  const { data, error } = await db.from('vz_projects').select(P)
+  let q = db.from('vz_projects').select(P);
+  q = bin ? q.not('deleted_at', 'is', null) : q.is('deleted_at', null);
+  const { data, error } = await q.order('deleted_at', { ascending: false })
     .order('updated_at', { ascending: false });
   if (error) throw error;
   return data;
+}
+
+/* a dictionary is the container; ✕ bins it. Publishing is separate: a binned
+ * project stops answering at its public address, because the read function only
+ * serves live rows. */
+export async function binProject(id) {
+  return updateProject(id, { deleted_at: new Date().toISOString() });
+}
+
+export async function restoreProject(id) {
+  return updateProject(id, { deleted_at: null });
 }
 
 export async function createProject(title = 'untitled') {

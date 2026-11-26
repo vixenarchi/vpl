@@ -3,6 +3,7 @@ import * as engine from './vendor/engine.js';
 import * as who from './vendor/who.js';
 import { mountDock, lastField, putInto } from './vendor/dock.js';
 import { mountNotice } from './vendor/notices.js';
+import { mountRail } from './vendor/rail.js';
 /* vpl · vz — zed. A project is a dictionary; a row is a key and a value.
  *
  * The screen is one list. Keys are monospace and always visible; values stay
@@ -27,6 +28,8 @@ const S = {
   project: null,
   pairs: [],
   bin: [],
+  jobBin: false,        // the rail is showing binned dictionaries
+  funnelsBinned: 0,
   shares: [],
   role: null,
   guest: null,          // null | 'share' | 'public'
@@ -174,26 +177,60 @@ async function enterApp() {
 
 /* ── the rail ─────────────────────────────────────────────────────── */
 async function loadProjects() {
-  S.projects = await db.listProjects();
+  S.projects = await db.listProjects({ bin: S.jobBin });
+  S.funnelsBinned = S.jobBin
+    ? S.projects.length
+    : await db.listProjects({ bin: true }).then((r) => r.length).catch(() => S.funnelsBinned || 0);
   renderRail();
 }
 
 function renderRail() {
   const list = $('#proj-list');
   list.innerHTML = '';
+  list.classList.toggle('bin-mode', S.jobBin);
   for (const p of S.projects) {
     const li = document.createElement('li');
     li.className = 'proj-row' + (p.id === S.project?.id ? ' on' : '');
     li.dataset.id = p.id;
-    li.innerHTML = `<button class="pick" type="button">${esc(p.title || 'untitled')}</button>`
-      + (p.published ? '<span class="n" title="published">pub</span>' : '')
-      + '<button class="kill" type="button" title="delete the project">✕</button>';
+    li.innerHTML = S.jobBin
+      ? `<span class="pick">${esc(p.title || 'untitled')}</span>`
+        + '<button class="row-restore" type="button" title="put it back" data-back-project>restore</button>'
+        + '<button class="kill" type="button" title="delete it for good" data-purge-project>✕</button>'
+      : `<button class="pick" type="button">${esc(p.title || 'untitled')}</button>`
+        + (p.published ? '<span class="n" title="published">pub</span>' : '')
+        + '<button class="kill" type="button" title="move the dictionary to the recycle bin">✕</button>';
     list.append(li);
   }
   $('#proj-none').hidden = S.projects.length > 0;
+  $('#proj-none').textContent = S.jobBin
+    ? 'nothing in the bin.'
+    : 'no projects yet. one project is one dictionary.';
   $('#btn-new').hidden = !!S.guest;
   paintProjectsBin();
+  paintJobBin();
 }
+
+/* the rail's bin, beside the words bin: same shape, different loss */
+function paintJobBin() {
+  const btn = $('#btn-job-bin');
+  if (!btn) return;
+  const n = S.funnelsBinned || 0;
+  btn.setAttribute('aria-pressed', String(S.jobBin));
+  btn.classList.toggle('on', S.jobBin);
+  btn.title = S.jobBin ? 'back to the dictionaries' : `dictionaries in the recycle bin (${n})`;
+  $('#job-bin-count').textContent = n ? String(n) : '';
+  $('#job-bin-banner').hidden = !S.jobBin;
+  $('#job-bin-note').textContent = S.jobBin
+    ? (n ? `${n} dictionar${n === 1 ? 'y' : 'ies'} binned — restore one, or delete it for good`
+         : 'nothing in it — a deleted dictionary waits here')
+    : '';
+}
+
+$('#btn-job-bin').onclick = async () => {
+  S.jobBin = !S.jobBin;
+  await loadProjects();
+  if (!S.jobBin && !S.project && S.projects[0]) await openProject(S.projects[0].id);
+};
 
 /* The bin button says what it is and where it goes, in words and in colour:
  * filled when the bin is open, with the count in it. */
@@ -218,11 +255,27 @@ function paintProjectsBin() {
 $('#proj-list').addEventListener('click', async (e) => {
   const li = e.target.closest('.proj-row');
   if (!li) return;
+  if (e.target.hasAttribute('data-back-project')) {
+    const p = S.projects.find((x) => x.id === li.dataset.id);
+    await db.restoreProject(li.dataset.id);
+    S.jobBin = false;
+    await loadProjects();
+    if (p) await openProject(p.id).catch(() => {});
+    return;
+  }
+  if (e.target.hasAttribute('data-purge-project')) {
+    const p = S.projects.find((x) => x.id === li.dataset.id);
+    if (!confirm(`delete "${p?.title || 'this dictionary'}" and every key in it, for good?`)) return;
+    await db.deleteProject(li.dataset.id);
+    await loadProjects();
+    return;
+  }
   if (e.target.classList.contains('kill')) {
     const p = S.projects.find((x) => x.id === li.dataset.id);
     if (!p) return;
-    if (!confirm(`delete "${p.title}" and every key in it?`)) return;
-    await db.deleteProject(p.id);
+    /* ✕ bins. A dictionary holds every key, so it keeps its words and the
+     * rail's bin is the way back. */
+    await db.binProject(p.id);
     if (S.project?.id === p.id) { S.project = null; S.pairs = []; }
     await loadProjects();
     if (S.projects[0]) await openProject(S.projects[0].id);
@@ -1054,3 +1107,8 @@ const DOCK = mountDock({
   onUse: useFromDock,
 });
 mountNotice({ app: 'vz', column: '#spec' });
+
+/* The rail is a place where words pile up, so its width is the person's
+ * to choose; the grip on its edge writes --rail-w and this app's layout
+ * already asks for that width. */
+mountRail(document.getElementById('projects'), { app: 'vz' });

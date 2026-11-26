@@ -1629,3 +1629,61 @@ a moved target cannot change silently.
 
 The gate is **40 groups**. It was 37 an hour ago and 35 before that; the number
 is not the point, the fact that nothing is skipped is.
+
+---
+
+## 2026-12-23 — the edge is a handle, and a token is a person
+
+Four things were asked for in one breath: the themes were eating vr's rail, ✕
+destroyed instead of binning, the rail had one width for everybody, and an agent
+should be able to work without clicking.
+
+**The rail had no floor.** `.themes` was `flex: 1` beside `.proj-list` that was
+also `flex: 1`, so the two lists split whatever was left *after* the taller one
+took what it wanted — and the themes, being a tree, took nearly all of it: one
+visible project row at 45 themes. `proj-list` now has `min-height: 4.5rem` and
+`themes` is `flex: 0 1 auto; max-height: 45%`, each with its own scroller.
+Measured: 12 themes → 595/157 px, 45 themes → 414/338 px. The rule underneath is
+older than this app: **two lists in one column need a floor and a ceiling, or the
+taller one wins.**
+
+**The container was not in the bin.** Seven apps binned rows and three of them
+still destroyed the thing that held the rows. `vd`, `vc` and `va` had `deleted_at`
+on their projects since `20261214000000`; `vi`, `vr` and `vz` did not.
+`20261223000000_project_bin_vi_vr_vz.sql` adds one nullable column to each, and
+the rail's ✕ stops asking a question and starts keeping a promise. The rail grew
+a **second** bin chip for it (`♲ funnels`, `♲ docs`), because a bin for rows and a
+bin for containers are two different losses and two bins must not share a word.
+The vz fix had a second half: `vz_read_public` served a binned project at its
+public address. It now asks `deleted_at is null` too — proved by reading a binned
+publish code (`null`) and a live one (its keys).
+
+**The rail had one width.** `packages/shell/rail.js` is new: a 9 px separator
+that sits *over* the border (so it costs the layout nothing), drag or arrow keys,
+Home/End for the ends, double-click to go back, one remembered width per app,
+clamped to 46 % of the window, hidden under 720 px where the rail is a drawer.
+Each app's `.body` now asks for `var(--rail-w, 14rem)` instead of naming a
+number, so the handle writes one variable and every layout follows. vn keeps
+`--list-w`, which is the same idea under an older name.
+`ux-sniff` learned one exception: a `role="separator"` is an edge, not a target,
+so the 30 px floor does not apply to it — it is still named and still reachable.
+
+**An agent should not click.** The answer is not a new service; it is that the
+apps already have an API and nobody had written it down. `docs/api.md` documents
+signing in with a password grant, the tokens, every app's tables, the closed
+lists, the bin, uploads, the four doors and the refusals. `tools/vpl-api.mjs` is
+the twenty-line version of that document: `login`, `me`, `get`, `post`, `patch`,
+`delete`, `rpc`, with the token cached and refreshed. The design decision worth
+keeping is the sentence in the file: **a token is a person** — every call runs as
+that account, row-level security decides, and the service key is never held by a
+tool, because it would make every rule above optional.
+
+Two things were learned by doing rather than by reading. `user_id` is not a
+default in the database (the insert policy asks whether the row is you), so the
+tool fills it and the document says so. And an upload path starts with the
+**project** id (`va_path_project` reads the first segment), not the user id — a
+path starting with the user id is refused with the same `42501` as everything
+else, which is why the first attempt looked like a permissions mystery.
+
+The gate is now **48 groups** (seven more for `rail-check`, one for `api-check`),
+and `api-check` runs with no browser at all.

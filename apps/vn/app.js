@@ -16,6 +16,7 @@ import * as engine from './vendor/engine.js';
 import * as who from './vendor/who.js';
 import { mountDock } from './vendor/dock.js';
 import { mountNotice } from './vendor/notices.js';
+import { mountRail } from './vendor/rail.js';
 
 /* ── elements ─────────────────────────────────────────────────────── */
 const $ = (id) => document.getElementById(id);
@@ -2836,3 +2837,8 @@ const DOCK = mountDock({
   onUse: useFromDock,
 });
 mountNotice({ app: 'vn', column: '#main' });
+
+/* The rail is a place where words pile up, so its width is the person's
+ * to choose; the grip on its edge writes --rail-w and this app's layout
+ * already asks for that width. */
+mountRail(document.getElementById('list'), { app: 'vn', setVar: '--list-w' });

@@ -139,3 +139,34 @@ left-column test rather than the rail test, because its bin lives in the tree.
 Proved in all seven: `bin-check` **19/19** each (vn, vi, vr, vz, vd, vc, va);
 `chrome-check` 48–50/0; `ux-sniff` 0 problems; `vi-check` 20, `vr-check` 59,
 `vz-check` 53, `vd-check` 47, `vc-check` 41, `va-check` 47.
+
+## A container bins too (v1.8)
+
+The bin held rows. A funnel, a document, a dictionary and a project still went
+away from the rail with one press and a sentence nobody could undo: `delete "the
+dog house" and every row in it?`. The rows inside were the person's work, and the
+warning was the only protection.
+
+Now the container is a row like the others:
+
+- **`deleted_at` on `vi_projects`, `vr_projects`, `vz_projects`**
+  (`20261223000000_project_bin_vi_vr_vz.sql`; `vd`, `vc`, `va` already had it from
+  `20261214000000`). One nullable column each, one index for "binned, newest
+  first".
+- **✕ in the rail bins.** No confirm. The rail's bin chip carries the count, and
+  the list itself changes colour — the same promise the rows get.
+- **The rail's bin is a second switch in the rail's head**, beside the rows'
+  bin: `♲ docs` next to `♲ rows` in vr, `♲ docs` beside `♲ words` in vz, `♲
+  funnels` in vi. Two bins do not share a glyph or a word.
+- **Restoring opens what came back.** A document that returns into a list nobody
+  is looking at returned silently; the restore puts it back *and* opens it.
+- **Deleting for good asks with the name in the sentence**, in the bin only.
+- **A binned dictionary stops answering at its public address**
+  (`20261223000100_vz_public_respects_the_bin.sql`): `vz_read_public` now asks
+  `deleted_at is null` as well as `published`. Measured: a binned published
+  project returns `null`, a live one still returns its keys.
+
+Proved in all three: `bin-check` 19/19, plus a probe that bins, restores and
+purges a container in vi (122 → 121 → 122 → 0 in the bin), vr (50 → 49 → 50),
+vz (57 → 56 → 57). `vr-check` 59, `vz-check` 53, `vi-check` 20, `e2e` 25,
+`mode-check` 23 — all green after the change.
