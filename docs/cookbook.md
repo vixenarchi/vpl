@@ -194,3 +194,17 @@ Backups contain the repository, never `config.local.js`, `agent.env`,
 2. `./tools/stage.sh --check` — the most common silent break.
 3. `docs/rules.md` — find the rule you are breaking, then run its proof.
 4. `docs/build-notes.md` — grep for the symptom; the argument is in there.
+
+## "Did the e-mail arrive?"
+
+```
+node tools/mail.mjs list 5            # the newest five, subject + sender
+node tools/mail.mjs find confirm      # anything whose subject or sender mentions it
+node tools/mail.mjs body 383          # one message, plain text (a link is in there)
+node tools/mail.mjs send a@b.hr "subject" "body…"
+```
+
+It needs `MAIL_ACCOUNT` and `MAIL_APP_PASS` (an **app password**, not the account
+password — Google refuses the account password for IMAP once 2FA is on, and says
+`Application-specific password required`). Without them it looks for the pairs
+`mail.account` / `mail.app` in the vz dictionary.
