@@ -1,0 +1,15 @@
+/*
+  Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+  Cache-Control: public, max-age=0, must-revalidate
+
+/og.png
+  Cache-Control: public, max-age=604800
+
+/mark.svg
+  Cache-Control: public, max-age=604800
+
+/vendor/*
+  Cache-Control: public, max-age=3600

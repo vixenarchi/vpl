@@ -1,0 +1,101 @@
+/* The imprint is a legal page, not a landing page: it wants the same paper as
+ * the rest of the house, one column of definition list, and one visible promise
+ * that the bracketed fields are placeholders and not the real particulars.
+ *
+ * It exists because `imprint.html` asked for it and nothing was there — a 404 on
+ * a stylesheet comes back from Pages as the home page, so the page had been
+ * loading 18 KB of HTML as CSS and losing the three classes it needed.
+ */
+
+.imprint {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem 5rem;
+}
+
+.imprint h1 {
+  font-family: var(--serif);
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  line-height: 1.12;
+  margin: 0 0 0.6rem;
+}
+
+.imprint .lede {
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+  margin: 0 0 2.2rem;
+  max-width: 34rem;
+}
+
+/* a placeholder is content, not decoration: it is marked with a background and
+ * a dashed rule so a half-filled imprint cannot pass for a finished one */
+.fill {
+  background: color-mix(in srgb, var(--mark) 12%, transparent);
+  border-bottom: 1px dashed color-mix(in srgb, var(--mark) 55%, transparent);
+  padding: 0 0.15em;
+  border-radius: 2px;
+}
+
+.launch-note {
+  display: block;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--mark);
+  background: var(--paper-2);
+  padding: 0.8rem 0.95rem;
+  margin: 0 0 2rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+  border-radius: 3px;
+  max-width: 38rem;
+}
+
+/* the same quiet button as the apps' chrome: it is a theme switch, not a call */
+.ghost {
+  border: 1px solid var(--rule-strong);
+  background: var(--paper);
+  color: var(--ink-2);
+  border-radius: 999px;
+  width: 2rem;
+  height: 2rem;
+  line-height: 1;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.ghost:hover { color: var(--ink); border-color: var(--ink-2); }
+
+.imprint dl {
+  display: grid;
+  grid-template-columns: minmax(11rem, 15rem) 1fr;
+  gap: 0.55rem 1.4rem;
+  margin: 0 0 2.4rem;
+  padding: 0;
+}
+
+.imprint dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+  padding-top: 0.2rem;
+}
+
+.imprint dd {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.imprint h2 {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  margin: 2.2rem 0 0.6rem;
+}
+.imprint p, .imprint li { font-size: 0.94rem; line-height: 1.62; color: var(--ink-2); }
+.imprint a { color: var(--ink); }
+
+@media (max-width: 640px) {
+  .imprint dl { grid-template-columns: 1fr; gap: 0.2rem 0; }
+  .imprint dt { margin-top: 0.9rem; }
+}

@@ -58,6 +58,13 @@ for d in lib icons vendor functions assets img .well-known; do
   [ -d "$SRC/$d" ] && cp -r "$SRC/$d" "$STAGE/"
 done
 
+# The front door is one page with no JavaScript: it wants the shell's tokens and
+# nothing else. Shipping eight modules nobody loads would be weight with no
+# purpose, and the house rule is that a page carries what it uses.
+if [ "$APP" = www ] && [ -d "$STAGE/vendor" ]; then
+  find "$STAGE/vendor" -name '*.js' -delete
+fi
+
 # the anon key is public on purpose — RLS is the lock, not the key. But a
 # service-role key would be fatal, so refuse to publish one by accident.
 if grep -q "service_role" "$STAGE"/*.js 2>/dev/null; then

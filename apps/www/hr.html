@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terg — softver dovoljno mal da ga razumiješ</title>
+<meta name="description" content="Terg gradi male, neovisne aplikacije koje dijele jedan račun i jedan izgled: bilješke, ideje, zahtjevi, rječnik, dokumenti, usklađenost, ključevi i kodovi te arhitektura. Bez nadzornih ploča, bez licenci po korisniku, bez faktura.">
+<link rel="canonical" href="https://www.terg.hr/hr.html">
+<link rel="alternate" hreflang="en" href="https://www.terg.hr/">
+<link rel="alternate" hreflang="hr" href="https://www.terg.hr/hr.html">
+<link rel="alternate" hreflang="x-default" href="https://www.terg.hr/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Terg">
+<meta property="og:url" content="https://www.terg.hr/hr.html">
+<meta property="og:title" content="Terg — softver dovoljno mal da ga razumiješ">
+<meta property="og:description" content="Terg gradi male, neovisne aplikacije koje dijele jedan račun i jedan izgled: bilješke, ideje, zahtjevi, rječnik, dokumenti, usklađenost, ključevi i kodovi te arhitektura. Bez nadzornih ploča, bez licenci po korisniku, bez faktura.">
+<meta property="og:image" content="https://www.terg.hr/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="hr_HR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="vendor/tokens.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="site">
+
+<header class="bar">
+  <div class="bar-in">
+    <a class="mark" href="hr.html" aria-label="Terg">
+      <span class="mark-glyph" aria-hidden="true">V</span>
+      <span class="mark-word">terg</span>
+    </a>
+    <nav class="nav" aria-label="aplikacije">
+      <details class="menu">
+        <summary aria-controls="menu-apps">aplikacije <span class="chev" aria-hidden="true">▾</span></summary>
+        <div class="panel" id="menu-apps">
+          <div class="panel-head">
+            <div><h2>Aplikacije</h2><p>Osam aplikacija, jedan račun. Svaka radi jednu stvar i čita se u minuti.</p></div>
+            <a class="go" href="#apps">svih osam <span aria-hidden="true">↗</span></a>
+          </div>
+          <div class="panel-cols">
+            <div class="panel-col">
+              <p class="panel-label">piši i misli</p>
+              <a class="panel-item" href="https://vn.terg.hr/">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16M8 8h8M6 12h12M9 16h6M11 20h2"/></svg>
+                <span><b>vn</b> bilješke<em>stablo bilješki s čitačem</em></span>
+              </a>
+              <a class="panel-item" href="https://vi.terg.hr/">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4M5 8h14M6 12h12M8 16h8M10 20h4"/><circle cx="12" cy="8" r="1.2"/></svg>
+                <span><b>vi</b> ideje<em>zid stickieja i lijevak</em></span>
+              </a>
+              <a class="panel-item" href="https://vz.terg.hr/">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h9a4 4 0 0 1 0 8H5zM5 12h10a4 4 0 0 1 0 8H5z"/></svg>
+                <span><b>vz</b> rječnik<em>riječi, objašnjene jednom</em></span>
+              </a>
+            </div>
+            <div class="panel-col">
+              <p class="panel-label">vodi posao</p>
+              <a class="panel-item" href="https://vr.terg.hr/">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h13"/><path d="M19 15l2 2-2 2"/></svg>
+                <span><b>vr</b> zahtjevi<em>jedna rečenica po zahtjevu</em></span>
+              </a>
+              <a class="panel-item" href="https://vd.terg.hr/">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>
+                <span><b>vd</b> dokumenti<em>hrpa unutra, dokument van</em></span>
+              </a>
+              <a class="panel-item" href="https://vc.terg.hr/">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16l-7-3-7 3z"/><path d="M9 9h6M9 13h4"/></svg>
+                <span><b>vc</b> usklađenost<em>kontrole provjerene dokazima</em></span>
+              </a>
+            </div>
+            <div class="panel-col">
+              <p class="panel-label">gradi</p>
+              <a class="panel-item" href="https://vp.terg.hr/">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="3"/><path d="M11 12h9M17 12v3M20 12v2"/></svg>
+                <span><b>vp</b> ključevi i kodovi<em>jedan kredit, jedan poziv</em></span>
+              </a>
+              <a class="panel-item" href="https://va.terg.hr/">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="7" height="6" rx="1"/><rect x="14" y="4" width="7" height="6" rx="1"/><rect x="8" y="15" width="8" height="5" rx="1"/><path d="M6.5 10v2.5h11V10M12 12.5V15"/></svg>
+                <span><b>va</b> arhitektura<em>popis kutija i crtež</em></span>
+              </a>
+              <div class="panel-promo">
+                <b>Eva AB</b>
+                <span class="what">u pripremi</span>
+                <p>Duga verzija iste ideje: evolucijski agenti oko male jezgre. U pripremi.</p>
+                <a href="#philosophy">što to znači ↗</a>
+              </div>
+            </div>
+          </div>
+          <div class="panel-foot">
+            <span>jedan račun · bez analitike · bez kolačića</span>
+            <a href="privacy.html">što se ne pohranjuje ↗</a>
+          </div>
+        </div>
+      </details>
+      <a href="#philosophy">filozofija</a>
+      <a href="#process">proces</a>
+      <a href="#resources">resursi</a>
+      <a href="#about">o nama</a>
+    </nav>
+    <div class="bar-acts">
+      <button id="theme" class="ghost" type="button" title="promijeni izgled" aria-label="promijeni izgled">◐</button>
+      <a class="go" id="btn-signin" href="https://vn.terg.hr/">prijava <span aria-hidden="true">↗</span></a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section class="hero">
+    <p class="kicker">vpl · vixen productivity light</p>
+    <h1>Softver dovoljno mal<br>da ga razumiješ.</h1>
+    <p class="lede">
+      Osam aplikacija, svaka radi jednu stvar, svaka na svojoj adresi, sve s
+      jednim računom. Bez nadzornih ploča, bez licenci po korisniku, bez
+      faktura, bez analitike. Svaki ekran pročitaš u minuti i isti dan ga
+      prestaneš koristiti bez pitanja bilo koga.
+    </p>
+    <p class="hero-acts">
+      <a class="go big" href="https://vn.terg.hr/">počni s bilješkama <span aria-hidden="true">↗</span></a>
+      <button class="quiet as-link" id="btn-signin-2" type="button">ili odaberi aplikaciju</button>
+    </p>
+  </section>
+
+  <section id="apps" class="block">
+    <h2>Aplikacije</h2>
+    <p class="sub">
+      Jedan račun, jedan izgled, osam neovisnih aplikacija. Među njima se ne
+      dijeli ništa osim tvog imena i načina na koji su nacrtane — bilješka ne
+      postaje zahtjev dok je sam ne preneseš. Prijaviš se u bilo koju i račun
+      te prati u ostalih sedam.
+    </p>
+
+    <ul class="apps">
+      <li>
+        <a href="https://vn.terg.hr/">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16M8 8h8M6 12h12M9 16h6M11 20h2"/></svg>
+          <b>vn</b><span class="what">bilješke</span>
+        </a>
+        <p>Stablo bilješki s čitačem. Ona s kojom svi počinju.</p>
+        <span class="addr">vn.terg.hr</span>
+      </li>
+      <li>
+        <a href="https://vi.terg.hr/">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4M5 8h14M6 12h12M8 16h8M10 20h4"/><circle cx="12" cy="8" r="1.2"/></svg>
+          <b>vi</b><span class="what">ideje</span>
+        </a>
+        <p>Zid stickieja, lijevak, i mjesto gdje odlažeš ono što još ne radiš.</p>
+        <span class="addr">vi.terg.hr</span>
+      </li>
+      <li>
+        <a href="https://vr.terg.hr/">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h13"/><path d="M19 15l2 2-2 2"/></svg>
+          <b>vr</b><span class="what">zahtjevi</span>
+        </a>
+        <p>Jedna rečenica po zahtjevu, koliko je težak, i gdje stoji.</p>
+        <span class="addr">vr.terg.hr</span>
+      </li>
+      <li>
+        <a href="https://vz.terg.hr/">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h9a4 4 0 0 1 0 8H5zM5 12h10a4 4 0 0 1 0 8H5z"/></svg>
+          <b>vz</b><span class="what">rječnik</span>
+        </a>
+        <p>Riječi koje projekt koristi, objašnjene jednom, da se o njima ne
+          raspravlja dvaput.</p>
+        <span class="addr">vz.terg.hr</span>
+      </li>
+      <li>
+        <a href="https://vd.terg.hr/">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>
+          <b>vd</b><span class="what">dokumenti</span>
+        </a>
+        <p>Hrpa unutra, dokument van, i svaka njegova verzija sačuvana.</p>
+        <span class="addr">vd.terg.hr</span>
+      </li>
+      <li>
+        <a href="https://vc.terg.hr/">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16l-7-3-7 3z"/><path d="M9 9h6M9 13h4"/></svg>
+          <b>vc</b><span class="what">usklađenost</span>
+        </a>
+        <p>Popis kontrola provjeren red po red prema dokazima — nacrt koji
+          potpisuje revizor, ne certifikat.</p>
+        <span class="addr">vc.terg.hr</span>
+      </li>
+      <li>
+        <a href="https://vp.terg.hr/">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="3"/><path d="M11 12h9M17 12v3M20 12v2"/></svg>
+          <b>vp</b><span class="what">ključevi i kodovi</span>
+        </a>
+        <p>Jedan kredit je jedan poziv, koliko god velik bio. Kodovi i ključevi
+          se pokažu jednom, nikad više.</p>
+        <span class="addr">vp.terg.hr</span>
+      </li>
+      <li>
+        <a href="https://va.terg.hr/">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="7" height="6" rx="1"/><rect x="14" y="4" width="7" height="6" rx="1"/><rect x="8" y="15" width="8" height="5" rx="1"/><path d="M6.5 10v2.5h11V10M12 12.5V15"/></svg>
+          <b>va</b><span class="what">arhitektura</span>
+        </a>
+        <p>Hrpa unutra, popis kutija van — kao tekst, kao crtež, ili predan
+          agentu koji već ima račun.</p>
+        <span class="addr">va.terg.hr</span>
+      </li>
+    </ul>
+
+    <div class="soon">
+      <b>Eva AB</b>
+      <span class="what">evolucijski agenti · u pripremi</span>
+      <p>Duga verzija iste ideje: sustav koji raste oko čovjeka, a ne obrnuto.
+        Vidi <a href="#philosophy">filozofiju</a>.</p>
+    </div>
+  </section>
+
+  <section id="philosophy" class="block">
+    <h2>Filozofija</h2>
+    <p class="sub">
+      Dva načina rada, nazvana po dva lika koja ih nose. Vixen i Eva su avatari
+      i protagonisti priče i pristupa; aplikacije su Vixenine, a Eva je smjer.
+    </p>
+
+    <div class="pair">
+      <article>
+        <h3><span class="pip" aria-hidden="true">v</span> Vixen</h3>
+        <p class="pair-lede">Lagano, brzo, gotovo prije ručka.</p>
+        <ul>
+          <li>Male aplikacije, jedna namjena, bez slojeva za održavanje.</li>
+          <li><b>Nula arhitekture</b>: bez grafa, bez metamodela, bez nadzorne
+            ploče koja dobije svoju nadzornu ploču.</li>
+          <li>Građeno za brzinu, kreativnost i brze promjene mišljenja.</li>
+          <li>Kratki angažmani — ili nikakvi. Otvoriš alat, koristiš ga, odeš.</li>
+          <li>Želi sve odmah, za točno određenu namjenu.</li>
+        </ul>
+      </article>
+      <article>
+        <h3><span class="pip" aria-hidden="true">e</span> Eva</h3>
+        <p class="pair-lede">Ista lakoća, sačuvana godinama.</p>
+        <ul>
+          <li>Kreće lagano, oko kostura: jezgra je mala i ne mijenja se.</li>
+          <li>Evolucijska arhitektura — slojevita, a slojevi dolaze kad trebaju.</li>
+          <li>Sustav evoluira u interakciji s čovjekom koji ga koristi, na
+            no-code principu.</li>
+          <li>Evolucijski virtualni agenti preuzimaju taj posao kako raste.</li>
+          <li>Kontinuirani angažman, i governance za veće sustave.</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section id="process" class="block">
+    <h2>Proces</h2>
+    <p class="sub">Tri koraka, kojim god od dva puta išao.</p>
+
+    <ol class="steps">
+      <li>
+        <span class="step-n" aria-hidden="true">1</span>
+        <h3>Koristi / uči / ideja</h3>
+        <p>Otvori aplikaciju i stavi u nju nešto stvarno. Pola sata u
+          <b>vn</b> i <b>vi</b> dovoljno je da znaš odgovara li ti ovakav rad.</p>
+        <p class="step-acts">
+          <a href="https://vn.terg.hr/">bilješke ↗</a>
+          <a href="https://vi.terg.hr/">ideje ↗</a>
+        </p>
+      </li>
+      <li>
+        <span class="step-n" aria-hidden="true">2</span>
+        <h3>Istraži / konzultiraj</h3>
+        <p>Pročitaj kako je građeno i pokreni sam, ili donesi problem ovamo i
+          dobij odgovor.</p>
+        <ul class="step-list">
+          <li><a href="https://github.com/vixenarchi/vpl">kod, na githubu</a></li>
+          <li><a href="https://vn.terg.hr/">dokumentacija, objavljena iz vn-a</a></li>
+          <li><a href="mailto:info@terg.hr?subject=TERG%20konzultacija">konzultiraj TERG</a></li>
+        </ul>
+      </li>
+      <li>
+        <span class="step-n" aria-hidden="true">3</span>
+        <h3>Usvoji i skaliraj</h3>
+        <p>Zadrži ga i pusti da evoluira: aplikacije se dodaju kad zatrebaju,
+          ništa se ne prepisuje da bi se napravilo mjesta.</p>
+        <p class="step-acts"><a href="mailto:info@terg.hr?subject=TERG%20sastanak">razgovarajmo ↗</a></p>
+      </li>
+    </ol>
+  </section>
+
+  <section id="resources" class="block">
+    <h2>Resursi</h2>
+    <ul class="res">
+      <li>
+        <a href="https://github.com/vixenarchi/vpl">github.com/vixenarchi/vpl</a>
+        <span>Svaka aplikacija i cijela ljuska. Apache-2.0; čitaj, pokreni,
+          razdvoji.</span>
+      </li>
+      <li>
+        <a href="https://vn.terg.hr/">dokumentacija</a>
+        <span>Napisana i objavljena u vn-u — isti tekst koji možeš izvući iz
+          aplikacije.</span>
+      </li>
+      <li>
+        <a href="#apps">osam aplikacija</a>
+        <span>Redom kojim ih je smisleno čitati: bilješke prve, arhitektura
+          zadnja.</span>
+      </li>
+      <li>
+        <a href="faq.html">pitanja</a>
+        <span>Deset pitanja, odgovorena bez pridjeva.</span>
+      </li>
+    </ul>
+    <p class="fine">Vijesti i duže tekstove objavljivat ćemo u vn-u i ovdje
+      povezivati. Nema feeda, jer nema tracker-a koji bi ga opravdao.</p>
+  </section>
+
+  <section id="about" class="block split">
+    <div>
+      <h2>O nama</h2>
+      <p>TERG je konzultantska praksa za evolucijske sustave i njihovu
+        arhitekturu, građena na Vixen i Eva načelima: riješi mali problem sada,
+        drži jezgru dovoljno malom da se i za pet godina može promijeniti.</p>
+      <p>Sve što je ovdje dostupno je, ili će biti, na
+        <a href="https://github.com/vixenarchi/vpl">GitHubu</a> — kod, odluke i
+        razlozi za njih.</p>
+    </div>
+    <div>
+      <h2>Kontakt</h2>
+      <p>Pitanja, bug, ili projekt koji traži nekoga tko je ovo već radio. Jedna
+        adresa, odgovara čovjek.</p>
+      <p class="mail"><a href="mailto:info@terg.hr">info@terg.hr</a></p>
+      <p class="fine"><a href="mailto:info@terg.hr?subject=TERG%20sastanak">sastanak</a>
+        — piši, i odgovorimo pozivom u kalendaru.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p class="foot-mark"><span aria-hidden="true">V</span> Terg</p>
+  <nav aria-label="podnožje">
+    <a href="https://vn.terg.hr/">vn</a>
+    <a href="https://vi.terg.hr/">vi</a>
+    <a href="https://vr.terg.hr/">vr</a>
+    <a href="https://vz.terg.hr/">vz</a>
+    <a href="https://vd.terg.hr/">vd</a>
+    <a href="https://vc.terg.hr/">vc</a>
+    <a href="https://vp.terg.hr/">vp</a>
+    <a href="https://va.terg.hr/">va</a>
+  </nav>
+  <p class="foot-fine">
+    <a href="faq.html">pitanja</a> · <a href="imprint.html">impresum</a> ·
+    <a href="privacy.html">privatnost</a> · <a href="mailto:info@terg.hr">info@terg.hr</a> ·
+    <a href="/" hreflang="en" lang="en">english</a>
+  </p>
+</footer>
+
+<dialog id="signin" class="pick">
+  <button class="dialog-x" type="button" data-close aria-label="zatvori">✕</button>
+  <h2>Prijava</h2>
+  <p class="fine">Jedan račun za cijelu obitelj aplikacija. Prijaviš se na bilo
+    kojoj adresi ispod i račun te prati u ostalih sedam — isti ključ, isto ime,
+    isti izgled.</p>
+  <ul>
+    <li><a href="https://vn.terg.hr/">vn · bilješke</a></li>
+    <li><a href="https://vi.terg.hr/">vi · ideje</a></li>
+    <li><a href="https://vr.terg.hr/">vr · zahtjevi</a></li>
+    <li><a href="https://vz.terg.hr/">vz · rječnik</a></li>
+    <li><a href="https://vd.terg.hr/">vd · dokumenti</a></li>
+    <li><a href="https://vc.terg.hr/">vc · usklađenost</a></li>
+    <li><a href="https://vp.terg.hr/">vp · ključevi i kodovi</a></li>
+    <li><a href="https://va.terg.hr/">va · arhitektura</a></li>
+  </ul>
+  <p class="fine">Još nemaš račun? Prva aplikacija koju otvoriš ga napravi.</p>
+</dialog>
+
+<script type="module" src="site.js"></script>
+</body>
+</html>
