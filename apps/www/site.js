@@ -88,6 +88,80 @@ document.getElementById('theme')?.addEventListener('click', () => {
   draw();
 })();
 
+/* ── the menus in the bar ────────────────────────────────────────────
+ * A <details> opens on click by itself. Four things make it feel like a menu
+ * rather than five accordions: only one is open at a time (two panels are two
+ * fixed overlays in the same place, which reads as a broken card), it closes
+ * when you pick something, when you click the paper, and on Escape.
+ */
+(() => {
+  const menus = [...document.querySelectorAll('details.menu')];
+  if (!menus.length) return;
+
+  const closeAll = (except) => {
+    for (const m of menus) if (m !== except && m.open) m.open = false;
+  };
+
+  for (const menu of menus) {
+    menu.addEventListener('toggle', () => { if (menu.open) closeAll(menu); });
+    menu.addEventListener('click', (e) => {
+      if (e.target.closest('a')) menu.open = false;
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('details.menu')) closeAll(null);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const open = menus.find((m) => m.open);
+    if (!open) return;
+    open.open = false;
+    open.querySelector('summary')?.focus();
+  });
+})();
+
+/* ── news, five at a time ────────────────────────────────────────────
+ * The entries live in the page (so they work with the script off, and with no
+ * build), and this only decides which five are visible. A page that needs a
+ * server to show five paragraphs would be the wrong page for this house.
+ */
+(() => {
+  const list = document.getElementById('news-list');
+  const pager = document.getElementById('news-pager');
+  if (!list || !pager) return;
+  const items = [...list.children];
+  const PER = 5;
+  const pages = Math.max(1, Math.ceil(items.length / PER));
+  if (pages < 2) { pager.hidden = true; return; }
+  pager.hidden = false;
+
+  let page = 0;
+  const button = (label, onClick, disabled) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'quiet';
+    b.textContent = label;
+    b.disabled = !!disabled;
+    b.addEventListener('click', onClick);
+    return b;
+  };
+
+  function draw() {
+    items.forEach((li, i) => { li.hidden = i < page * PER || i >= (page + 1) * PER; });
+    pager.replaceChildren(
+      button('← newer', () => { page = Math.max(0, page - 1); draw(); }, page === 0),
+      button('older →', () => { page = Math.min(pages - 1, page + 1); draw(); }, page === pages - 1),
+    );
+    const of = document.createElement('span');
+    of.className = 'page-of';
+    of.textContent = `page ${page + 1} of ${pages}`;
+    pager.append(of);
+  }
+  draw();
+})();
+
 /* ── the panel under "apps" ──────────────────────────────────────────
  * A <details> opens on click by itself. Three small things make it feel like a
  * menu instead of an accordion: it closes when you pick something, when you
