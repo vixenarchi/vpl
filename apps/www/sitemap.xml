@@ -1,16 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  <url>
-    <loc>https://www.terg.hr/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.terg.hr/"/>
-    <xhtml:link rel="alternate" hreflang="hr" href="https://www.terg.hr/hr"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.terg.hr/"/>
-  </url>
-  <url>
-    <loc>https://www.terg.hr/hr</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.terg.hr/"/>
-    <xhtml:link rel="alternate" hreflang="hr" href="https://www.terg.hr/hr"/>
-  </url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://www.terg.hr/</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://www.terg.hr/news</loc><lastmod>2026-11-27</lastmod></url>
   <url><loc>https://www.terg.hr/faq</loc></url>
   <url><loc>https://www.terg.hr/imprint</loc></url>
   <url><loc>https://www.terg.hr/privacy</loc></url>

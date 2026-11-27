@@ -34,7 +34,23 @@
 }
 .bar-in {
   position: relative; display: flex; align-items: center; gap: 1.3rem;
+  /* the shell's tokens make .bar a flex row, so this is a flex item: without
+   * width it shrinks to its content and the centred nav lands off the page */
+  flex: 1 1 auto; width: 100%;
   max-width: var(--wide); margin: 0 auto; padding: 0.55rem 1.25rem;
+  /* the name on the left, the sections in the middle, the way in on the right:
+   * the three things a person looks for, each where they look for it */
+}
+.nav {
+  /* centred by spanning the bar and centring inside it — not with a transform,
+   * because a transformed ancestor becomes the containing block of a fixed
+   * child and the apps panel would size itself to the menu instead of the page */
+  position: absolute; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: center;
+  gap: 0.25rem; flex-wrap: nowrap;
+}
+@media (max-width: 900px) {
+  .nav { position: static; margin-left: 0.5rem; flex-wrap: wrap; justify-content: flex-start; }
 }
 .mark {
   display: inline-flex; align-items: center; gap: 0.45rem;
@@ -80,9 +96,16 @@
 
 /* the panel itself */
 .panel {
-  position: absolute; left: 1.25rem; right: 1.25rem; top: 100%;
-  border: 1px solid var(--line-strong); border-top: 0; border-radius: 0 0 10px 10px;
+  /* fixed, not absolute: the nav is centred and only as wide as its own words,
+   * so a panel anchored to it was 369px wide and every column inside it was cut
+   * off. The panel belongs to the bar, and the bar is the width of the page. */
+  position: fixed; left: 1.25rem; right: 1.25rem; top: 2.85rem;
+  /* a menu is an overlay, not a growth: it fits the window and scrolls inside
+   * itself, so opening it never pushes the page down */
+  max-height: calc(100dvh - 3.6rem); overflow: auto;
+  border: 1px solid var(--line-strong); border-radius: 10px;
   background: var(--paper); box-shadow: 0 18px 40px -24px rgba(31, 29, 26, 0.45);
+  max-width: var(--wide); margin: 0 auto;
 }
 .panel-head {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem;
@@ -132,7 +155,7 @@
 /* ── the hero ────────────────────────────────────────────────────── */
 main { display: block; }
 .hero {
-  max-width: var(--wide); margin: 0 auto; padding: 3.2rem 1.25rem 2.4rem;
+  max-width: var(--wide); margin: 0 auto; padding: 2.4rem 1.25rem 1.8rem;
   display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   gap: 0.9rem 3rem; align-items: start;
 }
@@ -152,17 +175,65 @@ main { display: block; }
 .lede { max-width: 34rem; font-size: 1rem; line-height: 1.6; color: var(--ink-2); margin: 0; }
 .hero-acts { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin: 1.2rem 0 0; }
 
+/* ── the paper behind the words ──────────────────────────────────────
+ * Three textures, borrowed from the applications themselves: the ruled page of
+ * vr, the dot grid of vc, the mesh of a diagram. Each sits in the right half of
+ * its section and fades toward the text, because decoration that competes with
+ * a sentence is a bug. Nothing is clicked: it is paper, not a control.
+ */
+main > section { position: relative; }
+main > section::before {
+  content: ''; position: absolute; inset: 0 0 0 auto; width: min(54%, 40rem);
+  pointer-events: none; z-index: 0; opacity: 0.75;
+  -webkit-mask-image: linear-gradient(to left, #000 0%, #000 45%, transparent 100%);
+  mask-image: linear-gradient(to left, #000 0%, #000 45%, transparent 100%);
+  background-attachment: local;
+}
+main > section > * { position: relative; z-index: 1; }
+
+[data-bg='rules']::before {
+  background-image: repeating-linear-gradient(to bottom,
+    transparent 0 1.62rem,
+    color-mix(in srgb, var(--ink) 12%, transparent) 1.62rem calc(1.62rem + 1px));
+  background-position: 0 1.1rem;
+}
+[data-bg='dots']::before {
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--ink) 16%, transparent) 1px, transparent 1.2px);
+  background-size: 1.05rem 1.05rem;
+}
+[data-bg='mesh']::before {
+  background-image:
+    repeating-linear-gradient(to bottom, color-mix(in srgb, var(--ink) 9%, transparent) 0 1px, transparent 1px 2.2rem),
+    repeating-linear-gradient(to right, color-mix(in srgb, var(--ink) 9%, transparent) 0 1px, transparent 1px 2.2rem);
+}
+@media (max-width: 820px) {
+  main > section::before { width: 100%; opacity: 0.45; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  main > section::before { display: none; }
+}
+
 /* ── blocks ──────────────────────────────────────────────────────── */
-.block { max-width: var(--wide); margin: 0 auto; padding: 2.2rem 1.25rem; border-top: 1px solid var(--line); }
+.block { max-width: var(--wide); margin: 0 auto; padding: 1.7rem 1.25rem; border-top: 1px solid var(--line); }
 .block h2 { font-family: var(--serif); font-weight: 400; font-size: 1.5rem; margin: 0 0 0.35rem; }
 .block .sub { max-width: var(--col); color: var(--ink-2); margin: 0 0 1.4rem; font-size: 0.95rem; }
 .block p { max-width: var(--col); }
 
-/* the eight */
+/* the stream a group of applications belongs to: a word, a count, and a rule
+ * that says where one story ends and the other starts */
+.stream {
+  display: flex; align-items: baseline; gap: 0.7rem;
+  max-width: 52rem; margin: 1.6rem 0 0.2rem;
+  font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--ink);
+}
+.stream span { color: var(--ink-3); letter-spacing: 0.06em; text-transform: none; font-size: 0.78rem; }
+.block .stream:first-of-type { margin-top: 0.4rem; }
+
 .apps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; max-width: 52rem; }
 .apps li {
   display: grid; grid-template-columns: 1fr auto; gap: 0.1rem 1rem;
-  padding: 0.85rem 0; border-top: 1px solid var(--line-strong);
+  padding: 0.7rem 0; border-top: 1px solid var(--line-strong);
 }
 .apps li:first-child { border-top: 0; }
 .apps li > a {
@@ -379,4 +450,46 @@ main { display: block; }
 @media print {
   .top-acts, .top-nav, .foot nav { display: none; }
   .site { font-size: 11pt; }
+}
+
+/* ── news ────────────────────────────────────────────────────────────
+ * Five entries a page, newest first. The date is a column of its own so the eye
+ * can run down it; the pager sits under the last entry and only exists when
+ * there is more than one page.
+ */
+.news-block .page-h1 {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(1.8rem, 4vw, 2.6rem); line-height: 1.1; margin: 0 0 0.5rem;
+}
+.news { list-style: none; margin: 1.4rem 0 0; padding: 0; max-width: 46rem; }
+.news > li { padding: 1.15rem 0 1.3rem; border-top: 1px solid var(--line-strong); }
+.news > li:first-child { border-top: 0; padding-top: 0.4rem; }
+.news-meta {
+  display: flex; align-items: baseline; gap: 0.6rem; margin: 0 0 0.25rem;
+  font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-2);
+}
+.news-meta span { color: var(--ink-3); letter-spacing: 0.04em; text-transform: none; font-size: 0.72rem; }
+.news h2 { font-family: var(--serif); font-weight: 400; font-size: 1.28rem; line-height: 1.28; margin: 0 0 0.5rem; }
+.news p { font-size: 0.95rem; line-height: 1.62; color: var(--ink-2); margin: 0 0 0.6rem; }
+.news-acts { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.7rem; }
+.news-acts a { font-size: 0.88rem; }
+.pager { display: flex; align-items: center; gap: 0.5rem; margin-top: 1.2rem; max-width: 46rem; }
+.pager .page-of {
+  margin-left: auto; font-family: var(--mono); font-size: 0.7rem;
+  letter-spacing: 0.08em; color: var(--ink-3); text-transform: uppercase;
+}
+
+/* ── less scrolling: the list reads in two columns on a wide page ────
+ * Nine rows in one column is a screen and a half of walking; the same nine in
+ * two columns is one screen, and the eye still runs down each stream in order.
+ */
+@media (min-width: 900px) {
+  .apps {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 2.6rem;
+    align-items: start;
+  }
+  .apps li:nth-child(2) { border-top: 0; }
+  .apps li:nth-child(-n+2) { padding-top: 0.5rem; }
 }

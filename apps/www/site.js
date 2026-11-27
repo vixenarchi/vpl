@@ -48,6 +48,46 @@ document.getElementById('theme')?.addEventListener('click', () => {
   dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
 })();
 
+/* ── news, five at a time ────────────────────────────────────────────
+ * The entries live in the page (so they work with the script off, and with no
+ * build), and this only decides which five are visible. A page that needs a
+ * server to show five paragraphs would be the wrong page for this house.
+ */
+(() => {
+  const list = document.getElementById('news-list');
+  const pager = document.getElementById('news-pager');
+  if (!list || !pager) return;
+  const items = [...list.children];
+  const PER = 5;
+  const pages = Math.max(1, Math.ceil(items.length / PER));
+  if (pages < 2) { pager.hidden = true; return; }
+  pager.hidden = false;
+
+  let page = 0;
+  const button = (label, onClick, disabled) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'quiet';
+    b.textContent = label;
+    b.disabled = !!disabled;
+    b.addEventListener('click', onClick);
+    return b;
+  };
+
+  function draw() {
+    items.forEach((li, i) => { li.hidden = i < page * PER || i >= (page + 1) * PER; });
+    pager.replaceChildren(
+      button('← newer', () => { page = Math.max(0, page - 1); draw(); }, page === 0),
+      button('older →', () => { page = Math.min(pages - 1, page + 1); draw(); }, page === pages - 1),
+    );
+    const of = document.createElement('span');
+    of.className = 'page-of';
+    of.textContent = `page ${page + 1} of ${pages}`;
+    pager.append(of);
+  }
+  draw();
+})();
+
 /* ── the panel under "apps" ──────────────────────────────────────────
  * A <details> opens on click by itself. Three small things make it feel like a
  * menu instead of an accordion: it closes when you pick something, when you
