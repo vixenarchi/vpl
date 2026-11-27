@@ -37,6 +37,14 @@ const K = 'id,project_id,key,value,deleted_at,created_at,updated_at';
 const SH = 'id,project_id,owner_id,code,email,role,pending,created_at';
 
 /* ── auth ─────────────────────────────────────────────────────────── */
+/** The session's token, for the shell's direct REST calls (the model key that
+ *  can live on the account). Null when nobody is signed in. */
+export async function currentToken() {
+  const db = await client();
+  const { data } = await db.auth.getSession();
+  return data?.session?.access_token || null;
+}
+
 export async function session() {
   const db = await client();
   const { data } = await db.auth.getSession();

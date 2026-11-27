@@ -14,6 +14,7 @@ import { mountRail } from './vendor/rail.js';
 
 import * as db from './lib/db.js';
 import { storedId } from './vendor/ai.js';
+import * as aiShell from './vendor/ai.js';
 import { plainAuthError, guestLine } from './vendor/words.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -117,6 +118,10 @@ async function boot() {
   if (shareCode) return openGuest(shareCode, 'share');
   if (pubCode) return openGuest(pubCode, 'public');
 
+  /* the shared settings dialog speaks REST to `vpl_ai` on its own; without the
+   * token the "keep the key on my account" buttons never appear */
+  aiShell.setTokenSource(db.currentToken);
+
   S.session = await db.session().catch(() => null);
   if (!S.session) { showGate(); return; }
   await enterApp();
@@ -163,6 +168,8 @@ function wireGate() {
 }
 
 async function enterApp() {
+  /* the account's model key arrives with the person, once (see vn) */
+  aiShell.adoptAccountAi().catch(() => {});
   $('#gate').hidden = true;
   $('#app').hidden = false;
   $('#who').textContent = displayName(S.session);

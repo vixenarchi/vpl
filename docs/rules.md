@@ -147,6 +147,12 @@ Run the proof with `./tools/test-all.sh`, or one at a time from `apps/vn/test`
 - **A header is only worth what the page still does under it.** Prove the walk,
   not the string: sign in, open, settings, theme, and pdf.js's worker.
   → `csp-check`
+- **A shell module that speaks REST needs the app's token** — `setTokenSource`
+  in every app, wired where auth is wired, not where the dialog opens. Three apps
+  shipped without it and the feature was silently absent. → `account-key-check`
+- **A setting that lives on the account must arrive at sign-in**, not at the
+  moment somebody opens the settings: a new browser asking a question should not
+  hear "no key yet". → `account-key-check`
 - **A limit nobody can see is not evidence.** The answer carries the count
   (`X-Vpl-Limit: 12/60`), so the bound can be read from a terminal instead of
   believed. → `door-check`, and a `curl` in `docs/security.md`

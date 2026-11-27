@@ -148,6 +148,9 @@ async function login(register = false) {
 
 /* ── entering the app ─────────────────────────────────────────────── */
 async function enter() {
+  /* the account's model key arrives with the person, once, so a new
+   * browser is ready before anybody opens the settings */
+  ai.adoptAccountAi().catch(() => {});
   $('#gate').hidden = true;
   $('#app').hidden = false;
   $('#who').textContent = displayName(S.session);

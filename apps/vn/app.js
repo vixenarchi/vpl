@@ -237,6 +237,11 @@ async function boot() {
   });
   sayUrlTrouble();
 
+  /* The shell's model settings speak REST on their own, so they need the
+   * session's token: without this the "keep the key on my account" buttons never
+   * appear and a new browser never adopts a key. (vn was the app that forgot.) */
+  ai.setTokenSource(db.currentToken);
+
   db.onAuthChange((s) => {
     const had = !!S.session;
     S.session = s;
@@ -275,6 +280,10 @@ function enterApp() {
   el.gate.hidden = true;
   el.app.hidden = false;
   db.session().then((s) => who.paintWho(document.getElementById('who'), s)).catch(() => {});
+  /* a key kept on the account arrives with the person, once, so a new browser is
+   * ready before anybody opens the settings — "no model key yet" in a suite whose
+   * key is on the account is a lie the first press tells */
+  ai.adoptAccountAi().catch(() => {});
   loadNotes();
   route();
 }

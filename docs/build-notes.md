@@ -1820,3 +1820,43 @@ was the smallest possible observability: the count moved into `_middleware.js`
 `unbounded`. Then a `for` loop in a terminal answered the question in five
 seconds: 30 answers, then `429` with `retry-after: 60`. **A claim about the edge
 needs a header, not a unit test.**
+
+---
+
+## 2026-12-24 — the key on the account never arrived
+
+The suite has promised, since the settings dialog was one dialog, that a model
+key saved **on the account** follows the person into every browser and every
+address. `docs/configure.md` says it plainly: "one model key saved on an account,
+if the suite is to be demonstrable without a visitor pasting their own".
+
+It worked in five apps. In **vn, vz and vp** it could not work, and nobody
+noticed for weeks, because the dialog still drew itself:
+
+- `ai.js` speaks REST directly, so it needs the session's token
+  (`setTokenSource`). vn, vz and vp never called it. `accountAi()` therefore
+  asked the database with **no** token, got `[]`, and concluded the person had
+  nothing on their account — the three buttons never appeared, and "save to my
+  account" answered "sign in first" to a signed-in person.
+- vn also adopted the account's key only when the settings were *opened*, so a
+  new browser that signed in and asked the dock got "no model key yet".
+
+The fix is small and dull, which is the point: a `currentToken()` in each of the
+three apps' `lib/`, `ai.setTokenSource(db.currentToken)` where the app wires
+auth, and `adoptAccountAi()` in `enterApp`/`enter` for **all eight** — the key
+arrives with the person, not with a dialog.
+
+It was found by finally having a real key to try with: the test mailbox account
+and the Gemini key from `~/.config/vpl/accounts.md` (alive; `gemini-2.5-flash`
+is retired, `gemini-3.8-flash` and `gemini-3.1-flash-lite` answer). With the key
+on the agent's account, a fresh browser signs in, adopts it, and the dock answers
+from the model in one second — measured, not assumed.
+
+`account-key-check.mjs` (40 assertions, all eight) is the proof and uses the
+**guest** account, because the owner's row now holds the real key that makes the
+suite demonstrable, and a test must not overwrite it. It signs in with an empty
+browser and asserts two things per app: the key is already in the browser before
+any dialog is opened, and the dialog says *on your account* with the three
+buttons. That is the whole promise, asked from the outside.
+
+The gate is **54 groups**.

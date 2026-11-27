@@ -44,6 +44,15 @@ export async function session() {
   return data.session ?? null;
 }
 
+/** The session's token, for the parts of the shell that speak REST directly
+ *  (the model settings' "keep the key on my account"). Null when nobody is
+ *  signed in — the caller decides what that means. */
+export async function currentToken() {
+  const db = await client();
+  const { data } = await db.auth.getSession();
+  return data?.session?.access_token || null;
+}
+
 export async function onAuthChange(fn) {
   const db = await client();
   const { data } = db.auth.onAuthStateChange((_event, s) => fn(s));

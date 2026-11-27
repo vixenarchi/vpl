@@ -31,6 +31,12 @@ out and deploy alone.
 
 Dashboard → *Authentication*:
 
+- **A key on the account follows the person.** Save the model key once in
+  *settings → key → save to my account* and every app, every browser and every
+  address of the suite adopts it at sign-in (`account-key-check.mjs` proves it in
+  all eight). Confirm email is off, so a real mailbox is not needed to try it —
+  and `terg.tester@gmail.com` in `~/.config/vpl/accounts.md` is a real address
+  the suites may use when they need one.
 - **Confirm email: off** to start. Without a mailbox a new account cannot get in,
   and the suite's accounts are made with a bare name (`miki@vpl.local`).
 - **Site URL** — exactly one address: the `vn` host. Supabase holds one, and

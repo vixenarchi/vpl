@@ -39,6 +39,14 @@ const K = 'id,code_id,holder_id,label,credits_left,valid_until,calls,revoked,cre
 const H = 'id,key_id,app,model,in_tokens,out_tokens,ms,status,created_at';
 
 /* ── auth ─────────────────────────────────────────────────────────── */
+/** The session's token, for the shell's direct REST calls (the model key that
+ *  can live on the account). Null when nobody is signed in. */
+export async function currentToken() {
+  const db = await client();
+  const { data } = await db.auth.getSession();
+  return data?.session?.access_token || null;
+}
+
 export async function session() {
   const db = await client();
   const { data } = await db.auth.getSession();

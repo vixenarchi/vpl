@@ -136,6 +136,9 @@ done
 # the surface an agent uses: a token is a person, a bin is a column, an owner
 # is not a field. no browser at all.
 run "api · the agent's surface" node api-check.mjs
+# a key kept on the account must arrive with the person, in all eight (it did
+# not: three apps never handed ai.js the token, and a new browser said "no key")
+run "account · the key follows the person" node account-key-check.mjs
 run "va · canvas" node va-canvas.mjs
 run "va · hand-off" node va-handoff.mjs
 

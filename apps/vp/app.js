@@ -11,6 +11,7 @@ import { mountNotice } from './vendor/notices.js';
  */
 import * as db from './lib/db.js';
 import { writeAi, readAi, accountAi, storedId } from './vendor/ai.js';
+import * as aiShell from './vendor/ai.js';
 import { plainAuthError } from './vendor/words.js';
 
 /* Where a credit is spent: `door` in config.local.js. Without one, vp still
@@ -87,6 +88,9 @@ function showGate() {
 }
 
 async function enterApp() {
+  /* a key kept on the account arrives with the person, once: a code spends the
+   * issuer's key, and "no key" is a worse first sentence than the key working */
+  aiShell.adoptAccountAi().catch(() => {});
   $('#gate').hidden = true;
   $('#app').hidden = false;
   $('#who').textContent = displayName(S.session);
@@ -311,6 +315,9 @@ async function boot() {
   $('#mk-until').value = d.toISOString().slice(0, 10);
 
   db.onAuthChange((s) => { if (!s) showGate(); });
+
+  /* the shared settings dialog speaks REST to `vpl_ai` on its own */
+  aiShell.setTokenSource(db.currentToken);
 
   S.session = await db.session().catch(() => null);
   if (!S.session) return showGate();

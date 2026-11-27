@@ -152,6 +152,8 @@ function wireGate() {
 }
 
 async function enterApp() {
+  /* the account's model key arrives with the person, once (see vn) */
+  ai.adoptAccountAi().catch(() => {});
   $('#gate').hidden = true;
   $('#app').hidden = false;
   $('#who').textContent = displayName(S.session);
