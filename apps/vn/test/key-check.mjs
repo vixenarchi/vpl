@@ -114,9 +114,14 @@ ok(rows.status === 200 && rows.body.length === 1 && rows.body[0].api_key === KEY
 
 /* ── 3. a fresh browser on the same address adopts it ────────────── */
 await pg.evaluate(() => localStorage.removeItem('vpl.ai'));
+ok((await localKey(pg)) === '', 'the browser forgets it when told to');
 await pg.reload({ waitUntil: 'networkidle' });
 await pg.waitForSelector('#app:not([hidden])', { timeout: 20000 });
-ok((await localKey(pg)) === '', 'localStorage starts empty again (a new browser)');
+/* since the account key is adopted on the way in, a forgotten key comes back
+ * from the account by itself — that is the feature, so the test says so rather
+ * than demanding an empty browser after signing in */
+ok(await until(async () => (await localKey(pg)) === KEY),
+  'a reload takes it back from the account, before anybody opens settings');
 await pg.click('#btn-ai');
 await pg.waitForSelector('#ai-dialog[open]');
 ok(await until(async () => (await pg.inputValue('#set-key')) === KEY),
@@ -132,8 +137,8 @@ const pgVr = await ctx.newPage();
 pgVr.on('pageerror', (e) => errors.push('vr pageerror: ' + e.message));
 pgVr.on('console', (m) => { if (m.type() === 'error') errors.push('vr console: ' + m.text()); });
 await login(pgVr, VR, OWNER);
-ok((await pgVr.evaluate(() => localStorage.getItem('vpl.ai'))) === null ||
-   (await localKey(pgVr)) === '', 'vr, a different origin, has no key yet');
+ok(await until(async () => (await localKey(pgVr)) === KEY),
+  'vr, a different origin, adopts the same key without a paste');
 await pgVr.click('#btn-ai');
 await pgVr.waitForSelector('#ai-dialog[open]');
 ok(await until(async () => (await pgVr.inputValue('#set-key')) === KEY),
@@ -145,9 +150,17 @@ await pgVr.close();
 const ctxGuest = await br.newContext({ viewport: { width: 1200, height: 900 } });
 const pgGuest = await ctxGuest.newPage();
 await login(pgGuest, VD, GUEST);
-const seen = await rest(pgGuest, 'vpl_ai?select=api_key');
-ok(seen.status === 200 && Array.isArray(seen.body) && seen.body.length === 0,
-  'a signed-in guest sees no rows at all (' + seen.status + ', ' + JSON.stringify(seen.body) + ')');
+const guestId = await pgGuest.evaluate(() => {
+  const k = Object.keys(localStorage).find((x) => x.startsWith('sb-') && x.endsWith('-auth-token'));
+  try { const s = JSON.parse(localStorage.getItem(k)); return (s.user || s?.currentSession?.user)?.id || null; } catch { return null; }
+});
+const seen = await rest(pgGuest, 'vpl_ai?select=user_id,api_key');
+const guestRows = Array.isArray(seen.body) ? seen.body : [];
+/* "sees no rows" was too strong once the guest may hold a key of its own: the
+ * rule is that a token is a person, so every row it sees must be its own and
+ * the owner's key must not be among them */
+ok(seen.status === 200 && guestRows.every((r) => r.user_id === guestId) && !guestRows.some((r) => r.api_key === KEY),
+  'a signed-in guest sees only its own rows (' + seen.status + ', ' + JSON.stringify(guestRows) + ')');
 await ctxGuest.close();
 
 /* ── 6. remove from the account, keep the browser working ────────── */

@@ -219,6 +219,14 @@ async function loadProjects() {
   else showWelcome();
 }
 
+/* The rail lists what I own and what was shared with me in one column, so the
+ * difference has to be visible without opening anything: a project whose owner is
+ * somebody else carries the word `shared`. */
+function sharedWithMe(p) {
+  const me = S.session?.user?.id;
+  return !!p.user_id && !!me && p.user_id !== me;
+}
+
 function paintProjects() {
   const ul = $('#proj-list');
   ul.innerHTML = '';
@@ -237,11 +245,15 @@ function paintProjects() {
       ul.append(li);
       return;
     }
+    const shared = sharedWithMe(p);
     li.innerHTML = `<button class="pick" type="button">${esc(p.title)}</button>
+      ${shared ? '<span class="shared-mark" title="shared with you — not yours to rename or remove">shared</span>' : ''}
       <span class="n" title="ideas">·</span>
-      <button class="kill" type="button" title="move this funnel to the recycle bin">✕</button>`;
+      ${shared ? '' : '<button class="kill" type="button" title="move this funnel to the recycle bin">✕</button>'}`;
     li.querySelector('.pick').onclick = () => openProject(p.id);
-    li.querySelector('.kill').onclick = () => removeProject(p);
+    /* a shared row has no ✕ — asking for one must not take the rail down with it */
+    const kill = li.querySelector('.kill');
+    if (kill) kill.onclick = () => removeProject(p);
     ul.append(li);
   });
   $('#proj-none').hidden = S.projects.length > 0;

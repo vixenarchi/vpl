@@ -191,6 +191,14 @@ async function loadProjects() {
   renderRail();
 }
 
+/* The rail lists what I own and what was shared with me in one column, so the
+ * difference has to be visible without opening anything: a dictionary whose
+ * owner is somebody else carries the word `shared`. */
+function sharedWithMe(p) {
+  const me = S.session?.user?.id;
+  return !!p.user_id && !!me && p.user_id !== me;
+}
+
 function renderRail() {
   const list = $('#proj-list');
   list.innerHTML = '';
@@ -204,8 +212,10 @@ function renderRail() {
         + '<button class="row-restore" type="button" title="put it back" data-back-project>restore</button>'
         + '<button class="kill" type="button" title="delete it for good" data-purge-project>✕</button>'
       : `<button class="pick" type="button">${esc(p.title || 'untitled')}</button>`
+        + (sharedWithMe(p) ? '<span class="shared-mark" title="shared with you — not yours to rename or remove">shared</span>' : '')
         + (p.published ? '<span class="n" title="published">pub</span>' : '')
-        + '<button class="kill" type="button" title="move the dictionary to the recycle bin">✕</button>';
+        /* the bin is the owner's decision, so a shared row gets no ✕ at all */
+        + (sharedWithMe(p) ? '' : '<button class="kill" type="button" title="move the dictionary to the recycle bin">✕</button>');
     list.append(li);
   }
   $('#proj-none').hidden = S.projects.length > 0;

@@ -391,6 +391,22 @@ body.rail-dragging { cursor: col-resize; user-select: none; }
   .rail-grip { display: none; }
 }
 
+/* ── a project that is not yours ──────────────────────────────────────
+ * The rail lists what you own and what was shared with you in one column, so the
+ * two must not look the same: a project somebody else shared carries the word
+ * `shared` in a pill, exactly as vn has marked a shared note from the start.
+ * Colour is never the only signal, so the word is the signal and the border is
+ * the colour.
+ */
+.shared-mark {
+  flex: none; margin-left: 0.35rem; padding: 0 0.3rem;
+  font-family: var(--mono); font-size: 0.62rem; line-height: 1.5;
+  letter-spacing: 0.04em; text-transform: lowercase;
+  color: var(--ink-2); border: 1px solid var(--line-strong);
+  border-radius: 999px; white-space: nowrap;
+}
+.proj-row.on .shared-mark { color: var(--mark); border-color: var(--mark); }
+
 /* ── the bin switch in the rail ─────────────────────────────────────
  * A place belongs on the left, and a place needs a word: two bins with the same
  * glyph are a puzzle, and a bar at the foot of the work column is one more thing

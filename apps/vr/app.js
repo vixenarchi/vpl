@@ -233,6 +233,14 @@ function showWelcome() {
   S.project = null;
 }
 
+/* The rail lists what I own and what was shared with me in one column, so the
+ * difference has to be visible without opening anything: a project whose owner is
+ * somebody else carries the word `shared`. */
+function sharedWithMe(p) {
+  const me = S.session?.user?.id;
+  return !!p.user_id && !!me && p.user_id !== me;
+}
+
 function paintProjects() {
   const ul = $('#proj-list');
   ul.classList.toggle('bin-mode', S.jobBin);
@@ -246,7 +254,8 @@ function paintProjects() {
     : S.projects.map((p) => `
       <li class="proj-row ${S.project && p.id === S.project.id ? 'on' : ''}" data-id="${p.id}">
         <button class="pick" type="button" title="${esc(p.title)}">${esc(p.title)}</button>
-        <button class="kill o-only" type="button" title="move this document to the recycle bin" data-del-project="${p.id}">✕</button>
+        ${sharedWithMe(p) ? '<span class="shared-mark" title="shared with you — not yours to rename or remove">shared</span>' : ''}
+        ${sharedWithMe(p) ? '' : `<button class="kill o-only" type="button" title="move this document to the recycle bin" data-del-project="${p.id}">✕</button>`}
       </li>`).join('');
   $('#proj-none').hidden = S.projects.length > 0;
   $('#proj-none').textContent = S.jobBin

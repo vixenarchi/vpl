@@ -12,6 +12,11 @@ One project is one row in `<app>_projects`; its content is rows that carry
 the project the apps use, as one person's token — row-level security is the lock,
 and a service key is never needed or allowed.
 
+Two things the rail must show and an API client must expect: a project whose
+`user_id` is not yours is a **shared** project (the word `shared` in the rail,
+`.shared-mark`), read or write per the share's role, and the owner's name, not
+yours, is what `owner_id` holds.
+
 This skill covers **vi, vr, vz, vd, vc, va** (projects and rows) and **vp**
 (keys and codes — *read only*: no projects, no shares, and a code spends the
 issuer's money). Notes live in the `vpl-notes` skill.

@@ -204,6 +204,7 @@ function renderRail() {
         + '</span>'
       : `<button class="pick" type="button">${esc(p.title || 'untitled job')}</button>`
         + `<span class="tpl" title="${esc(tpl.label)}">${esc(tpl.id)}</span>`
+        + (mine ? '' : '<span class="shared-mark" title="shared with you — not yours to rename or remove">shared</span>')
         + (mine ? '<button class="kill" type="button" title="move the job to the recycle bin">✕</button>' : '');
     list.append(li);
   }

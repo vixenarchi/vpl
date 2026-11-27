@@ -104,6 +104,10 @@ Run the proof with `./tools/test-all.sh`, or one at a time from `apps/vn/test`
   name only for an address on your own share. → `share-check`
 - **Publishing is a separate switch from sharing.** → `vz-check`
 - **Keys are per origin; what is shared is the list of models.** → `key-check`
+- **A rail lists what you own and what somebody gave you in one column, so the
+  two must not look alike.** A shared project carries the word `shared` (the
+  mark, never only the colour) and **no ✕** — the bin is the owner's decision,
+  and a row asking for a ✕ it does not have once emptied the whole list. → `shared-rail-check`
 - **Backups never contain keys.** → `tools/backup.sh`, review
 
 ## The database is the last word

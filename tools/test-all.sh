@@ -154,6 +154,9 @@ run "csp · the policy, in all eight" node csp-check.mjs
 run "fetch · the redirect walk" node fetch-check.mjs
 run "authz · the grid" node authz-matrix.mjs
 run "authz · one proof per finding" node authz-confirm.mjs
+# the rail shows what I own and what somebody gave me in one column, so the two
+# must not look alike — and a shared row must not carry a ✕ it cannot use
+run "shared · the word on a rail that is not mine" node shared-rail-check.mjs
 
 # ── 3c. the security regressions, one per finding that crossed a line ─
 # These are not the audit: they are the four questions a person may ask again
