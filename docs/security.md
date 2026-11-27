@@ -110,12 +110,22 @@ inline `<script>` in each of the eight `index.html`. It is now
 stylesheet — one file instead of eight copies and eight hashes, and the flash of
 the wrong theme is still gone.
 
-One thing it found that is not in this repository: on **`vn.terg.hr`** the edge
-injects Cloudflare's Web Analytics beacon (`static.cloudflareinsights.com`) into
-the page. The policy blocks it — a third-party script is against a rule of this
-suite — so it costs nothing but a console line, and the check names the host
-rather than failing on it. The fix is a switch in the Cloudflare dashboard (Web
-Analytics off for the zone); until then `csp-check` says so in its output.
+One thing it found that is not in this repository: the edge was injecting
+Cloudflare's Web Analytics beacon (`static.cloudflareinsights.com`, token
+`7adefc77…`) into every `*.terg.hr` page. It was not installed by anybody here —
+Cloudflare began adding it by default to proxied zones on its free plan, which is
+why nothing in the zone's own settings mentioned it.
+
+**Closed on 27 Nov 2026.** The beacon is off at the account, not in the zone:
+*Analytics → Web Analytics → `terg.hr` → Manage site → Advanced options → JS
+snippet injection → Disable*, then *Caching → Purge Everything* for the pages
+already cached with the tag. Verified on all eight hostnames: no request to
+`cloudflareinsights`, nothing in the served HTML.
+
+The policy stays as it was. A switch somebody can flip back is not a guarantee,
+so the next automatic re-enable is still refused — and `csp-check` now prints
+`EDGE INJECTS … AGAIN` in its output rather than a quiet note, so it cannot come
+back unnoticed.
 
 `csp-check.mjs` proves the policy is *usable*, not merely present: it walks all
 eight — sign in, open, settings, theme, then imports pdf.js and starts its worker

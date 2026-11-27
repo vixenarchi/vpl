@@ -87,11 +87,12 @@ for (const app of list) {
   const noise = [];
   const edge = [];
   /* One name is not ours. Cloudflare's Web Analytics beacon is injected at the
-   * edge on a proxied zone (it is on vn.terg.hr, not on the pages.dev addresses),
-   * so the policy blocks a script nobody in this repository asked for. It is
-   * reported with its name, once per app — the fix is a switch in the Cloudflare
-   * dashboard, not a wider policy: "no third-party script" is a rule of the
-   * suite, not an accident of one header. */
+   * edge on a proxied zone, and it was on every *.terg.hr address until it was
+   * switched off at the account (Analytics, Web Analytics, Manage site, Disable)
+   * on 27 Nov. The policy still refuses it, because a switch somebody can flip
+   * back is not a guarantee — "no third-party script" is a rule of this suite.
+   * So the check reports the name rather than widening the policy, and now also
+   * says out loud whether it came back. */
   const EDGE_HOST = 'static.cloudflareinsights.com';
   pg.on('console', (m) => {
     const t = m.text();
@@ -167,7 +168,7 @@ for (const app of list) {
 
   const left = noise.length;
   ok(left === 0, `${app.id}: no policy violations in the whole walk`, noise.slice(0, 2).join(' · '));
-  const note = edge.length ? ` · edge injects ${EDGE_HOST} (blocked; switch Web Analytics off)` : '';
+  const note = edge.length ? ` · EDGE INJECTS ${EDGE_HOST} AGAIN (blocked, but the switch is back on)` : ' · no edge beacon';
   console.log(`  ${app.id.padEnd(3)} ${left === 0 ? 'clean' : left + ' violation(s)'} · ${(csp || '').split(';').length} directives${note}`);
   await ctx.close();
 }
