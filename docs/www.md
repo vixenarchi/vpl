@@ -1,7 +1,14 @@
 # www.terg.hr — the front door
 
-The eight apps work and each has its own address. What does not exist is the
-page that explains them: today `terg.hr` and `www.terg.hr` do not resolve at all.
+**Status, 27 Nov 2026: the page exists and is published** at
+<https://vpl-www.pages.dev> — built in another session, and its source now lives
+in this repository as `apps/www` (taken over from the deployment, so the page can
+be edited and republished from one place: `./deploy www`).
+
+What is still missing is the domain: `terg.hr` and `www.terg.hr` do not resolve,
+so every canonical URL on the page points at an address nobody can reach yet.
+Attaching the two custom domains to the `vpl-www` project and adding the apex
+redirect is the whole remaining step — plus the six imprint fields below.
 
 This is the plan for that page, written so it can be built and published in one
 sitting. It is deliberately small: **one page, one stylesheet, no JavaScript, no
