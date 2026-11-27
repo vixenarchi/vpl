@@ -67,9 +67,11 @@
     <nav id="projects" class="projects" aria-label="projects">
       <div class="proj-head">
         <span>dictionaries</span>
-        <span class="grow"></span>
-        <!-- the rail's head, not its foot: a bin at the bottom of the column
-             ends up under the dock, and a place you cannot press is not a place -->
+      </div>
+      <!-- The rail's bins, under the name of the list rather than beside it: two
+           words this long do not share a 220px row with a heading, and a chip that
+           runs over its neighbour is not a button you can find. -->
+      <div class="proj-bins">
         <button id="btn-bin" class="job-bin" type="button" aria-pressed="false" hidden
                 title="the recycle bin of words"><span aria-hidden="true">♲</span><span class="bin-word">words</span><span id="bin-count"></span></button>
         <button id="btn-job-bin" class="job-bin" type="button" aria-pressed="false"

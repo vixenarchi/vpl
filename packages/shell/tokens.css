@@ -413,6 +413,15 @@ body.rail-dragging { cursor: col-resize; user-select: none; }
  * to scroll past (and to cover what is under it). The chip carries a mark, a
  * word and a number; the banner inside the list names the place in full once
  * you are in it. */
+/* the rail's bins, on their own line under the name of the list: "dictionaries"
+ * as a heading and "dictionaries" as a chip do not fit on one 220px row, and
+ * overlapping words are worse than a second line */
+.proj-bins {
+  display: flex; flex-wrap: wrap; gap: 0.3rem; justify-content: flex-end;
+  padding: 0 0.6rem 0.35rem;
+}
+.proj-bins .job-bin { max-width: 100%; }
+
 .job-bin {
   display: inline-flex; align-items: center; gap: 0.2rem;
   border: 1px solid var(--line); background: var(--paper); color: var(--ink-2);

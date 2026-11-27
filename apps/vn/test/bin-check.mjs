@@ -389,6 +389,57 @@ check(afterPurge === before2 - 1, 'and it does not come back to the list', `${be
 
 check(errors.length === 0, 'no page errors', errors.slice(0, 2).join(' | '));
 
+/* ── the two chips have to fit the rail ───────────────────────────────
+ * vz's rail is 220px wide and its bins are called "words" and "dictionaries":
+ * side by side with the heading that names the list, the second chip ran over
+ * the first and out of its own border. A chip that overlaps its neighbour is not
+ * a button you can find, and dragging the rail narrow must wrap the row rather
+ * than push the words through each other.
+ */
+const chipFit = () => pg.evaluate(() => {
+  /* vn's rail is its note tree, not a project list; the chips still have to fit
+   * there, so look for them wherever they are and measure against that column */
+  const chip = document.querySelector('.job-bin');
+  const nav = document.getElementById('projects') || (chip && chip.closest('nav, aside, .rail, .panel')) || (chip && chip.parentElement);
+  if (!nav) return { count: 0, skip: 'no rail' };
+  const rail = nav.getBoundingClientRect();
+  const boxes = [...nav.querySelectorAll('.job-bin')].map((b) => ({ box: b.getBoundingClientRect(), word: b.textContent.replace(/\s+/g, '') }));
+  /* the word that names the list, not the row it sits in: in most apps the chips
+   * share that row and must simply not run over the word */
+  const label = nav.querySelector('.proj-head > span:not(.grow)');
+  const headBox = label ? label.getBoundingClientRect() : null;
+  const over = (a, b) => !(a.right <= b.left + 1 || a.left >= b.right - 1 || a.bottom <= b.top + 1 || a.top >= b.bottom - 1);
+  return {
+    count: boxes.length,
+    words: boxes.map((b) => b.word),
+    overlap: boxes.length > 1 ? over(boxes[0].box, boxes[1].box) : false,
+    onHead: headBox ? boxes.some((b) => over(b.box, headBox)) : false,
+    inside: boxes.every((b) => b.box.left >= rail.left - 1 && b.box.right <= rail.right + 1),
+    widths: boxes.map((b) => Math.round(b.box.width)),
+  };
+});
+
+const chipsWide = await chipFit();
+if (!chipsWide.count) { console.log('   (no bin chips in this rail)'); }
+check(!chipsWide.overlap, 'the two bin chips do not run over each other', JSON.stringify(chipsWide));
+check(!chipsWide.onHead, 'and do not sit on the word that names the list', JSON.stringify(chipsWide));
+check(chipsWide.inside, 'and stay inside the rail', JSON.stringify(chipsWide));
+
+/* the grip lives on whichever column this app calls a rail */
+const gripBox = await pg.locator('.rail-grip').first().boundingBox().catch(() => null);
+if (gripBox) {
+  const start = { x: gripBox.x + gripBox.width / 2, y: gripBox.y + gripBox.height / 2 };
+  await pg.mouse.move(start.x, start.y);
+  await pg.mouse.down();
+  await pg.mouse.move(start.x - 150, start.y, { steps: 12 });
+  await pg.mouse.up();
+  await pg.waitForTimeout(700);
+  const narrow = await chipFit();
+  check(!narrow.overlap && narrow.inside, 'a rail dragged narrow wraps them instead of overlapping', JSON.stringify(narrow));
+} else {
+  check(false, 'the rail has a grip to drag', 'no #projects .rail-grip');
+}
+
 /* tidy up whatever the probe made */
 await pg.evaluate(async (app) => {
   if (!['vd', 'vc', 'va'].includes(app)) return;

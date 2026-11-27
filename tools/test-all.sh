@@ -255,8 +255,9 @@ run "mcp · the same API as tools" node mcp-check.mjs
 # a key kept on the account must arrive with the person, in all eight (it did
 # not: three apps never handed ai.js the token, and a new browser said "no key")
 run "account · the key follows the person" node account-key-check.mjs
-lane va2
+lane va
 run "va · canvas" node va-canvas.mjs
+lane va
 run "va · hand-off" node va-handoff.mjs
 
 # ── 3b. the authorization grid, from the other laptop ─────────────────
@@ -280,8 +281,9 @@ run "shared · the word on a rail that is not mine" node shared-rail-check.mjs
 # These are not the audit: they are the four questions a person may ask again
 # after any change — may an editor start a machine, may an editor take a row,
 # may a stranger read the codes, may a note carry a way in.
-lane va-sec
+lane va
 run "va · who may queue" env VA_URL="${VA_URL:-http://127.0.0.1:${PORT[va]}}" node va-sec.mjs
+lane vd
 run "vd · a row is not a field" env VD_URL="${VD_URL:-http://127.0.0.1:${PORT[vd]}}" node owner-guard.mjs
 
 # ── 4. the floor under every control, in all eight ───────────────────
