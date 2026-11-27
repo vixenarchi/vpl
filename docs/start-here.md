@@ -2,7 +2,12 @@
 
 For a person — or a model — who arrives with no context. Read this, then
 `README.md`, then the one app you were asked to touch. Everything below was true
-on 21 Nov 2026 and is checked by the tests named at the end.
+on 27 Nov 2026 and is checked by the tests named at the end.
+
+**Three documents to read in order, if you have five minutes:** `docs/state.md`
+(what exists and the numbers that prove it), `docs/reminders.md` (where the
+hidden things live and what bites), `docs/rules.md` (the rules, each with the
+test that holds it).
 
 ## What this is
 

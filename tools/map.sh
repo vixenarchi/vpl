@@ -68,6 +68,8 @@ find apps/api/functions -name '*.js' | sort | sed 's/^/  /'
 echo
 echo "the API an agent uses — the apps' own API, as a person with a token"
 [ -f tools/vpl-api.mjs ] && printf '  %-22s %s\n' "tools/vpl-api.mjs" "login, me, get, post, patch, delete, rpc"
+[ -f tools/vpl-mcp.mjs ] && printf '  %-22s %s\n' "tools/vpl-mcp.mjs" "the same five tools over MCP (stdio), the person's token, never the service key"
+[ -f tools/mail.mjs ] && printf '  %-22s %s\n' "tools/mail.mjs" "list, find, body, send — the project's mailbox (app password)"
 [ -f docs/api.md ] && printf '  %-22s %s\n' "docs/api.md" "sign in, tables, closed lists, the bin, files, refusals"
 echo "  the surface                 POST /auth/v1/token, /rest/v1/<table>, /storage/v1/object/<bucket>/<project_id>/<file>, /rest/v1/rpc/<fn>"
 
@@ -101,6 +103,12 @@ for f in apps/vn/test/*.mjs; do
          | grep -ohE "app_name=[a-z]{2}|app=[a-z]{2}|(vn|vi|vr|vz|vd|vc|vp|va)_url|^  (vn|vi|vr|vz|vd|vc|vp|va): " \
          | grep -oE "vn|vi|vr|vz|vd|vc|vp|va" | sort -u | tr '\n' ',' | sed 's/,$//')
   printf '  %-22s %-18s %s\n' "$name" "${apps:-(the shell)}" "$(purpose "$f")"
+done
+
+echo
+echo "the documents that hold the state of the house"
+for f in docs/state.md docs/reminders.md docs/www.md docs/next.md docs/rules.md; do
+  [ -f "$f" ] && printf '  %-22s %s\n' "$f" "$(sed -n 's/^# //p' "$f" | head -1)"
 done
 
 echo

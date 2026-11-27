@@ -66,7 +66,15 @@ async function token() {
     body: JSON.stringify({ refresh_token: c.refresh_token }),
   });
   const j = await r.json().catch(() => null);
-  if (!r.ok || !j?.access_token) throw new Error(`refresh failed (${r.status}) — sign in again`);
+  if (!r.ok || !j?.access_token) {
+    /* two doors share one cached token — the shell tool and this one — so a
+     * refresh that fails is usually the other one having just done it. Read the
+     * cache again before telling the person to sign in. */
+    const again = readCache();
+    if (again?.access_token && again.access_token !== c.access_token
+        && Date.now() < (again.expires_at || 0) - 5_000) return again.access_token;
+    throw new Error(`refresh failed (${r.status}) — sign in again`);
+  }
   writeCache({
     email: c.email, access_token: j.access_token, refresh_token: j.refresh_token || c.refresh_token,
     expires_at: Date.now() + (j.expires_in || 3600) * 1000, user_id: c.user_id,

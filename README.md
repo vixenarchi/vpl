@@ -35,7 +35,8 @@ Each app is documented in `docs/`: `vi.md`, `vr.md`, `vz.md`, `vd.md`, `vc.md`,
   add a bin, add a ninth app, deploy, back up.
 - **`skills/`** — two skills an agent can run as it stands: `vpl-notes` (a note,
   its body, a share) and `vpl-apps` (a project, its rows, a share). Symlink them
-  into an agent's skills folder and the work is six commands.
+  into an agent's skills folder and the work is six commands. `tools/vpl-mcp.mjs`
+  is the same thing for an agent that speaks MCP instead of shell.
 - **`docs/api.md`** — the way an agent works without a browser: sign in with the
   person's account, then read and write the same rows the apps do
   (`node tools/vpl-api.mjs login …; get / post / patch / delete / rpc`). There is
@@ -45,7 +46,18 @@ Each app is documented in `docs/`: `vi.md`, `vr.md`, `vz.md`, `vd.md`, `vc.md`,
   diff) for whichever assistant you use.
 - **`./tools/map.sh`** — the generated map: tables, ports, suites.
 - **`./tools/stage.sh --check`** and **`./tools/test-all.sh`** — the two commands
-  that keep the house honest. A skipped group is not a green group.
+  that keep the house honest. A skipped group is not a green group. The gate runs
+  56 groups in lanes: about eight minutes, not twenty-five.
+- **`docs/state.md`** — where the house stands today: what exists, the numbers the
+  gate proves, what is closed, what is open. Start here after a break.
+- **`docs/reminders.md`** — where the hidden things live (test accounts, tokens,
+  the mailbox) and the traps that cost time.
+- **`docs/www.md`** — the front door that does not exist yet: the page, the six
+  imprint fields only the owner can give, and the publish steps.
+- **`docs/next.md`** — the phase after the code: marketing, design, pitch, the
+  business model.
+- **`tools/vpl-mcp.mjs`** — the same API as five MCP tools, so an agent without a
+  shell can still work; **`tools/mail.mjs`** — read or send the project's mail.
 
 ## What it deliberately does not do
 

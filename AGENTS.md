@@ -13,9 +13,14 @@ it. The house has one way of doing that, and this page is it.
 
 ```bash
 ./serve vn                  # local, no-store headers (ports below)
-./tools/test-all.sh         # the gate: 40 groups, ~25 minutes, starts its own servers
+./tools/test-all.sh         # the gate: 56 groups, ~8 minutes in 4 lanes, starts its own servers
 ./deploy vn                 # Cloudflare Pages, one project per app
 ```
+
+The gate runs its groups in **lanes**: one lane per app, so a bin test cannot
+delete the note a markdown test is reading. `VPL_JOBS=1` gives the old order one
+at a time (~25 min), `VPL_JOBS=8` is as fast as it gets, and `VPL_KEEP=1` leaves
+every group's log and prints the path — that is how a failure is read.
 
 Ports: `vn 8102`, `vi 8100`, `vr 8101`, `vz 8103`, `vd 8104`, `vc 8105`,
 `vp 8106`, `va 8107`. `./tools/test-all.sh` starts any that are not up and kills
@@ -53,6 +58,9 @@ packages/shell/    the shared shell: tokens.css ai.js settings.js who.js
 apps/api/          the one origin the browser talks to: chat, search, fetch, vp
                    (_door.js: the four refusals; _limit.js: the bound)
 tools/vpl-api.mjs  the API an agent uses: a token, then get/post/patch/delete
+tools/vpl-mcp.mjs  the same API as five MCP tools over stdio (login, whoami,
+                   query, write, rpc) — registered in ~/.free-pi/agent/mcp.json
+tools/mail.mjs     list / find / body / send the project's mailbox (app password)
 skills/            two skills an agent can run as it stands: notes, and the
                    seven project apps (each SKILL.md + one script)
 agent/             the worker that takes a `va` job and writes the answer back
@@ -104,7 +112,20 @@ The full list with reasons is `docs/rules.md`.
 12. **A share is the owner's decision, and a bin is the owner's too.** Policies
     are OR'd, so a narrower rule added beside a wide one changes nothing — drop
     the old ones first. `authz-matrix`, `authz-confirm`.
-13. **No inline scripts, and every page carries the same CSP.** An inline boot
+13. **A rail lists what you own and what somebody shared with you in one column,
+    so the two must not look alike.** A shared project carries the word `shared`
+    (a pill, never only a colour) and **no ✕** — the bin is the owner's decision,
+    and a row asking for a ✕ it does not have once emptied the whole list.
+    The chips have to fit the rail: they get their own line and wrap.
+    `shared-rail-check`, `bin-check`.
+14. **A finished job is a record.** Once a job is `done` or `failed`, only its
+    owner may change the report, the files, the status or the start time; a
+    colleague gets `42501` with a hint. RLS cannot see the row it replaces, so
+    the rule is a trigger. `va-sec`.
+15. **A link that has been used names the way forward.** A confirmation ticket
+    works once; the second click must say "already used or has expired — sign in,
+    or sign up again", never a raw error. `auth-check`.
+16. **No inline scripts, and every page carries the same CSP.** An inline boot
     script is what a strict policy refuses; the shell's `theme.js` exists for
     that reason. `csp-check` walks the page under the policy.
 
@@ -125,16 +146,21 @@ The full list with reasons is `docs/rules.md`.
 
 ```bash
 # 1. write supabase/migrations/<timestamp>_<name>.sql   (re-runnable, numbered)
-# 2. the CLI root is a separate tree that symlinks into this repo:
-cd /home/vergovic/vixen/supabase
-ln -sf /home/vergovic/vpl/supabase/migrations/<file> migrations/<file>
-npx supabase db push --remote --yes
+# 2. push from this repo; the CLI is linked to the project
+cd supabase && npx supabase db push --remote --yes
 ```
 
-The symlinked name must be exactly `<timestamp>_<name>.sql`. Syntax errors and
-policy mistakes surface **only at push** — a `create policy` written
+The file name must be exactly `<timestamp>_<name>.sql`. Syntax errors and policy
+mistakes surface **only at push** — a `create policy` written
 `for insert … as restrictive` is a syntax error, because `as restrictive` comes
 *before* `for`.
+
+Two things that bit on 27 Nov: the remote history had 38 versions whose files
+lived in the v2 repository (restored into `supabase/migrations/`), and
+`20261120000000` was a **full schema dump**, not a step — it now lives in
+`supabase/bootstrap/` and its history row was repaired
+(`npx supabase migration repair --status reverted 20261120000000 --remote --yes`).
+Never push the dump: it creates tables without `if not exists`.
 
 ## What not to do
 
@@ -148,6 +174,14 @@ policy mistakes surface **only at push** — a `create policy` written
 
 ## Where the knowledge is
 
+- **`docs/state.md`** — where the house stands: what exists, the numbers the gate
+  proves, what is closed, what is open. Read this one first after a break.
+- **`docs/reminders.md`** — the practical memory: where the hidden things live,
+  the traps that cost time, and what to run in ten minutes.
+- **`docs/www.md`** — the front door (`www.terg.hr`): the page, the six imprint
+  fields only the owner can give, and the publish steps.
+- **`docs/next.md`** — the phase after the code: marketing, design, pitch, the
+  business model. Marked as questions, not decisions.
 - **`docs/api.md`** — how an agent does the work without a browser: sign in, the
   tables, the closed lists, the bin, files, what is refused.
 - **`skills/`** — the same thing as two runnable skills (`vpl-notes`,

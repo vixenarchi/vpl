@@ -83,6 +83,10 @@ Run the proof with `./tools/test-all.sh`, or one at a time from `apps/vn/test`
   the thing that covers what is under it. → `bin-check`
 - **An open bin is visible from anywhere in the list** (sticky banner, sticky
   foot) — and sticky needs a real scroller. → `bin-check`, `docs/bin.md`
+- **A rail lists what I own and what somebody shared with me in one column, so
+  the two must not look alike.** The shared row says `shared` in a pill and has
+  no ✕. The chips fit: their own line, and they wrap when the rail is dragged
+  narrow. → `shared-rail-check`, `bin-check`
 - **A shared document never shows the bin.** → `share-check`
 - **A copy keeps each version's own timestamp; a shared document opens the
   newest.** → `vd-check`
@@ -111,6 +115,19 @@ Run the proof with `./tools/test-all.sh`, or one at a time from `apps/vn/test`
   pill is a **word, not a whisper**: 0.7rem, because the suite's type floor is
   10.5px and the first draft came out at 9.92. → `shared-rail-check`, `ux-sniff`
 - **Backups never contain keys.** → `tools/backup.sh`, review
+
+## When the work is finished
+
+- **A finished job is a record.** Once `status` is `done` or `failed`, only the
+  owner may change `report`, `files`, `status`, `started_at`. A colleague gets
+  `42501` with a hint, and the owner opens it again by setting `queued`. RLS
+  cannot see the row it replaces, so it is a **trigger** — and a trigger that
+  names a column that does not exist fails *open*, which is how the first version
+  of this one was caught. → `va-sec`
+- **A ticket is used once, and the second click says what to do.** A spent
+  confirmation link lands with `error_code=otp_expired`; the page must say
+  "already used or has expired — sign in, or sign up again", not print the
+  provider's sentence alone. → `auth-check`
 
 ## The database is the last word
 
@@ -236,6 +253,13 @@ Run the proof with `./tools/test-all.sh`, or one at a time from `apps/vn/test`
 
 - **A group that is not in the test list is green by absence.** Add the suite
   *and* the line in `tools/test-all.sh`. → the summary count
+- **Groups that share state share a lane.** Every suite signs in as the same
+  person; everything touching one app is one lane, and a lane runs one group at a
+  time. Two suites beside each other on the same rows is a race, not a test —
+  which is how `va` lost three checks and passed on the retry. → `VPL_JOBS`
+- **A refusal that nobody can see is not a refusal.** The edge injection of a
+  third-party script is reported by name (`EDGE INJECTS … AGAIN`), not filed
+  quietly. → `csp-check`
 - **A skip is not a pass.** No account means exit 78 and a "skipped" line.
   → `./tools/test-all.sh` summary
 - **In tests, look for the row, not the count** — a list can hold rows from an
