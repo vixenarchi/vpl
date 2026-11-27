@@ -106,6 +106,26 @@ await a.reload({ waitUntil: 'networkidle' });
 await a.waitForTimeout(1000);
 ok(await a.locator('#gate:not([hidden])').isVisible(), 'a reload in the other tab does not sign anybody back in');
 
+/* ── a spent confirmation link names the way forward ──────────────────
+ * The token in a confirmation letter works once. A second click — or a mail
+ * client that prefetches — spends it, and Supabase sends the browser back with
+ * ?error=access_denied&error_code=otp_expired. vn is the address in the letter's
+ * redirect, so vn is where that lands. */
+if (/\bvn\b|notes/i.test(NAME)) {
+  const c = await br.newPage();
+  await c.goto(B + '#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired',
+    { waitUntil: 'networkidle' });
+  await c.waitForTimeout(1200);
+  const said = ((await c.textContent('#gate-msg').catch(() => '')) || '').trim();
+  ok(/already used or has expired/i.test(said), 'a spent link says so', said);
+  ok(/sign in with your password|fresh letter/i.test(said), 'and names the way forward', said);
+  await c.goto(B + '?error=access_denied&error_description=Email+not+confirmed', { waitUntil: 'networkidle' });
+  await c.waitForTimeout(1000);
+  const other = ((await c.textContent('#gate-msg').catch(() => '')) || '').trim();
+  ok(/not confirmed/i.test(other) && !/already used/i.test(other), 'any other error keeps its own words', other);
+  await c.close();
+}
+
 ok(errors.length === 0, 'no page errors');
 if (errors.length) console.log(errors.slice(0, 3).join('\n'));
 

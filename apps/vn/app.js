@@ -270,9 +270,16 @@ function sayUrlTrouble() {
   const why = q.get('error_description') || h.get('error_description') || '';
   if (!err) return;
 
-  gateMsg(why
-    ? 'sign-in did not go through: ' + why.replace(/\+/g, ' ')
-    : 'sign-in did not go through (' + err + ').');
+  /* A confirmation link holds a one-time token. A second click, or a mail client
+   * that prefetches, spends it — and the person is left on a page that says
+   * "invalid or has expired" with no way forward. Naming the way forward is the
+   * whole job of this sentence. */
+  const spent = /otp_expired|link is invalid|has expired/i.test(why + ' ' + (h.get('error_code') || ''));
+  gateMsg(spent
+    ? 'that link was already used or has expired — sign in with your password, or sign up again for a fresh letter.'
+    : (why
+      ? 'sign-in did not go through: ' + why.replace(/\+/g, ' ')
+      : 'sign-in did not go through (' + err + ').'));
   history.replaceState(null, '', location.pathname + (location.hash.startsWith('#/') ? location.hash : ''));
 }
 

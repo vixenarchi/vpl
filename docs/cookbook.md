@@ -208,3 +208,35 @@ It needs `MAIL_ACCOUNT` and `MAIL_APP_PASS` (an **app password**, not the accoun
 password — Google refuses the account password for IMAP once 2FA is on, and says
 `Application-specific password required`). Without them it looks for the pairs
 `mail.account` / `mail.app` in the vz dictionary.
+
+### The whole confirmation loop, in two minutes
+
+Only worth doing with **"Confirm email" on** in the project's auth settings; with
+it off, signup signs you in and no letter exists. Use a `+tag` address so the
+letter lands in the one inbox and the account is throwaway:
+
+```
+# 1. sign up — a confirmed-at-empty user and no session means a letter went out
+curl -s -X POST "$SUPABASE_URL/auth/v1/signup" -H "apikey: $ANON" \
+  -H 'content-type: application/json' \
+  -d '{"email":"terg.tester+vpl1@gmail.com","password":"Confirm-test-2026!"}'
+
+# 2. read it (Supabase sends from noreply@mail.app.supabase.io, HTML only)
+node tools/mail.mjs find supabase 3
+
+# 3. the letter is HTML, so its text part is empty — pull the href out of it
+node tools/mail.mjs body <n> | grep -o 'https://[^"]*verify[^"]*'
+
+# 4. open that link in a browser: it 303s to redirect_to (https://vn.terg.hr)
+#    with #access_token=… and the app comes up signed in. The token works once;
+#    a second click says "that link was already used or has expired".
+
+# 5. tidy up: the account deletes itself, and its auth row with it
+node tools/vpl-api.mjs login <that address> <password>
+node tools/vpl-api.mjs rpc vn_delete_my_account '{}'
+```
+
+**The two settings this depends on:** *Site URL* = `https://vn.terg.hr` (that is
+what `redirect_to` becomes), and *Redirect URLs* must list every app that will
+ever send a letter. Built-in SMTP allows only a couple of letters an hour, which
+is why the suite runs with confirmation **off** and this is a manual check.
