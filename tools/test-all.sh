@@ -42,41 +42,102 @@ if [ "$PROD" != "1" ]; then
 fi
 
 pass=0; fail=0; skip=0; skipped=(); failed=()
-run() {                       # run "<label>" <command…>
+# ── running a group ──────────────────────────────────────────────────
+# Each group is a process: a browser walk, a suite, a shell check. They are
+# independent — different app, different account, different rows — and one small
+# machine spends most of the twenty-five minutes waiting for a repaint, not
+# computing. So they run VPL_JOBS at a time and the summary is the same.
+#
+# What stays sequential is anything one group *is* the premise of: the shell
+# check (a stale vendor copy makes every later pass a lie) and the syntax pass.
+PARALLEL=${VPL_JOBS:-4}
+JOBDIR=$(mktemp -d)
+JOB_N=0
+cleanup_jobs() { rm -rf "$JOBDIR"; }
+trap 'cleanup; cleanup_jobs' EXIT
+
+slug() { printf '%s' "$1" | tr -cs 'a-zA-Z0-9' '-' | cut -c1-60; }
+
+# one group, run for real: its own log, its own exit code, no shared file
+run_one() {                   # run_one "<label>" <command…>
   local label="$1"; shift
-  printf '\n\033[1m%s\033[0m\n' "$label"
-  "$@" >/tmp/test-all-last.log 2>&1
+  local log="$JOBDIR/$(slug "$label").log"
+  ( "$@" ) >"$log" 2>&1
   local code=$?
-  tail -n 12 /tmp/test-all-last.log
-  if [ "$code" = 0 ]; then
-    pass=$((pass + 1))
-    return
-  fi
   # 78 is EX_CONFIG: the suite did not run because no account was set. It is
   # neither a pass nor a failure, and it must never be counted as a pass — an
   # agent that reads "0 failed" and believes it is worse off than one that was
   # never told about a gate at all.
+  printf '%s' "$code" > "$JOBDIR/$(slug "$label").code"
+  return $code
+}
+
+run() {                       # queue a group; sequential when VPL_JOBS=1
+  local label="$1"; shift
+  if [ "$PARALLEL" = 1 ]; then
+    printf '\n\033[1m%s\033[0m\n' "$label"
+    run_one "$label" "$@" || true
+    local code; code=$(cat "$JOBDIR/$(slug "$label").code" 2>/dev/null || echo 1)
+    tail -n 12 "$JOBDIR/$(slug "$label").log" 2>/dev/null || true
+    tally "$label" "$code"
+    return
+  fi
+  JOB_N=$((JOB_N + 1))
+  local n; n=$(printf '%03d' "$JOB_N")
+  printf '%s' "$label" > "$JOBDIR/$n.label"
+  printf '%s' "$PWD" > "$JOBDIR/$n.dir"
+  # quoted, so a group whose command has a space in an argument replays exactly
+  printf '%q ' "$@" > "$JOBDIR/$n.cmd"
+}
+
+tally() {                     # tally "<label>" <exit code>
+  local label="$1" code="$2"
+  if [ "$code" = 0 ]; then pass=$((pass + 1)); return; fi
   if [ "$code" = 78 ]; then
     skip=$((skip + 1)); skipped+=("$label")
     printf '   — skipped: not configured (exit 78)\n'
     return
   fi
-  # Nine servers, one small machine, and a suite that waits 8 s for a repaint:
-  # a single failure is usually a slow neighbour, not a break. A suite that fails
-  # twice is a break, and the retry is printed so the first failure is not hidden.
-  echo "   — failed once; retrying (a slow neighbour looks exactly like a break)"
-  "$@" >/tmp/test-all-last.log 2>&1
-  code=$?
-  tail -n 12 /tmp/test-all-last.log
-  if [ "$code" = 0 ]; then
-    pass=$((pass + 1))
-    echo "   — passed on the retry"
-  elif [ "$code" = 78 ]; then
-    skip=$((skip + 1)); skipped+=("$label")
-    printf '   — skipped: not configured (exit 78)\n'
-  else
-    fail=$((fail + 1)); failed+=("$label")
-  fi
+  fail=$((fail + 1)); failed+=("$label")
+}
+
+# everything queued, VPL_JOBS at a time, then reported in the order it was asked
+flush_jobs() {
+  [ "$PARALLEL" = 1 ] && return
+  [ "$JOB_N" = 0 ] && return
+  printf '\n\033[1m%s\033[0m\n' "running $JOB_N groups, $PARALLEL at a time"
+
+  local file
+  for file in "$JOBDIR"/*.cmd; do
+    [ -e "$file" ] || continue
+    (
+      cd "$(cat "${file%.cmd}.dir")" || exit 1
+      eval "$(cat "$file")" >"${file%.cmd}.log" 2>&1
+      printf '%s' "$?" > "${file%.cmd}.code"
+    ) &
+    while [ "$(jobs -rp | wc -l)" -ge "$PARALLEL" ]; do wait -n 2>/dev/null || break; done
+  done
+  wait
+
+  for file in "$JOBDIR"/*.cmd; do
+    [ -e "$file" ] || continue
+    local label code
+    label=$(cat "${file%.cmd}.label")
+    code=$(cat "${file%.cmd}.code" 2>/dev/null || echo 1)
+    printf '\n\033[1m%s\033[0m\n' "$label"
+    if [ "$code" = 0 ]; then
+      tail -n 3 "${file%.cmd}.log" 2>/dev/null || true
+    else
+      echo "   — failed once; retrying (a slow neighbour looks exactly like a break)"
+      if ( cd "$(cat "${file%.cmd}.dir")" && eval "$(cat "$file")" ) >"${file%.cmd}.retry.log" 2>&1; then
+        code=0; echo "   — passed on the retry"
+      else
+        code=$?
+      fi
+      tail -n 12 "${file%.cmd}.log" 2>/dev/null || true
+    fi
+    tally "$label" "$code"
+  done
 }
 
 # ── 0. the shell each app carries is the shell in this repo ─────────
@@ -177,6 +238,8 @@ for app in vn vi vr vz vd vc vp va; do
     run "ux · $app" env APP_URL="http://127.0.0.1:${PORT[$app]}" APP_NAME="$app" node ux-sniff.mjs
   fi
 done
+
+flush_jobs
 
 printf '\n\033[1m%s\033[0m\n' "── summary ──────────────────────────────────"
 echo "  $pass passed, $fail failed, $skip skipped"

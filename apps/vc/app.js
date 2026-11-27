@@ -1,7 +1,7 @@
 /* vpl · vc — compliance. Rules and proofs in, a verdict for every control out.
  *
  * The same desk as vd, with two piles instead of one: *standardi* (the rule)
- * and *dokazi* (the proof). The report is text a person can edit; above it a
+ * and *proofs* (the proof). The report is text a person can edit; above it a
  * strip counts the verdict lines — number and word together, never colour
  * alone. The engine is vendor/engine.js; this file owns the two piles and the
  * strip, nothing else.
@@ -367,7 +367,7 @@ function paintSpec() {
   const n = tpl.nouns;
   const pile = evRows();
   /* Croatian counts the genitive plural after any number but one: 1 standard,
-   * 2 standarda — the same noun cannot serve both, so the pack carries both */
+   * 2 standards — the same noun cannot serve both, so the pack carries both */
   const words = [...S.artifacts, ...pile].reduce((k, a) => k + engine.countWords(a.text), 0);
   const nStd = S.artifacts.filter((a) => a.kind === 'standard').length;
   const nEv = pile.length;
@@ -645,7 +645,7 @@ async function runRow(row, tpl, rules) {
   row.status = 'running';
   paintTargets();
   const all = await db.listArtifacts(projectId, { targetId: row.id });
-  /* one choice covers the whole batch: the rows you ticked in dokazi are the
+  /* one choice covers the whole batch: the rows you ticked in proofs are the
    * proofs every row is measured against, and an empty tick means all of them */
   const proofs = S.selEv.size ? all.filter((a) => S.selEv.has(a.id)) : all;
   const messages = engine.buildMessages({
@@ -835,7 +835,7 @@ function artRow(a) {
 }
 
 function renderArtifacts() {
-  /* In the bin both lists are one drawer: a standard and a dokaz are the same
+  /* In the bin both lists are one drawer: a standard and a proof are the same
    * kind of thing to lose, and the row's kind word says which it was. */
   if (S.binMode) {
     $('#standards').classList.add('bin-mode');
@@ -927,8 +927,8 @@ for (const sel of ['#standards', '#evidence']) $(sel).addEventListener('click', 
 function openArtifact(a, kind = 'evidence') {
   S.artDraft = a ? { ...a } : { kind, title: '', text: '' };
   $('#art-head').textContent = a
-    ? (a.kind === 'standard' ? 'standard' : 'dokaz')
-    : (kind === 'standard' ? 'a new standard' : 'a new dokaz');
+    ? (a.kind === 'standard' ? 'standard' : 'proof')
+    : (kind === 'standard' ? 'a new standard' : 'a new proof');
   $('#art-title').value = S.artDraft.title || '';
   $('#art-text').value = S.artDraft.text || '';
   const cold = S.role === 'view';

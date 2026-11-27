@@ -105,12 +105,12 @@ chk('the check exists', (await pg.locator('#proj-list li').count()) >= nRows);
 await pg.selectOption('#template', 'tender');
 await wait(1200);
 
-chk('the piles are named by the pack', (await txt('#std-head')) === 'uvjeti natječaja'
-  && (await txt('#ev-head')) === 'kandidati'
-  && (await txt('#tgt-head')) === 'kandidati', `${await txt('#std-head')} / ${await txt('#ev-head')} / ${await txt('#tgt-head')}`);
+chk('the piles are named by the pack', (await txt('#std-head')) === 'conditions'
+  && (await txt('#ev-head')) === 'candidates'
+  && (await txt('#tgt-head')) === 'candidates', `${await txt('#std-head')} / ${await txt('#ev-head')} / ${await txt('#tgt-head')}`);
 chk('the add buttons follow the pack',
-  (await txt('#btn-add-standard')).includes('uvjet natječaja')
-  && (await txt('#btn-add-target')).includes('kandidat'));
+  (await txt('#btn-add-standard')).includes('condition')
+  && (await txt('#btn-add-target')).includes('candidate'));
 chk('a batch shows its list', !(await pg.locator('#targets-wrap').isHidden()));
 
 /* ── the rules: shared, added once ─────────────────────────────────── */

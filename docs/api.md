@@ -316,3 +316,32 @@ the same table — not a cache of it. Nothing has to be told that the API wrote.
 - `supabase/migrations/` — the schema, the policies, the guards and the closed lists, in order.
 - `docs/security.md` — the findings and what each one closed.
 - `docs/rules.md` — the rules this document obeys, each with the test that catches it.
+
+---
+
+## 7. The same API as MCP tools
+
+`tools/vpl-mcp.mjs` speaks Model Context Protocol on stdio, so an agent that has
+no shell can still work: five tools, no new service, no service key.
+
+| tool | what it does |
+| --- | --- |
+| `vpl_login` | sign in as the person, caching the token beside the shell tool's |
+| `vpl_whoami` | who the token is, minutes left, live and binned rows per app |
+| `vpl_query` | read rows with PostgREST filters, as that person |
+| `vpl_write` | insert, update or delete — **a filter is required** for the last two |
+| `vpl_rpc` | call a database function, e.g. `vn_delete_my_account` |
+
+Register it once:
+
+```json
+{ "mcpServers": { "vpl": { "command": "node",
+    "args": ["/home/<you>/vpl/tools/vpl-mcp.mjs"] } } }
+```
+
+Then `npx free-pi-cli mcp login vpl` in a fresh session picks it up (or restart).
+The token is the one `tools/vpl-api.mjs login` already cached, so signing in once
+in a shell is enough for both — and signing out is deleting that file.
+
+`node tools/vpl-mcp.mjs --tools` prints the list without speaking the protocol,
+which is the quickest way to see what an agent will be offered.

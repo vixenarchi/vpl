@@ -140,6 +140,37 @@ const place = await pg.evaluate(() => {
 ok(place.bottom <= 2, 'it sits on the bottom edge (' + place.bottom + 'px gap)');
 ok(place.width >= place.vw - 4, 'and spans the whole width');
 
+/* A dock question is about what is on screen, so there has to be something on
+ * the screen — and an app's own idea of "on screen" is what the dock sends (vd
+ * sends the job's brief and the document on the desk, not the chrome around
+ * them). If that is thin, put a sentence where the app reads from: otherwise the
+ * check measures an empty job and calls it a broken dock. */
+const thin = async () => {
+  const b = pg.locator('#brief:visible').first();
+  if (await b.count()) {
+    if (!(await b.inputValue()).trim()) {
+      await b.fill('A sentence that is on the screen, long enough that an answer about it has something to stand on.');
+      await pg.waitForTimeout(1000);
+    }
+    return;
+  }
+  const out = pg.locator('#out-body:visible, #editable:visible').first();
+  if (await out.count()) {
+    const has = await out.evaluate((e) => (e.isContentEditable ? e.textContent : e.value) || '');
+    if (!String(has).trim()) {
+      if (await out.evaluate((e) => e.isContentEditable)) { await out.click(); await pg.keyboard.type('A sentence on the screen, long enough to be worth an answer.'); }
+      else await out.fill('A sentence on the screen, long enough to be worth an answer.');
+      await pg.waitForTimeout(900);
+    }
+  }
+};
+const first = pg.locator('#proj-list .proj-row .pick').first();
+if (!(await pg.locator('#spec:visible, .editor:visible, #editable:visible').count()) && await first.count()) {
+  await first.click();
+  await pg.waitForTimeout(1200);
+}
+await thin();
+
 await pg.fill('#dock .dock-input', 'what is this?');
 await pg.click('#dock .dock-go');
 const answered = await until(async () => (await pg.locator('#dock .dock-row.it .dock-text').count()) === 1);
@@ -151,6 +182,7 @@ ok(!!asked && asked.messages?.some((m) => m.role === 'system'), 'the request car
 ok(!!asked && asked.messages?.[1]?.content.includes('what is this?'), 'and the question');
 const brief = asked?.messages?.[1]?.content || '';
 ok(brief.split('Question:')[0].length > 60, 'and what is on screen travels with it (' + brief.split('Question:')[0].length + ' chars)');
+if (brief.split('Question:')[0].length <= 60) console.log('   the brief was: ' + JSON.stringify(brief.slice(0, 200)));
 
 /* the dock never writes into the document on its own: where an app offers
  * *use it*, it is a button, and only a press makes it happen */

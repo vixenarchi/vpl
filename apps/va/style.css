@@ -97,6 +97,10 @@ input:focus, textarea:focus, select:focus { outline: 1px solid var(--ink); outli
   width: 100%; margin: 0.15rem 0 0; border: none; border-bottom: 1px dashed transparent;
   background: none; color: var(--ink-2); font-size: 0.9rem; resize: none;
   padding: 0.2rem 0; line-height: 1.45;
+  /* height is set from scrollHeight on every keystroke, so the box grows with
+   * the sentence and never needs a scrollbar of its own — a one-line field with
+   * a scroll gutter looked broken, and the padding made the last line clip */
+  overflow: hidden;
 }
 .brief:hover { border-bottom-color: var(--rule); }
 .brief:focus { outline: none; border-bottom-color: var(--ink); }

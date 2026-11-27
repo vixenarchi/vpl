@@ -116,7 +116,7 @@ ok((await pg.locator('#evidence .art').count()) === 0, 'and not among the proofs
 
 await pg.click('#btn-add-evidence');
 await pg.waitForSelector('#art-dialog[open]');
-ok((await pg.textContent('#art-head')).includes('dokaz'), 'the dialog knows it is a proof');
+ok((await pg.textContent('#art-head')).includes('proof'), 'the dialog knows it is a proof');
 await pg.fill('#art-title', 'Zapisnik 12.3.');
 await pg.fill('#art-text', 'Promjena lozinke svakih 90 dana potvrđena. MFA uključen na svim administratorskim računima.');
 await pg.click('#art-save');
@@ -129,7 +129,7 @@ writeFileSync(txt, 'Ovlaštene osobe: Ana, Marko. Nijedan račun nema MFA.');
 await pg.setInputFiles('#file-input', txt);
 ok(await until(async () => (await pg.locator('#evidence .art').count()) === 2), 'a file is a second proof');
 ok((await pg.textContent('#proj-meta')).includes('1 standard'), 'the meta line counts the rules');
-ok((await pg.textContent('#proj-meta')).includes('2 dokaza'), 'and the proofs');
+ok((await pg.textContent('#proj-meta')).includes('2 proofs'), 'and the proofs');
 
 /* ── generate: the strip reads the report ───────────────────────── */
 await pg.click('#btn-generate');

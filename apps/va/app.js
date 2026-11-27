@@ -409,7 +409,9 @@ function paintSpec() {
 
 function growBrief(el) {
   el.style.height = 'auto';
-  el.style.height = Math.max(24, el.scrollHeight) + 'px';
+  /* +2 because scrollHeight rounds up over the padding: without it the last
+   * line sits one pixel under the edge and the box clips its own text */
+  el.style.height = Math.max(24, el.scrollHeight + 2) + 'px';
 }
 
 /* title and brief save themselves; a job with no name is a job you lose */

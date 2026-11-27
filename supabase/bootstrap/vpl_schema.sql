@@ -4,7 +4,7 @@
 -- moving, so a new project can be built in one step:
 --
 --   npx supabase link --project-ref <ref>
---   npx supabase db push --remote
+--   psql "$DB_URL" -f bootstrap/vpl_schema.sql
 --
 -- The project that is live at vn.terg.hr applied the same schema as a series of
 -- small migrations; this file is that series with the history folded in. From
