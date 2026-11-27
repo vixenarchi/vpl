@@ -107,7 +107,9 @@ Run the proof with `./tools/test-all.sh`, or one at a time from `apps/vn/test`
 - **A rail lists what you own and what somebody gave you in one column, so the
   two must not look alike.** A shared project carries the word `shared` (the
   mark, never only the colour) and **no ✕** — the bin is the owner's decision,
-  and a row asking for a ✕ it does not have once emptied the whole list. → `shared-rail-check`
+  and a row asking for a ✕ it does not have once emptied the whole list. The
+  pill is a **word, not a whisper**: 0.7rem, because the suite's type floor is
+  10.5px and the first draft came out at 9.92. → `shared-rail-check`, `ux-sniff`
 - **Backups never contain keys.** → `tools/backup.sh`, review
 
 ## The database is the last word
