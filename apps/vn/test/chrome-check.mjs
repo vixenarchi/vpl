@@ -146,22 +146,21 @@ ok(place.width >= place.vw - 4, 'and spans the whole width');
  * them). If that is thin, put a sentence where the app reads from: otherwise the
  * check measures an empty job and calls it a broken dock. */
 const thin = async () => {
-  const b = pg.locator('#brief:visible').first();
-  if (await b.count()) {
-    if (!(await b.inputValue()).trim()) {
-      await b.fill('A sentence that is on the screen, long enough that an answer about it has something to stand on.');
-      await pg.waitForTimeout(1000);
-    }
+  /* `#brief` is a textarea in vd and a contenteditable div in vr, so ask the
+   * element what it is rather than assuming a form control */
+  for (const sel of ['#brief:visible', '#out-body:visible', '#editable:visible']) {
+    const el = pg.locator(sel).first();
+    if (!(await el.count())) continue;
+    const kind = await el.evaluate((e) => ({
+      input: e.tagName === 'TEXTAREA' || e.tagName === 'INPUT',
+      text: e.isContentEditable ? e.textContent : (e.value ?? e.textContent ?? ''),
+    }));
+    if (String(kind.text || '').trim()) return;
+    const sentence = 'A sentence that is on the screen, long enough that an answer about it has something to stand on.';
+    if (kind.input) await el.fill(sentence);
+    else { await el.click(); await pg.keyboard.type(sentence); }
+    await pg.waitForTimeout(1000);
     return;
-  }
-  const out = pg.locator('#out-body:visible, #editable:visible').first();
-  if (await out.count()) {
-    const has = await out.evaluate((e) => (e.isContentEditable ? e.textContent : e.value) || '');
-    if (!String(has).trim()) {
-      if (await out.evaluate((e) => e.isContentEditable)) { await out.click(); await pg.keyboard.type('A sentence on the screen, long enough to be worth an answer.'); }
-      else await out.fill('A sentence on the screen, long enough to be worth an answer.');
-      await pg.waitForTimeout(900);
-    }
   }
 };
 const first = pg.locator('#proj-list .proj-row .pick').first();
