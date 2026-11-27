@@ -9,7 +9,7 @@ Read with `docs/rules.md` (why the code is shaped like this) and
 
 ## 1. What the thing is
 
-**vpl** — vixen productivity light. Eight small web apps that share one look and
+**vpl** — vixen productivity lite. Eight small web apps that share one look and
 one signed-in person, one database, one static deploy each. No framework, no
 bundler, no build step, no server of ours to keep warm, no bill.
 

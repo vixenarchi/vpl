@@ -1,6 +1,6 @@
 # AGENTS.md — read this before you touch anything
 
-`vpl` is "vixen productivity light": **eight small web apps** that share one look
+`vpl` is "vixen productivity lite": **eight small web apps** that share one look
 and one signed-in person. Notes, ideas, requirements, a dictionary, documents,
 compliance, keys and codes, architecture. One repository, one database, one
 static deploy per app, **no framework, no bundler, no build step, no server of

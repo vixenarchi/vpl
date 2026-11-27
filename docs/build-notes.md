@@ -1,6 +1,6 @@
 # vpl v2
 
-A clean rebuild of **vixen productivity light** against `vpl-specification.md`
+A clean rebuild of **vixen productivity lite** against `vpl-specification.md`
 (the untruncated one, R1–R17).
 
 The `doc/` originals were left untouched. v2 is a reset, not a patch.

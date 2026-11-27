@@ -1,6 +1,6 @@
 # vpl — specification
 
-**Vixen Productivity Light**
+**Vixen Productivity Lite**
 Status: draft for day 1, written while Vixen is out walking.
 This is not an architecture. **This is 0-Architecture** — the document that
 says what exists, what does not, and why nothing else is allowed in.

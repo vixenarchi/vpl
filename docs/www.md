@@ -28,7 +28,7 @@ Everything else is a list of the eight, one line each, with the real addresses.
 ## Shape
 
 ```
-header      vpl · vixen productivity light        [ sign in ]  (→ vn.terg.hr)
+header      vpl · vixen productivity lite        [ sign in ]  (→ vn.terg.hr)
 hero        one sentence + one paragraph, no animation
 apps        eight rows: name · what it does in one line · address
 how         three short paragraphs: one account / one database / nothing to install

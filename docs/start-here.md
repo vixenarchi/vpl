@@ -11,7 +11,7 @@ test that holds it).
 
 ## What this is
 
-**vpl** (vixen productivity light) is a suite of very small, independent web
+**vpl** (vixen productivity lite) is a suite of very small, independent web
 apps that share one login, one database and one look. The success metric is
 *lightness*: one repo, one database, one deploy target, zero servers, zero euro
 per month. A new app is a folder of plain files, one table with a prefix, one

@@ -1,4 +1,4 @@
-# vpl — vixen productivity light
+# vpl — vixen productivity lite
 
 Eight small applications that share one look and one signed-in person: notes,
 ideas, requirements, a dictionary, documents, compliance, keys and codes, and
