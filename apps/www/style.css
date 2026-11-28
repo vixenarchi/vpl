@@ -38,27 +38,26 @@ body.site {
 body.site::before {
   content: '';
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  /* the margins: dots, quiet, all the way to the edges */
-  background-image: radial-gradient(circle, color-mix(in srgb, var(--ink) 40%, transparent) 1.3px, transparent 1.7px);
-  background-size: 0.95rem 0.95rem;
-  opacity: 0.5;
+  /* the margins: squared paper, quiet, all the way to the edges */
+  background-image:
+    repeating-linear-gradient(to bottom, transparent 0 25px, color-mix(in srgb, var(--ink) 14%, transparent) 25px 26px),
+    repeating-linear-gradient(to right, transparent 0 25px, color-mix(in srgb, var(--ink) 14%, transparent) 25px 26px);
 }
 
-/* the middle: squared paper, exactly as wide as the column the words live in.
- * Two textures, one edge between them — dots outside, squares inside — because
- * that is the boundary a reader already sees: text, and no text. */
+/* the middle: dots, exactly as wide as the column the words live in, and opaque
+ * paper under them so the squares stop where the column starts. Two textures,
+ * one edge between them — the boundary a reader already sees: text, and no
+ * text. */
 body.site::after {
   content: '';
   position: fixed; top: 0; bottom: 0; left: 50%;
   width: min(100%, var(--wide));
   transform: translateX(-50%);
   z-index: 0; pointer-events: none;
-  /* opaque paper under the grid, so the dots stop where the column starts: a
-   * dot showing through the middle would make this graph paper, not squares */
   background-color: var(--paper);
-  background-image:
-    repeating-linear-gradient(to bottom, transparent 0 25px, color-mix(in srgb, var(--ink) 15%, transparent) 25px 26px),
-    repeating-linear-gradient(to right, transparent 0 25px, color-mix(in srgb, var(--ink) 15%, transparent) 25px 26px);
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--ink) 32%, transparent) 1.25px, transparent 1.65px);
+  background-size: 0.95rem 0.95rem;
+  opacity: 0.95;
 }
 
 /* the header paints above the page, the panel above the header: a menu that is
