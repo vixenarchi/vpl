@@ -102,7 +102,7 @@ main { position: relative; z-index: 1; }
 .menu > summary::-webkit-details-marker { display: none; }
 .menu[open] > summary { color: var(--ink); background: var(--paper-2); }
 .chev { font-size: 0.6rem; color: var(--ink-3); }
-.bar-acts { margin-left: auto; display: flex; align-items: center; gap: 0.45rem; }
+.bar-acts { margin-left: auto; display: flex; align-items: center; gap: 0.7rem; }
 .ghost {
   border: 1px solid var(--line); background: var(--paper); color: var(--ink-2);
   border-radius: 4px; padding: 0.22rem 0.4rem; font-size: 0.95rem; cursor: pointer; line-height: 1.2;
@@ -162,41 +162,62 @@ main { position: relative; z-index: 1; }
 .panel-item b { font-weight: 700; }
 .panel-item em { display: block; width: 100%; font-style: normal; font-size: 0.76rem; color: var(--ink-3); }
 
-/* ── a section shown as a panel ────────────────────────────────────
- * The four bands are not destinations any more: they open under the bar, the
- * page underneath does not move, and the panel takes the width it needs to be
- * read rather than the width it can find.
+/* ── a page of words: dots all the way across, words all the way across ──
+ * The front page keeps the two textures (squares in the gutters, dots where the
+ * list is). A page that is only words does not: there the paper is dots edge to
+ * edge and the text runs the full width of it, because a column in the middle of
+ * a full-width sheet is a column that was left over from a design that had
+ * columns.
  */
-.panel-sect { max-width: 46rem; padding: 0.9rem 1.1rem 1rem; }
-.panel-sect > h2 {
-  font-family: var(--mono); font-weight: 400; font-size: 0.68rem;
-  letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-2);
-  margin: 0 0 0.55rem;
+body.site-text::before { display: none; }          /* no squares on a page of words */
+body.site-text::after { left: 0; width: 100%; transform: none; }  /* the dots run edge to edge */
+.site-text .block { padding: 1.2rem 1.1rem 1.6rem; }
+.site-text .kicker { margin-bottom: 0.45rem; }
+.site-text .page-h1 {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(1.9rem, 4.4vw, 3rem); line-height: 1.05;
+  margin: 0 0 0.9rem; letter-spacing: -0.01em;
 }
-.panel-sect > h2::before {
-  content: ''; display: inline-block; width: 0.35rem; height: 0.35rem;
-  background: var(--tq); border-radius: 50%; margin-right: 0.45rem; vertical-align: 0.1em;
-}
-.panel-sect h3 { font-family: var(--serif); font-weight: 400; font-size: 1.02rem; margin: 0 0 0.2rem; }
-.panel-sect p { margin: 0 0 0.5rem; font-size: 0.88rem; line-height: 1.55; color: var(--ink-2); max-width: 40rem; }
-.panel-sect .pair { grid-template-columns: 1fr 1fr; gap: 0.4rem 1.6rem; }
-.panel-sect .steps, .panel-sect .res { grid-template-columns: 1fr; gap: 0.45rem; }
-.panel-sect .about-strip { grid-template-columns: 1.4fr 1fr; gap: 0.4rem 1.8rem; }
-.panel-sect .mail { font-family: var(--serif); font-size: 1.1rem; margin: 0.15rem 0 0; }
-.panel-sect .mail a { color: var(--tq); text-decoration: none; }
-.panel-sect .mail a:hover { text-decoration: underline; }
-@media (max-width: 820px) {
-  .panel-sect .pair, .panel-sect .about-strip { grid-template-columns: 1fr; }
+.site-text p, .site-text .lede, .site-text .news p, .site-text .aside-line { max-width: none; }
+/* full width means long lines, so the type gets a little more air to carry them */
+.site-text p, .site-text .flow article p, .site-text .flow-steps p, .site-text .flow-list dd {
+  font-size: 1rem; line-height: 1.68;
 }
 
-/* ── the hero ────────────────────────────────────────────────────── */
+.flow { display: grid; gap: 1rem; }
+.flow article h2, .flow-steps h2, .flow-list dt {
+  font-family: var(--serif); font-weight: 400; font-size: 1.15rem;
+  margin: 0 0 0.25rem; color: var(--ink);
+}
+.flow article p, .flow-steps p, .flow-list dd {
+  margin: 0 0 0.6rem; font-size: 0.95rem; line-height: 1.6; color: var(--ink-2); max-width: none;
+}
+
+.flow-steps { list-style: none; margin: 0 0 0.8rem; padding: 0; display: grid; gap: 0.9rem; }
+.flow-steps li { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr); gap: 0.6rem; align-items: start; }
+.flow-steps li > b {
+  display: grid; place-items: center; width: 1.6rem; height: 1.6rem;
+  border-radius: 50%; background: var(--tq-soft); color: var(--tq); font-size: 0.8rem;
+}
+.aside-line {
+  font-family: var(--serif); font-size: 1.05rem; color: var(--ink-2);
+  margin: 0.6rem 0 0; padding-top: 0.7rem; border-top: 1px solid var(--line);
+}
+
+.flow-list { margin: 0; display: grid; gap: 0.85rem; }
+.flow-list > div { display: grid; grid-template-columns: minmax(0, 14rem) minmax(0, 1fr); gap: 0.2rem 1.8rem; align-items: baseline; }
+.flow-list dt a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--tq); }
+.flow-list dt a:hover { color: var(--tq); }
+.flow-list dd { margin: 0; }
+.addrs { font-family: var(--mono); font-size: 0.82rem; }
+.mono { font-family: var(--mono); font-size: 0.9em; }
+@media (max-width: 820px) { .flow-list > div { grid-template-columns: 1fr; } }
+
+/* ── the hero ─/* ── the hero ────────────────────────────────────────────────────── */
 .hero {
   max-width: var(--wide); margin: 0 auto;
-  padding: 1.7rem 1.1rem 1.1rem;
-  display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
-  gap: 0.6rem 2.4rem; align-items: start;
+  padding: 1.1rem 1.1rem 0.9rem;
 }
-.hero-copy { min-width: 0; }
 .kicker {
   font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.13em;
   text-transform: uppercase; color: var(--ink-3); margin: 0 0 0.5rem;
@@ -204,37 +225,27 @@ main { position: relative; z-index: 1; }
 .shout {
   font-family: var(--serif);
   color: var(--tq);
-  font-size: clamp(1.55rem, 3.1vw, 2.35rem);
+  font-size: clamp(1.6rem, 3.2vw, 2.5rem);
   line-height: 1.1; letter-spacing: -0.01em;
-  margin: 0 0 0.7rem; max-width: 34rem;
+  margin: 0 0 0.7rem;
 }
+/* one flow, full width: the sentence and its four labels are the same sentence,
+ * so they are set the same way — inline, not in a column beside it */
 .lede {
-  max-width: 44rem; font-size: 0.98rem; line-height: 1.58;
-  color: var(--ink); margin: 0 0 0.5rem;
+  font-size: 1.02rem; line-height: 1.62;
+  color: var(--ink); margin: 0 0 0.55rem; max-width: none;
 }
-.lede-2 { color: var(--ink-2); font-size: 0.92rem; max-width: 46rem; }
+.lede-2 { color: var(--ink-2); font-size: 0.94rem; }
+.tag {
+  font-style: normal; white-space: nowrap;
+  border-bottom: 2px solid color-mix(in srgb, var(--tq) 55%, transparent);
+  padding-bottom: 1px; color: var(--ink);
+}
+.tag:nth-of-type(even) { color: var(--tq); }
 .hero-acts { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; margin: 0.9rem 0 0; }
 .quiet { background: none; border: 0; color: var(--ink-2); font: inherit; cursor: pointer; padding: 0; }
 .as-link { text-decoration: underline; text-underline-offset: 3px; }
 .as-link:hover { color: var(--ink); }
-
-.hero-side { border-left: 1px solid var(--line); padding-left: 1.2rem; }
-.side-line {
-  display: flex; flex-wrap: wrap; gap: 0.25rem 0.45rem; margin: 0 0 0.8rem;
-  font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--ink-2);
-}
-.side-line span {
-  border: 1px solid var(--line-strong); border-radius: 999px;
-  padding: 0.12rem 0.5rem;
-}
-.side-line span:nth-child(2) { border-color: color-mix(in srgb, var(--tq) 60%, var(--line-strong)); color: var(--tq); }
-.side-note { margin: 0; font-size: 0.86rem; line-height: 1.55; color: var(--ink-3); }
-
-@media (max-width: 860px) {
-  .hero { grid-template-columns: 1fr; }
-  .hero-side { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 0.8rem; }
-}
 
 /* ── blocks ──────────────────────────────────────────────────────── */
 .block {
@@ -319,6 +330,12 @@ main { position: relative; z-index: 1; }
 .about-strip .mail a { color: var(--tq); text-decoration: none; }
 .about-strip .mail a:hover { text-decoration: underline; }
 @media (max-width: 820px) { .about-strip { grid-template-columns: 1fr; } }
+
+.closing {
+  margin: 1rem 0 0; padding-top: 0.8rem; border-top: 1px solid var(--line);
+  font-size: 0.88rem; line-height: 1.6; color: var(--ink-2);
+}
+.closing a { color: var(--ink); }
 
 /* ── print: the words, without the furniture ─────────────────────── */
 @media print {

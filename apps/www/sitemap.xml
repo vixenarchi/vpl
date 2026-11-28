@@ -2,7 +2,8 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.terg.hr/</loc><lastmod>2026-11-27</lastmod></url>
   <url><loc>https://www.terg.hr/news</loc><lastmod>2026-11-27</lastmod></url>
-  <url><loc>https://www.terg.hr/faq</loc></url>
-  <url><loc>https://www.terg.hr/imprint</loc></url>
-  <url><loc>https://www.terg.hr/privacy</loc></url>
+  <url><loc>https://www.terg.hr/philosophy</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://www.terg.hr/process</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://www.terg.hr/resources</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://www.terg.hr/about</loc><lastmod>2026-11-27</lastmod></url>
 </urlset>

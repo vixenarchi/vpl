@@ -90,70 +90,10 @@
         </div>
       </details>
       <a href="/news">news</a>
-      <details class="menu" id="nav-philosophy">
-        <summary aria-controls="menu-philosophy">philosophy <span class="chev" aria-hidden="true">▾</span></summary>
-        <div class="panel panel-sect" id="menu-philosophy">
-  <h2>Philosophy</h2>
-  <div class="pair">
-    <article>
-      <h3>Vixen</h3>
-      <p>Light, fast, done before lunch. One purpose per thing, no graph, no
-        metamodel, no dashboard that grows a dashboard. Short engagements: open
-        it, use it, leave.</p>
-    </article>
-    <article>
-      <h3>Eva</h3>
-      <p>The same lightness, kept for years. A skeleton that does not change,
-        layers that arrive when they are needed, agents that take the work over
-        as it grows.</p>
-    </article>
-  </div>
-
-        </div>
-      </details>
-      <details class="menu" id="nav-process">
-        <summary aria-controls="menu-process">process <span class="chev" aria-hidden="true">▾</span></summary>
-        <div class="panel panel-sect" id="menu-process">
-  <h2>Process</h2>
-  <ol class="steps">
-    <li><b>1</b> Put something real into a tool. Half an hour tells you whether this way of working suits you.</li>
-    <li><b>2</b> Read the code at <a href="https://github.com/vixenarchi/vpl" target="_blank" rel="noopener">github.com/vixenarchi/vpl</a>, or bring the problem and have it answered.</li>
-    <li><b>3</b> Keep it and let it evolve. Things are added; nothing is rewritten to make room.</li>
-  </ol>
-
-        </div>
-      </details>
-      <details class="menu" id="nav-resources">
-        <summary aria-controls="menu-resources">resources <span class="chev" aria-hidden="true">▾</span></summary>
-        <div class="panel panel-sect" id="menu-resources">
-  <h2>Resources</h2>
-  <ul class="res">
-    <li><a href="https://github.com/vixenarchi/vpl" target="_blank" rel="noopener">the code</a> — every application and the whole shell. Apache-2.0; read it, run it, fork it.</li>
-    <li><a href="https://vn.terg.hr/" target="_blank" rel="noopener">the documentation</a> — written, and published, inside the notes.</li>
-    <li><a href="/news">the record</a> — what was built, and when.</li>
-  </ul>
-
-        </div>
-      </details>
-      <details class="menu" id="nav-about">
-        <summary aria-controls="menu-about">about <span class="chev" aria-hidden="true">▾</span></summary>
-        <div class="panel panel-sect" id="menu-about">
-          <div class="about-strip">
-  <div>
-    <h2>About</h2>
-    <p>Terg is a project in two streams. Vixen is the fast half; Eva is the long
-      half; both live in the open. Location is project-dependent: the desk is in
-      Falkendorf, Landkreis Erlangen-Höchstadt, Mittelfranken, Bayern.</p>
-  </div>
-  <div>
-    <h2>Contact</h2>
-    <p>No form, no calendar link, no chat window. One address, read by a person,
-      answered when there is something worth saying.</p>
-    <p class="mail"><a href="mailto:req@terg.hr">req@terg.hr</a></p>
-  </div>
-          </div>
-        </div>
-      </details>
+      <a href="/philosophy">philosophy</a>
+      <a href="/process">process</a>
+      <a href="/resources">resources</a>
+      <a href="/about">about</a>
     </nav>
     <div class="bar-acts">
       <button id="theme" class="ghost" type="button" title="change the theme" aria-label="change the theme">◐</button>
@@ -165,25 +105,21 @@
 <main>
 
   <section class="hero">
-    <div class="hero-copy">
-      <p class="kicker">terg · two streams, Vixen and Eva</p>
-      <h1 class="shout">Natty or not,<br>here they come.</h1>
-      <p class="lede">Self organized, headless, zero architecture and zero deployment
-        productivity assets in cloud. Open source autonomous core system for small
-        businesses and solo proprietors.</p>
-      <p class="lede lede-2">They are not natural: no face, no body, one hundred per
-        cent artificial. Notes, ideas, requirements, a dictionary, documents,
-        compliance, keys, architecture — and a bookkeeper.</p>
-      <p class="hero-acts">
-        <a class="go big" href="https://vn.terg.hr/" target="_blank" rel="noopener">start with notes <span aria-hidden="true">↗</span></a>
-        <a class="quiet as-link" href="/news">what is new</a>
-      </p>
-    </div>
-    <aside class="hero-side">
-      <p class="side-line"><span>self organized</span><span>headless</span><span>zero architecture</span><span>zero deployment</span></p>
-      <p class="side-note">Nothing here is installed. Everything is somebody's
-        account, a browser, and a database in the EU.</p>
-    </aside>
+    <p class="kicker">terg · two streams, Vixen and Eva</p>
+    <h1 class="shout">Natty or not, here they come.</h1>
+    <p class="lede"><em class="tag">Self organized</em>
+      <em class="tag">headless</em> <em class="tag">zero architecture</em>
+      <em class="tag">zero deployment</em> productivity assets in cloud. An open
+      source autonomous core system for small businesses and solo proprietors.</p>
+    <p class="lede lede-2">They are not natural: no face, no body, one hundred per
+      cent artificial. Notes, ideas, requirements, a dictionary, documents,
+      compliance, keys, architecture — and a bookkeeper. Nothing is installed:
+      everything is somebody's account, a browser, and a database in the EU.</p>
+    <p class="hero-acts">
+      <a class="go big" href="https://vn.terg.hr/" target="_blank" rel="noopener">start with notes <span aria-hidden="true">↗</span></a>
+      <a class="quiet as-link" href="/news">what is new</a>
+      <a class="quiet as-link" href="/philosophy">why it is built this way</a>
+    </p>
   </section>
 
   <section id="list" class="block">
@@ -268,6 +204,12 @@
         <span class="addr">b.terg.hr</span>
       </li>
     </ul>
+
+    <p class="closing">Nothing here is sold and nothing is for sale. The code is
+      open at <a href="https://github.com/vixenarchi/vpl" target="_blank" rel="noopener">github.com/vixenarchi/vpl</a>,
+      the database is in the EU, and the only address is
+      <a href="mailto:req@terg.hr">req@terg.hr</a> — read by a person, answered
+      when there is something worth saying.</p>
   </section>
 
 </main>
