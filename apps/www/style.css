@@ -1,3 +1,31 @@
+/* ── the faces, shipped ──────────────────────────────────────────────
+ * tokens.css names Manrope and Newsreader, and this repository used to name them
+ * without shipping them: every page fell back to the system sans and Georgia,
+ * and nobody noticed until the front door was looked at closely. Two subset
+ * files, latin only, self-hosted, no third-party request.
+ */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('fonts/manrope-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('fonts/newsreader-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Bangers';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('fonts/bangers-latin.woff2') format('woff2');
+}
+
 /* terg.hr — one page, dense, no decoration that costs a scroll.
  *
  * The house's tokens come first (vendor/tokens.css) so the front door and the
