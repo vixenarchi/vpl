@@ -38,19 +38,33 @@ body.site {
 body.site::before {
   content: '';
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background-image: radial-gradient(circle, color-mix(in srgb, var(--ink) 22%, transparent) 1px, transparent 1.35px);
+  /* the dots run over the whole screen and get *stronger* in the middle, where
+   * the words are: a texture that only shows at the margins reads as a frame,
+   * and nobody asked for a frame */
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--ink) 26%, transparent) 1px, transparent 1.35px);
   background-size: 1.05rem 1.05rem;
-  -webkit-mask-image: radial-gradient(ellipse 62% 64% at 50% 30%, #000 12%, #000 46%, transparent 92%);
-  mask-image: radial-gradient(ellipse 62% 64% at 50% 30%, #000 12%, #000 46%, transparent 92%);
-  opacity: 0.75;
+  opacity: 0.55;
 }
-body.site > * { position: relative; z-index: 1; }
+body.site::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--ink) 24%, transparent) 1px, transparent 1.35px);
+  background-size: 1.05rem 1.05rem;
+  -webkit-mask-image: radial-gradient(ellipse 70% 62% at 50% 42%, #000 0%, #000 55%, transparent 100%);
+  mask-image: radial-gradient(ellipse 70% 62% at 50% 42%, #000 0%, #000 55%, transparent 100%);
+  opacity: 0.9;
+}
+
+/* the header paints above the page, the panel above the header: a menu that is
+ * under the text is not a menu */
+main { position: relative; z-index: 1; }
+.bar { z-index: 40; }
+.panel { z-index: 50; }
 
 /* ── the bar ─────────────────────────────────────────────────────── */
 .bar {
-  position: sticky; top: 0; z-index: 30;
-  background: color-mix(in srgb, var(--paper) 92%, transparent);
-  backdrop-filter: blur(6px);
+  position: sticky; top: 0; z-index: 40;
+  background: color-mix(in srgb, var(--paper) 96%, transparent);
   border-bottom: 1px solid var(--line);
 }
 .bar-in {
@@ -107,7 +121,7 @@ body.site > * { position: relative; z-index: 1; }
  * it never pushes the page down — a menu is an overlay, not a growth.
  */
 .panel {
-  position: fixed; left: 1.1rem; right: 1.1rem; top: 2.5rem;
+  position: fixed; left: 1.1rem; right: 1.1rem; top: 2.5rem; z-index: 50;
   max-width: var(--wide); margin: 0 auto;
   max-height: calc(100dvh - 3.2rem); overflow: auto;
   border: 1px solid var(--line-strong); border-radius: 6px;
@@ -196,12 +210,14 @@ body.site > * { position: relative; z-index: 1; }
   padding: 1.05rem 1.1rem 1.15rem;
   border-top: 1px solid var(--line);
 }
-.block h2 {
+/* the label style belongs to the block's own heading, not to every h2 inside it:
+ * a news entry is a title, not a section marker */
+.block > h2 {
   font-family: var(--mono); font-weight: 400;
   font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase;
   color: var(--ink-2); margin: 0 0 0.7rem;
 }
-.block h2::before {
+.block > h2::before {
   content: ''; display: inline-block; width: 0.35rem; height: 0.35rem;
   background: var(--tq); border-radius: 50%; margin-right: 0.45rem; vertical-align: 0.1em;
 }
@@ -293,7 +309,11 @@ body.site > * { position: relative; z-index: 1; }
   text-transform: uppercase; color: var(--ink-2);
 }
 .news-meta span { color: var(--ink-3); letter-spacing: 0.04em; text-transform: none; font-size: 0.72rem; }
-.news h2, .news h3 { font-family: var(--serif); font-weight: 400; font-size: 1.2rem; line-height: 1.3; margin: 0 0 0.4rem; }
+.news h2, .news h3 {
+  font-family: var(--serif); font-weight: 400; font-size: 1.2rem; line-height: 1.3;
+  margin: 0 0 0.4rem; text-transform: none; letter-spacing: 0;
+}
+.news h2::before, .news h3::before { content: none; }
 .news h3 a { color: var(--ink); text-decoration: none; }
 .news h3 a:hover { text-decoration: underline; }
 .news p { font-size: 0.92rem; line-height: 1.58; color: var(--ink-2); margin: 0 0 0.55rem; max-width: 48rem; }
