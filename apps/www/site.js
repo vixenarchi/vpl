@@ -1,5 +1,6 @@
-/* terg.hr — three lines of script, because a page that needs more is a page
- * that is doing something the apps should be doing.
+/* terg.hr — the whole script, and it stays small on purpose. A front door that
+ * needs a framework to show four paragraphs is slower than the product it is
+ * selling, so there is no framework: a theme, a pager, and the menus in the bar.
  *
  * The theme is the suite's theme: the same three names, the same key, the same
  * data-theme attribute, so a person who chose "comic" in vi gets comic paper
@@ -32,26 +33,9 @@ document.getElementById('theme')?.addEventListener('click', () => {
   apply(THEMES[(THEMES.indexOf(now) + 1) % THEMES.length]);
 });
 
-/* Sign in does not sign anybody in here: the front door has no login and never
- * will. It opens the list of the eight, because the one thing a stranger needs
- * at that moment is the addresses, and picking one is faster than reading six
- * paragraphs about which to pick. */
-(() => {
-  const dlg = document.getElementById('signin');
-  if (!dlg) return;
-  const open = (e) => { e.preventDefault(); dlg.showModal(); };
-  for (const id of ['btn-signin', 'btn-signin-2']) {
-    document.getElementById(id)?.addEventListener('click', open);
-  }
-  dlg.querySelector('[data-close]')?.addEventListener('click', () => dlg.close());
-  /* a click on the backdrop closes it, like every other dialog in the suite */
-  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
-})();
-
-/* ── news, five at a time ────────────────────────────────────────────
- * The entries live in the page (so they work with the script off, and with no
- * build), and this only decides which five are visible. A page that needs a
- * server to show five paragraphs would be the wrong page for this house.
+/* ── the news pager: five at a time ──────────────────────────────────
+ * The entries live in the page, so they work with this file blocked and with no
+ * build. The script only decides which five are visible.
  */
 (() => {
   const list = document.getElementById('news-list');
@@ -89,10 +73,14 @@ document.getElementById('theme')?.addEventListener('click', () => {
 })();
 
 /* ── the menus in the bar ────────────────────────────────────────────
- * A <details> opens on click by itself. Four things make it feel like a menu
- * rather than five accordions: only one is open at a time (two panels are two
- * fixed overlays in the same place, which reads as a broken card), it closes
- * when you pick something, when you click the paper, and on Escape.
+ * Every item with a panel is a <details>; the browser opens it on click. Three
+ * rules make them feel like menus rather than five accordions: only one is open
+ * at a time (two fixed panels in the same place read as a broken card), it
+ * closes when you pick something, when you click the paper, and on Escape.
+ *
+ * Opening a panel never scrolls the page. The band it shows is an overlay, not a
+ * destination, so the words underneath stay exactly where they were — a menu
+ * that moves the page is a menu you have to find again.
  */
 (() => {
   const menus = [...document.querySelectorAll('details.menu')];
@@ -104,9 +92,7 @@ document.getElementById('theme')?.addEventListener('click', () => {
 
   for (const menu of menus) {
     menu.addEventListener('toggle', () => { if (menu.open) closeAll(menu); });
-    menu.addEventListener('click', (e) => {
-      if (e.target.closest('a')) menu.open = false;
-    });
+    menu.addEventListener('click', (e) => { if (e.target.closest('a')) menu.open = false; });
   }
 
   document.addEventListener('click', (e) => {
@@ -120,66 +106,12 @@ document.getElementById('theme')?.addEventListener('click', () => {
     open.open = false;
     open.querySelector('summary')?.focus();
   });
-})();
 
-/* ── news, five at a time ────────────────────────────────────────────
- * The entries live in the page (so they work with the script off, and with no
- * build), and this only decides which five are visible. A page that needs a
- * server to show five paragraphs would be the wrong page for this house.
- */
-(() => {
-  const list = document.getElementById('news-list');
-  const pager = document.getElementById('news-pager');
-  if (!list || !pager) return;
-  const items = [...list.children];
-  const PER = 5;
-  const pages = Math.max(1, Math.ceil(items.length / PER));
-  if (pages < 2) { pager.hidden = true; return; }
-  pager.hidden = false;
-
-  let page = 0;
-  const button = (label, onClick, disabled) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'quiet';
-    b.textContent = label;
-    b.disabled = !!disabled;
-    b.addEventListener('click', onClick);
-    return b;
-  };
-
-  function draw() {
-    items.forEach((li, i) => { li.hidden = i < page * PER || i >= (page + 1) * PER; });
-    pager.replaceChildren(
-      button('← newer', () => { page = Math.max(0, page - 1); draw(); }, page === 0),
-      button('older →', () => { page = Math.min(pages - 1, page + 1); draw(); }, page === pages - 1),
-    );
-    const of = document.createElement('span');
-    of.className = 'page-of';
-    of.textContent = `page ${page + 1} of ${pages}`;
-    pager.append(of);
+  /* /#philosophy from another page opens that panel instead of looking for a
+   * band that is no longer in the flow. */
+  const hash = decodeURIComponent(location.hash.replace(/^#/, ''));
+  if (hash) {
+    const target = document.getElementById('nav-' + hash);
+    if (target && target.tagName === 'DETAILS') { target.open = true; history.replaceState(null, '', location.pathname); }
   }
-  draw();
-})();
-
-/* ── the panel under "apps" ──────────────────────────────────────────
- * A <details> opens on click by itself. Three small things make it feel like a
- * menu instead of an accordion: it closes when you pick something, when you
- * click the paper, and on Escape. In that order, because the first is the one
- * that matters. */
-(() => {
-  const menu = document.querySelector('details.menu');
-  if (!menu) return;
-  menu.addEventListener('click', (e) => {
-    if (e.target.closest('a')) menu.open = false;
-  });
-  document.addEventListener('click', (e) => {
-    if (menu.open && !e.target.closest('details.menu')) menu.open = false;
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && menu.open) {
-      menu.open = false;
-      menu.querySelector('summary')?.focus();
-    }
-  });
 })();
