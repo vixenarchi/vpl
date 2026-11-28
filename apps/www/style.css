@@ -38,21 +38,12 @@ body.site {
 body.site::before {
   content: '';
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  /* the dots run over the whole screen and get *stronger* in the middle, where
-   * the words are: a texture that only shows at the margins reads as a frame,
-   * and nobody asked for a frame */
-  background-image: radial-gradient(circle, color-mix(in srgb, var(--ink) 26%, transparent) 1px, transparent 1.35px);
-  background-size: 1.05rem 1.05rem;
+  /* One sheet of dotted paper for the whole screen, the same strength behind the
+   * words as beside them. The first version faded in the middle, which read as a
+   * frame with an empty page inside it — the opposite of paper. */
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--ink) 42%, transparent) 1.3px, transparent 1.7px);
+  background-size: 0.95rem 0.95rem;
   opacity: 0.55;
-}
-body.site::after {
-  content: '';
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background-image: radial-gradient(circle, color-mix(in srgb, var(--ink) 24%, transparent) 1px, transparent 1.35px);
-  background-size: 1.05rem 1.05rem;
-  -webkit-mask-image: radial-gradient(ellipse 70% 62% at 50% 42%, #000 0%, #000 55%, transparent 100%);
-  mask-image: radial-gradient(ellipse 70% 62% at 50% 42%, #000 0%, #000 55%, transparent 100%);
-  opacity: 0.9;
 }
 
 /* the header paints above the page, the panel above the header: a menu that is
