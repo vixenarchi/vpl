@@ -279,3 +279,37 @@ section.
 Still open, and known: the model key lives in `localStorage` — CSP is the second
 line there, not the first. The relay is bounded rather than authenticated (C7/VP-4), which is
 the honest shape for a proxy with no server behind it.
+
+## The history is scanned, not just the working tree (2026-11-28)
+
+The repository is public. That changes what a leak means: a key pushed here is
+not "in a private repo for a while", it is a key in somebody's clone before the
+next commit, and deleting it in the next commit does not delete it from the
+history. So the gate reads the history: `tools/secrets-check.sh` runs gitleaks
+over `git log --all` — 125 commits, every blob, every branch, about a second —
+and fails the run on a finding, naming the rule, the file and the commit.
+
+Two tools were run by hand first, over the whole history:
+
+- **gitleaks 8.28.0** — 2 findings, both the **anon** JWT (`"role":"anon"`) that
+  `apps/vz/functions/p/*` carries inline. Public by design: the browser sends
+  that key on every request and RLS is the lock, not the key.
+- **trufflehog 3.100.1** — 0 findings, 2,385 chunks, `verified_secrets: 0`.
+
+The anon key is allowlisted in `.gitleaks.toml` as a literal, not as a shape: a
+pattern for "any Supabase JWT" would hide the service key, which is the one that
+must never be here. Two traps were found while setting that up, and both are
+recorded in that file because both are silent:
+
+- a config file **replaces** the bundled rules instead of adding to them — the
+  first version had no rules and "found nothing", which is the quietest kind of
+  false negative;
+- base64 does not keep a substring intact unless it lands on a 3-byte boundary,
+  so an allowlist built from a fragment of the encoded claim matched nothing.
+
+The check was proved in both directions before being trusted: clean on the real
+history (125 commits), and a planted service-role key in a clone fails it with
+`leak.js:1 commit 7cb326f5`.
+
+When a finding is real: **rotate first**, then rewrite the history — a rotated
+key is dead everywhere, a rewritten key is still in every existing clone.

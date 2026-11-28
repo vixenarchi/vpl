@@ -1,0 +1,26 @@
+# gitleaks, for this repository and only this repository.
+#
+# A config file *replaces* the bundled rules instead of adding to them, so the
+# first line that matters is `useDefault`. Without it this scan "found nothing"
+# because it had no rules — the quietest kind of false negative, and the reason
+# the note is in the file rather than in a commit message.
+
+[extend]
+useDefault = true
+
+# One allowlist, and it is the anon key *itself* rather than a shape that looks
+# like a key. The anon key is public by design: the browser sends it on every
+# request, it sits in every config.local.js, and it is worthless without a row
+# policy that lets you read the row. A pattern for "any Supabase JWT" would
+# also hide the service key, which is the one that must never be here; the
+# literal below matches the anon key and nothing else.
+#
+# It is rotatable and revocable: rotate the anon key and this line stops
+# matching, the scan flags every copy of the new one, and somebody decides out
+# loud that the new one is public too. That is the behaviour we want.
+[allowlist]
+description = "the anon key is public by design: RLS is the lock, not the key"
+regexTarget = "secret"
+regexes = [
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaHJqc3RsbHNhenl3YnhuYnF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NTA0MDIsImV4cCI6MjExMDEyNjQwMn0.AskLuLd0E6bTWibu3VW_Jz04thLSjyWnj9DlCz-BSdY''',
+]

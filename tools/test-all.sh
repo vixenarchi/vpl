@@ -193,6 +193,12 @@ for f in apps/*/app.js packages/shell/*.js apps/*/lib/*.js; do
 done
 [ "$syntax" = 0 ] && { echo "syntax: every script parses"; pass=$((pass+1)); } || { echo "syntax: FAILED"; fail=$((fail+1)); failed+=("syntax"); }
 
+# ── 1b. no key in the history ───────────────────────────────────────
+# This repository is public, so a secret in any commit is published the moment
+# it lands — and stays published after it is deleted. One second to read every
+# blob of every commit, which is why it belongs here and not in a rule.
+run "secrets (every commit, every file)" ./tools/secrets-check.sh
+
 FORCE=0
 lane shell
 
